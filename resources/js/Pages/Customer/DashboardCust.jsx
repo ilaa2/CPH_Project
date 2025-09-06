@@ -1,4 +1,6 @@
-import { Head, Link, router } from '@inertiajs/react';
+// File: resources/js/Pages/Customer/DashboardCust.jsx
+
+import { Head, Link, router, usePage } from '@inertiajs/react'; // <-- Pastikan 'usePage' di-import
 import {
     FiHeart, FiMinus, FiPlus, FiShoppingCart,
     FiArrowRight, FiUsers, FiSun, FiUser, FiLogIn, FiMenu, FiX
@@ -15,14 +17,24 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
+// ===================================================================
+// === 1. IMPORT HEADER DAN FOOTER DARI FILE LAYOUT ===
+// ===================================================================
+import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
+
+
 // Komponen utama Dashboard
-export default function CustomerDashboard({ auth, latestBuah, latestSayur, tipeKunjungan }) {
-    const user = auth?.user;
+export default function CustomerDashboard({ latestBuah, latestSayur, tipeKunjungan }) {
+    // Ambil data 'auth' dari props global menggunakan usePage
+    const { auth } = usePage().props;
 
     return (
         <div className="min-h-screen w-full bg-white text-gray-800">
             <Head title="Central Palantea Hidroponik" />
+
+            {/* 2. GUNAKAN KOMPONEN YANG SUDAH DI-IMPORT */}
             <SiteHeader auth={auth} />
+
             <main className="w-full overflow-hidden">
                 <ImageSlider />
                 <KunjunganSection tipeKunjungan={tipeKunjungan} />
@@ -31,150 +43,25 @@ export default function CustomerDashboard({ auth, latestBuah, latestSayur, tipeK
                 <LatestProducts title="Sayuran Segar Terbaru" products={latestSayur} />
                 <QualityFeatures />
             </main>
-            <FooterNote user={user} />
+
+            {/* 2. GUNAKAN KOMPONEN YANG SUDAH DI-IMPORT */}
+            <FooterNote />
         </div>
     );
 }
 
+
 // ===================================================================
-// === KOMPONEN-KOMPONEN HALAMAN ===
+// === KOMPONEN-KOMPONEN HALAMAN (SiteHeader dan FooterNote dihapus dari sini) ===
 // ===================================================================
-
-function SiteHeader({ auth }) {
-    const user = auth?.user;
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isProfileOpen, setIsProfileOpen] = useState(false);
-    const profileDropdownRef = useRef(null);
-    const [searchQuery, setSearchQuery] = useState('');
-
-    const handleLinkClick = () => {
-        setIsMenuOpen(false);
-    };
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.get(route('customer.belanja.index'), { search: searchQuery }, {
-            preserveState: true,
-            replace: true,
-        });
-    };
-
-    useEffect(() => {
-        function handleClickOutside(event) {
-            if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target)) {
-                setIsProfileOpen(false);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
-    }, [profileDropdownRef]);
-
-    return (
-        <header className="sticky top-0 z-50 bg-white/90 backdrop-blur border-b border-green-100">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                <div className="h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Link href={route('home')}>
-                            <img src="/storage/logo/central_palantea.png" alt="Logo" className="h-14 w-auto flex-shrink-0" />
-                        </Link>
-                        <Link href={route('home')}>
-                            <span className="hidden sm:block text-xl font-extrabold text-green-800">Central Palantea Hidroponik</span>
-                        </Link>
-                    </div>
-
-                    <nav className="hidden md:flex items-center gap-8 text-sm text-gray-700">
-                        <Link href={route('home')} className={`font-semibold ${route().current('home') ? 'text-green-700' : 'hover:text-green-700'}`}>Beranda</Link>
-                        <Link href={route('customer.belanja.index')} className={`hover:text-green-700 ${route().current('customer.belanja.index') ? 'text-green-700 font-semibold' : ''}`}>Belanja</Link>
-                        <Link href={route('customer.kunjungan.index')} className={`hover:text-green-700 ${route().current('customer.kunjungan.index') ? 'text-green-700 font-semibold' : ''}`}>Kunjungan</Link>
-                    </nav>
-
-                    <div className="flex items-center gap-3">
-                        <form onSubmit={handleSearch}>
-                            <input
-                                type="search"
-                                placeholder="Cari..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="hidden sm:block h-9 w-40 md:w-56 rounded-md border border-green-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                            />
-                        </form>
-                        <button
-                            type="button"
-                            onClick={() => {
-                                if (!user) {
-                                    router.get(route('login'));
-                                } else {
-                                    alert('Fitur keranjang belum tersedia.');
-                                }
-                            }}
-                            className="h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100"
-                            title="Keranjang"
-                        >
-                            <FiShoppingCart />
-                        </button>
-
-                        <div className="relative" ref={profileDropdownRef}>
-                            <button
-                                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                className="h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100"
-                                title="Akun Saya"
-                            >
-                                <FiUser />
-                            </button>
-                            <div className={`absolute top-full right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg transition-opacity duration-200 ${isProfileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                                {user ? (
-                                    <>
-                                        <div className="px-4 py-3 border-b">
-                                            <p className="text-sm font-semibold truncate">{user.name}</p>
-                                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
-                                        </div>
-                                        <div className="p-1">
-                                            {/* Ganti 'profile.edit' jika Anda punya route spesifik untuk profil pelanggan */}
-                                            <Link href={route('profile.edit')} className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Profil Saya</Link>
-                                            <Link href={route('logout')} method="post" as="button" className="block w-full text-left px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50">Logout</Link>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="p-1">
-                                        <Link href={route('login')} className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Login</Link>
-                                        <Link href={route('register')} className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Daftar</Link>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <button className="md:hidden h-9 w-9 flex items-center justify-center" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                            {isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}
-                        </button>
-                    </div>
-                </div>
-
-                {isMenuOpen && (
-                    <nav className="md:hidden pb-4 space-y-2 border-t mt-1 pt-3">
-                        <Link href={route('home')} onClick={handleLinkClick} className={`block px-4 py-2 rounded-md ${route().current('home') ? 'font-semibold bg-green-50 text-green-700' : 'hover:bg-gray-50'}`}>Beranda</Link>
-                        <Link href={route('customer.belanja.index')} onClick={handleLinkClick} className={`block px-4 py-2 rounded-md ${route().current('belanja.index') ? 'font-semibold bg-green-50 text-green-700' : 'hover:bg-gray-50'}`}>Belanja</Link>
-                        <Link href={route('customer.kunjungan.index')} onClick={handleLinkClick} className={`block px-4 py-2 rounded-md ${route().current('customer.kunjungan.index') ? 'font-semibold bg-green-50 text-green-700' : 'hover:bg-gray-50'}`}>Kunjungan</Link>
-                        {!user && (
-                            <Link href={route('login')} className="flex items-center justify-center gap-2 h-10 w-full rounded-md bg-green-500 text-sm font-medium text-white hover:bg-green-600 mt-4">
-                                <FiLogIn /> Login
-                            </Link>
-                        )}
-                    </nav>
-                )}
-            </div>
-        </header>
-    );
-}
-
 
 /* ========== IMAGE SLIDER (RESPONSIF) ========== */
 function ImageSlider() {
+    // Karena Ziggy dihapus, kita gunakan URL manual di sini
     const slides = [
         { background: '/storage/slide/SlideA.jpeg', title: 'SELAMAT DATANG DI CENTRAL PALANTEA HIDROPONIK', subtitle: 'Bersama kita wujudkan pertanian sehat, hijau, dan berkelanjutan untuk masa depan yang lebih baik.', type: 'welcome' },
-        { background: '/storage/slide/SlideB.jpeg', title: 'Outing Class, Kunjungan Umum hingga Acara Bisa di Central Palantea Hidroponik!', buttonText: 'Booking Sekarang!', buttonIcon: <BsBookmarkCheckFill />, type: 'promo', buttonStyle: 'promo-booking', buttonLink: route('customer.kunjungan.index') },
-        { background: '/storage/slide/SlideC.jpeg', title: 'Sayuran Hidroponik untuk Masa Depan Sehat', subtitle: 'Tanpa pestisida, tanpa tanah, lebih bersih dan lebih baik untuk keluargamu.', buttonText: 'Belanja Sekarang!', buttonIcon: <BsFillCartFill />, type: 'promo', buttonStyle: 'promo-shop', buttonLink: route('customer.belanja.index') }
+        { background: '/storage/slide/SlideB.jpeg', title: 'Outing Class, Kunjungan Umum hingga Acara Bisa di Central Palantea Hidroponik!', buttonText: 'Booking Sekarang!', buttonIcon: <BsBookmarkCheckFill />, type: 'promo', buttonStyle: 'promo-booking', buttonLink: '/customer/kunjungan' },
+        { background: '/storage/slide/SlideC.jpeg', title: 'Sayuran Hidroponik untuk Masa Depan Sehat', subtitle: 'Tanpa pestisida, tanpa tanah, lebih bersih dan lebih baik untuk keluargamu.', buttonText: 'Belanja Sekarang!', buttonIcon: <BsFillCartFill />, type: 'promo', buttonStyle: 'promo-shop', buttonLink: '/customer/belanja' }
     ];
     const getButtonStyle = (style) => {
         switch (style) {
@@ -226,8 +113,12 @@ function ImageSlider() {
     );
 }
 
+// ... (semua komponen lainnya seperti KunjunganSection, AboutSteps, dll. biarkan tetap di sini)
+// ...
+// ... (Saya persingkat agar tidak terlalu panjang, tapi di kode Anda biarkan saja)
+// ...
 
-/* ========== SEKSI KUNJUNGAN ========== */
+/* ========== SEKSI KUNJungan ========== */
 function KunjunganSection({ tipeKunjungan }) {
     if (!tipeKunjungan || tipeKunjungan.length === 0) return null;
     const tipeDetails = {
@@ -264,7 +155,7 @@ function KunjunganCard({ title, description, icon, bgColor }) {
                 </div>
                 <p className="mt-4 text-white/90">{description}</p>
                 <Link
-                    href={route('customer.kunjungan.index')}
+                    href={'/customer/kunjungan'} // URL Manual
                     className="mt-6 inline-flex items-center gap-2 bg-white text-gray-800 font-semibold px-6 py-3 rounded-lg transition-colors hover:bg-gray-200"
                 >
                     Daftar Sekarang <FiArrowRight />
@@ -306,12 +197,11 @@ function LatestProducts({ title, products }) {
     if (!products || products.length === 0) return null;
 
     const handleAddToCart = (productId) => {
-        router.post(route('customer.cart.store'), {
+        router.post('/customer/cart/store', { // URL Manual
             product_id: productId
         }, {
             preserveScroll: true,
             onSuccess: () => {
-                // Mungkin menampilkan notifikasi kecil
                 alert('Produk ditambahkan ke keranjang!');
             }
         });
@@ -325,7 +215,7 @@ function LatestProducts({ title, products }) {
                         <h2 className="text-3xl sm:text-4xl font-extrabold text-green-800">{title}</h2>
                         <p className="mt-2 text-gray-500">Pilihan terbaik untuk Anda, langsung dari kebun.</p>
                     </div>
-                    <Link href={route('customer.belanja.index')} className="text-green-700 font-semibold hover:underline">Lihat semua</Link>
+                    <Link href={'/customer/belanja'} className="text-green-700 font-semibold hover:underline">Lihat semua</Link>
                 </div>
                 <div className="mt-8 grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
                     {products.map(p => (
@@ -351,11 +241,11 @@ function ProductCard({ data, onAddToCart }) {
                 <h4 className="font-semibold text-gray-800 truncate">{data.nama}</h4>
                 <p className="mt-1 font-bold text-green-700 text-lg">{formattedPrice}</p>
                 <div className="mt-4 flex items-center justify-between mt-auto pt-2">
-                <button onClick={onAddToCart} disabled={data.stok === 0} className="w-full h-10 rounded-md bg-green-100 text-green-800 font-bold text-sm flex items-center justify-center gap-2 hover:bg-green-600 hover:text-white transition-colors duration-300 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
-                    <FiShoppingCart />
-                    <span>Tambah</span>
-                </button>
-            </div>
+                    <button onClick={onAddToCart} disabled={data.stok === 0} className="w-full h-10 rounded-md bg-green-100 text-green-800 font-bold text-sm flex items-center justify-center gap-2 hover:bg-green-600 hover:text-white transition-colors duration-300 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
+                        <FiShoppingCart />
+                        <span>Tambah</span>
+                    </button>
+                </div>
             </div>
         </div>
     );
@@ -395,41 +285,5 @@ function FeatureItem({ title, text, icon }) {
                 <p className="text-sm text-gray-600">{text}</p>
             </div>
         </div>
-    );
-}
-
-/* ========== CATATAN FOOTER ========== */
-function FooterNote({ user }) {
-    return (
-        <section className="bg-green-50">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8">
-                <div className="md:col-span-2">
-                    <div className="flex items-center gap-3 mb-4">
-                        <img src="/storage/logo/central_palantea.png" alt="Logo" className="h-12 w-auto" />
-                        <div><h2 className="text-lg font-bold text-green-700">Central Palantea</h2><p className="text-sm text-gray-500">Hidroponik Modern</p></div>
-                    </div>
-                    <p className="text-sm text-gray-600 max-w-md">Membangun masa depan pertanian yang berkelanjutan dengan teknologi hidroponik modern untuk menghasilkan sayuran berkualitas tinggi.</p>
-                </div>
-                <div>
-                    <h3 className="font-semibold text-gray-800 mb-4">Navigasi</h3>
-                    <ul className="space-y-2 text-sm">
-                        <li><Link href={route('home')} className="text-gray-600 hover:text-green-600">Beranda</Link></li>
-                        <li><Link href={route('customer.belanja.index')} className="text-gray-600 hover:text-green-600">Belanja</Link></li>
-                        <li><Link href={route('customer.kunjungan.index')} className="text-gray-600 hover:text-green-600">Kunjungan</Link></li>
-                    </ul>
-                </div>
-                <div>
-                    <h3 className="font-semibold text-gray-800 mb-4">Kontak</h3>
-                    <ul className="space-y-3 text-sm">
-                        <li className="flex items-center gap-2 text-gray-600">Duri, Riau</li>
-                        <li className="flex items-center gap-2 text-gray-600">+62 8211 0987 211</li>
-                        <li className="flex items-center gap-2 text-gray-600">info@centralpalantea.com</li>
-                    </ul>
-                </div>
-            </div>
-            <div className="bg-gray-100 text-center py-4">
-                <p className="text-xs text-gray-500">&copy; {new Date().getFullYear()} Central Palantea Hidroponik.</p>
-            </div>
-        </section>
     );
 }

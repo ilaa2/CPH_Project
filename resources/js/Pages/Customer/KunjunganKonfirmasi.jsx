@@ -16,14 +16,15 @@ const DetailRow = ({ icon, label, value }) => (
 );
 
 
-export default function KunjunganKonfirmasi({ dataKunjungan }) {
+export default function KunjunganKonfirmasi({ auth, dataKunjungan }) {
     // State untuk processing button
     const [processing, setProcessing] = useState(false);
+
 
     // Fungsi untuk submit data ke method 'store'
     const handleSubmit = () => {
         setProcessing(true);
-        router.post(route('customer.kunjungan.store'), dataKunjungan, {
+        router.post(route('kunjungan.store'), dataKunjungan, {
             onFinish: () => setProcessing(false),
         });
     };
@@ -40,7 +41,7 @@ export default function KunjunganKonfirmasi({ dataKunjungan }) {
     return (
         <div className="min-h-screen w-full bg-gradient-to-b from-green-50 to-green-100 text-gray-800">
             <Head title="Konfirmasi Kunjungan" />
-            <SiteHeader />
+            <SiteHeader auth={auth} />
 
             <section className="relative h-[300px] bg-cover bg-center" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=1600&q=80)' }}>
                 <div className="absolute inset-0 bg-gradient-to-r from-green-900/70 to-green-600/60"></div>

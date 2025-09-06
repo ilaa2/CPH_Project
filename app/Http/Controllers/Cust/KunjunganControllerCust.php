@@ -7,36 +7,30 @@ use Illuminate\Http\Request;
 use App\Models\TipeKunjungan;
 use App\Models\Kunjungan;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia; // Jangan lupa import Inertia
 
 class KunjunganControllerCust extends Controller
 {
-    // ... method index() dan handleForm() tidak perlu diubah ...
-
-    public function showKonfirmasi()
+    /**
+     * Menampilkan halaman formulir awal untuk membuat kunjungan.
+     */
+    public function index()
     {
-        $validated = session()->get('form_data_kunjungan');
-        if (!$validated) {
-            return redirect()->route('customer.kunjungan.index');
-        }
-        $detailTipe = TipeKunjungan::find($validated['tipe_kunjungan_id']);
+        // Menghapus data sesi lama jika ada, agar form selalu bersih
+        session()->forget('form_data_kunjungan');
 
-        // ==========================================================
-        // UBAH PERHITUNGAN BIAYA DI SINI
-        // ==========================================================
-        $biayaPerOrang = 15000; // Tetapkan biaya per orang
-        $totalBiaya = $biayaPerOrang * $validated['jumlah_pengunjung'];
+        $tipeKunjungan = TipeKunjungan::all();
 
-        $validated['nama_tipe'] = $detailTipe->nama_tipe;
-        $validated['biaya_per_orang'] = $biayaPerOrang;
-        $validated['total_biaya'] = $totalBiaya;
-        // ==========================================================
-
-        return inertia('Customer/KunjunganKonfirmasi', [
-            'dataKunjungan' => $validated,
+        return Inertia::render('Customer/Kunjungan', [
+            'tipeKunjungan' => $tipeKunjungan,
         ]);
     }
 
-    public function store(Request $request)
+    /**
+     * Memvalidasi data dari form awal dan menyimpannya di sesi.
+     * Kemudian mengarahkan ke halaman konfirmasi.
+     */
+    public function handleForm(Request $request)
     {
         $validated = $request->validate([
             'nama_lengkap'      => 'required|string|max:255',
@@ -46,29 +40,75 @@ class KunjunganControllerCust extends Controller
             'jumlah_pengunjung' => 'required|integer|min:1',
         ]);
 
-        // ==========================================================
-        // UBAH PERHITUNGAN BIAYA DI SINI JUGA
-        // ==========================================================
-        $biayaPerOrang = 15000;
-        $totalBiaya = $biayaPerOrang * $validated['jumlah_pengunjung'];
+        // Simpan data yang valid ke dalam session untuk dibawa ke halaman konfirmasi
+        session()->put('form_data_kunjungan', $validated);
+
+        return redirect()->route('kunjungan.konfirmasi');
+    }
+
+    /**
+     * Menampilkan halaman konfirmasi dengan data dari sesi.
+     */
+    public function showKonfirmasi()
+    {
+        // Ambil data dari sesi
+        $dataFromSession = session()->get('form_data_kunjungan');
+
+        // Jika tidak ada data di sesi (misal, user langsung akses URL), kembalikan ke form awal
+        if (!$dataFromSession) {
+            return redirect()->route('kunjungan.index');
+        }
+
+        $detailTipe = TipeKunjungan::find($dataFromSession['tipe_kunjungan_id']);
+
+        // Kalkulasi biaya
+        $biayaPerOrang = 15000; // Anda bisa ubah ini
+        $totalBiaya = $biayaPerOrang * $dataFromSession['jumlah_pengunjung'];
+
+        // Siapkan data lengkap untuk dikirim ke view React
+        $dataKunjungan = array_merge($dataFromSession, [
+            'nama_tipe'   => $detailTipe->nama_tipe,
+            'total_biaya' => $totalBiaya,
+        ]);
+
+        return Inertia::render('Customer/KunjunganKonfirmasi', [
+            'dataKunjungan' => $dataKunjungan,
+        ]);
+    }
+
+    /**
+     * Menyimpan data kunjungan final ke database.
+     */
+    public function store(Request $request)
+    {
+        // Validasi ulang data yang dikirim dari halaman konfirmasi
+        $validated = $request->validate([
+            'nama_lengkap'      => 'required|string|max:255',
+            'no_hp'             => 'required|string|max:15',
+            'tanggal_kunjungan' => 'required|date',
+            'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
+            'jumlah_pengunjung' => 'required|integer|min:1',
+            'total_biaya'       => 'required|numeric',
+        ]);
 
         $tipeKunjungan = TipeKunjungan::find($validated['tipe_kunjungan_id']);
-        // ==========================================================
 
         Kunjungan::create([
-            'pelanggan_id'      => Auth::guard('pelanggan')->id(),
+            'pelanggan_id'      => Auth::guard('pelanggan')->id(), // Mengambil ID pelanggan yang login
             'tipe_id'           => $validated['tipe_kunjungan_id'],
             'judul'             => $tipeKunjungan->nama_tipe,
             'deskripsi'         => 'Kunjungan oleh ' . $validated['nama_lengkap'],
             'tanggal'           => $validated['tanggal_kunjungan'],
-            'jam'               => '09:00:00',
+            'jam'               => '09:00:00', // Jam default
             'jumlah_pengunjung' => $validated['jumlah_pengunjung'],
-            'total_biaya'       => $totalBiaya, // Gunakan total biaya yang baru
+            'total_biaya'       => $validated['total_biaya'],
             'status'            => 'dijadwalkan',
         ]);
 
+        // Hapus data dari sesi setelah berhasil disimpan
         session()->forget('form_data_kunjungan');
-        return redirect()->route('customer.kunjungan.index')
+
+        return redirect()->route('kunjungan.index')
             ->with('success', 'Kunjungan Anda telah berhasil dijadwalkan!');
     }
 }

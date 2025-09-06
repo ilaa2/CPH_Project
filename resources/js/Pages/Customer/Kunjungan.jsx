@@ -67,7 +67,7 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
 const handleSubmit = (e) => {
     e.preventDefault();
     // PASTIKAN INI MEMANGGIL NAMA ROUTE YANG BENAR
-    post(route('customer.kunjungan.handle_form'), {
+    post(route('kunjungan.handle_form'), {
         preserveScroll: true,
     });
 };

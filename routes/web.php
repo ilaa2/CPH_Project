@@ -31,6 +31,7 @@ Route::get('/', [WelcomeController::class, 'index'])->name('home');
 
 Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(function () {
 
+
     Route::get('/dashboard', function () {
         $latestBuah = Produk::where('status', 'Aktif')->where('id_kategori', 2)->latest()->take(8)->get();
         $latestSayur = Produk::where('status', 'Aktif')->where('id_kategori', 1)->latest()->take(8)->get();
@@ -55,7 +56,6 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
 
 
     Route::get('/kunjungan', [KunjunganControllerCust::class, 'index'])->name('kunjungan.index');
-    // PASTIKAN BARIS INI MEMANGGIL 'handleForm'
     Route::post('/kunjungan/handle-form', [KunjunganControllerCust::class, 'handleForm'])->name('kunjungan.handle_form');
     Route::get('/kunjungan/konfirmasi', [KunjunganControllerCust::class, 'showKonfirmasi'])->name('kunjungan.konfirmasi');
     Route::post('/kunjungan', [KunjunganControllerCust::class, 'store'])->name('kunjungan.store');
