@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+/* Custom FullCalendar theme override */
+.fc .fc-button {
+  @apply bg-white text-green-600 border border-green-600 rounded shadow-sm hover:bg-green-50 transition-all;
+}
+
+.fc .fc-button-primary:not(:disabled):active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+  @apply bg-green-600 text-white;
+}
+
+.fc .fc-button-primary:disabled {
+  @apply bg-gray-200 text-gray-400 border-gray-200;
+}
