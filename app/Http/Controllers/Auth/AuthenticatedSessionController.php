@@ -34,16 +34,16 @@ class AuthenticatedSessionController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // 🔹 Coba login sebagai Admin (tabel users, guard web)
-        if (Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
-            return redirect()->intended('dashboard');
-        }
-
-        // 🔹 Coba login sebagai Pelanggan (tabel pelanggans, guard pelanggan)
+        // Kode baru yang sudah benar
         if (Auth::guard('pelanggan')->attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended('/customer/dashboard');
+            return redirect()->intended('/customer/dashboard'); // Arahkan ke dashboard customer
+        }
+
+        // Anda bisa menambahkan pengecekan untuk admin jika perlu
+        if (Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+            return redirect()->intended('/dashboard'); // Arahkan ke dashboard admin
         }
 
         // 🔹 Kalau keduanya gagal
@@ -57,17 +57,22 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        if (Auth::guard('web')->check()) {
-            Auth::guard('web')->logout();
-        }
-
+        // Cek guard pelanggan terlebih dahulu
         if (Auth::guard('pelanggan')->check()) {
             Auth::guard('pelanggan')->logout();
         }
+        // Jika bukan pelanggan, coba logout dari guard web (admin)
+        else if (Auth::guard('web')->check()) {
+            Auth::guard('web')->logout();
+        }
 
+        // Hancurkan data sesi sepenuhnya
         $request->session()->invalidate();
+
+        // Buat ulang token sesi untuk mencegah serangan
         $request->session()->regenerateToken();
 
+        // Arahkan ke halaman utama
         return redirect('/');
     }
 }

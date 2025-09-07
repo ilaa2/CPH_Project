@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\WelcomeController;
@@ -59,6 +60,7 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::post('/kunjungan/handle-form', [KunjunganControllerCust::class, 'handleForm'])->name('kunjungan.handle_form');
     Route::get('/kunjungan/konfirmasi', [KunjunganControllerCust::class, 'showKonfirmasi'])->name('kunjungan.konfirmasi');
     Route::post('/kunjungan', [KunjunganControllerCust::class, 'store'])->name('kunjungan.store');
+    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 });
 
