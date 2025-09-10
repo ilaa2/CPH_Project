@@ -18,7 +18,8 @@ use App\Models\TipeKunjungan;
 
 use App\Http\Controllers\BelanjaController;
 use App\Http\Controllers\Cust\KunjunganControllerCust;
-use App\Http\Controllers\CartController; // <-- 1. TAMBAHKAN USE STATEMENT INI
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,20 +32,6 @@ Route::get('/', [WelcomeController::class, 'index'])->name('home');
 
 
 Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(function () {
-
-/*
-    Route::get('/dashboard', function () {
-        $latestBuah = Produk::where('status', 'Aktif')->where('id_kategori', 2)->latest()->take(8)->get();
-        $latestSayur = Produk::where('status', 'Aktif')->where('id_kategori', 1)->latest()->take(8)->get();
-        $tipeKunjungan = TipeKunjungan::all();
-
-        return Inertia::render('Customer/DashboardCust', [
-            'latestBuah' => $latestBuah,
-            'latestSayur' => $latestSayur,
-            'tipeKunjungan' => $tipeKunjungan,
-        ]);
-    })->name('dashboard');
-*/
     // Route Belanja
     Route::get('/belanja', [BelanjaController::class, 'index'])->name('belanja.index');
     Route::get('/belanja/{product}', [BelanjaController::class, 'show'])->name('belanja.show');
@@ -60,6 +47,12 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::post('/kunjungan/handle-form', [KunjunganControllerCust::class, 'handleForm'])->name('kunjungan.handle_form');
     Route::get('/kunjungan/konfirmasi', [KunjunganControllerCust::class, 'showKonfirmasi'])->name('kunjungan.konfirmasi');
     Route::post('/kunjungan', [KunjunganControllerCust::class, 'store'])->name('kunjungan.store');
+
+    // --- KUMPULAN ROUTE PROFIL ---
+    Route::get('/profile', [CustomerProfileController::class, 'edit'])->name('customer.profile.edit');
+    Route::patch('/profile', [CustomerProfileController::class, 'update'])->name('customer.profile.update');
+    Route::put('/profile/password', [CustomerProfileController::class, 'updatePassword'])->name('customer.profile.password.update');
+    Route::delete('/profile', [CustomerProfileController::class, 'destroy'])->name('customer.profile.destroy');
 
 });
 

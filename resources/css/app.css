@@ -16,3 +16,14 @@
 .fc .fc-button-primary:disabled {
   @apply bg-gray-200 text-gray-400 border-gray-200;
 }
+
+
+/* Mengatasi Latar Belakang Biru Akibat Autofill Browser */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-text-fill-color: #1f2937; /* Warna teks */
+    -webkit-box-shadow: 0 0 0px 1000px #ffffff inset; /* Warna latar belakang */
+    transition: background-color 5000s ease-in-out 0s;
+}
