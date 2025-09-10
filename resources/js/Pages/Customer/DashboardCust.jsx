@@ -1,40 +1,104 @@
 // File: resources/js/Pages/Customer/DashboardCust.jsx
 
-import { Head, Link, router, usePage } from '@inertiajs/react'; // <-- Pastikan 'usePage' di-import
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import {
-    FiHeart, FiMinus, FiPlus, FiShoppingCart,
-    FiArrowRight, FiUsers, FiSun, FiUser, FiLogIn, FiMenu, FiX
+    FiShoppingCart, FiHeart, FiEye, FiArrowRight,
+    FiUsers, FiSun, FiCheck
 } from 'react-icons/fi';
-import { BsBookmarkCheckFill, BsFillCartFill } from 'react-icons/bs';
-import { useState, useRef, useEffect } from 'react';
+import { BsBookmarkCheckFill, BsFillCartFill, BsStar, BsStarFill } from 'react-icons/bs';
+import { useState } from 'react';
+import Swal from 'sweetalert2';
 
-// Import Swiper React components
+// Import Swiper React components & styles
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, Navigation, Pagination } from 'swiper/modules';
-
-// Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-// ===================================================================
-// === 1. IMPORT HEADER DAN FOOTER DARI FILE LAYOUT ===
-// ===================================================================
 import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
+
+
+// ===================================================================
+// === KARTU PRODUK BARU (E-COMMERCE STYLE) ✨ ===
+// ===================================================================
+function ProductCard({ data, onAddToCart }) {
+    const formattedPrice = new Intl.NumberFormat('id-ID', {
+        style: 'currency',
+        currency: 'IDR',
+        minimumFractionDigits: 0,
+    }).format(data.harga);
+
+    // Placeholder untuk rating & diskon
+    const rating = data.rating || 4.5;
+    const discount = data.diskon || null;
+
+    return (
+        <div className="group relative flex w-full max-w-xs flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-2">
+            <div className="relative mx-3 mt-3 flex h-60 overflow-hidden rounded-xl">
+                <img className="h-full w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110" src={`/storage/${data.gambar}`} alt={data.nama} />
+                {discount && (
+                    <span className="absolute top-0 left-0 m-2 rounded-full bg-red-600 px-2 text-center text-sm font-medium text-white">
+                        {discount}% OFF
+                    </span>
+                )}
+                 {data.stok === 0 && (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <span className="rounded-full bg-gray-800 px-4 py-2 text-sm font-semibold text-white">
+                            Stok Habis
+                        </span>
+                    </div>
+                )}
+                {/* Tombol aksi yang muncul saat hover */}
+                <div className="absolute top-0 right-0 m-2 flex flex-col gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
+                    <button className="rounded-full bg-white p-2 text-gray-600 shadow-md hover:bg-gray-100 hover:text-red-500" title="Sukai">
+                        <FiHeart size={20} />
+                    </button>
+                    <button className="rounded-full bg-white p-2 text-gray-600 shadow-md hover:bg-gray-100 hover:text-blue-500" title="Lihat Cepat">
+                        <FiEye size={20} />
+                    </button>
+                </div>
+            </div>
+            <div className="mt-4 px-5 pb-5 flex flex-col flex-1">
+                {data.kategori && (
+                    <span className="mb-2 text-xs font-semibold text-gray-500 uppercase">{data.kategori.nama}</span>
+                )}
+                <h5 className="text-lg tracking-tight text-slate-900 truncate font-semibold">{data.nama}</h5>
+                <div className="mt-2 mb-5 flex items-center justify-between">
+                    <p>
+                        <span className="text-2xl font-bold text-green-600">{formattedPrice}</span>
+                    </p>
+                    <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                            i < Math.round(rating) ? <BsStarFill key={i} className="h-4 w-4 text-yellow-400" /> : <BsStar key={i} className="h-4 w-4 text-gray-300" />
+                        ))}
+                        <span className="ml-2 rounded bg-yellow-200 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">
+                            {rating.toFixed(1)}
+                        </span>
+                    </div>
+                </div>
+                <button
+                    onClick={() => onAddToCart(data)}
+                    disabled={data.stok === 0}
+                    className="flex items-center justify-center rounded-md bg-green-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 disabled:bg-gray-300 disabled:cursor-not-allowed mt-auto"
+                >
+                    <FiShoppingCart className="mr-2 h-5 w-5" />
+                    Tambah ke Keranjang
+                </button>
+            </div>
+        </div>
+    );
+}
 
 
 // Komponen utama Dashboard
 export default function CustomerDashboard({ latestBuah, latestSayur, tipeKunjungan }) {
-    // Ambil data 'auth' dari props global menggunakan usePage
     const { auth } = usePage().props;
 
     return (
         <div className="min-h-screen w-full bg-white text-gray-800">
             <Head title="Central Palantea Hidroponik" />
-
-            {/* 2. GUNAKAN KOMPONEN YANG SUDAH DI-IMPORT */}
             <SiteHeader auth={auth} />
-
             <main className="w-full overflow-hidden">
                 <ImageSlider />
                 <KunjunganSection tipeKunjungan={tipeKunjungan} />
@@ -43,21 +107,72 @@ export default function CustomerDashboard({ latestBuah, latestSayur, tipeKunjung
                 <LatestProducts title="Sayuran Segar Terbaru" products={latestSayur} />
                 <QualityFeatures />
             </main>
-
-            {/* 2. GUNAKAN KOMPONEN YANG SUDAH DI-IMPORT */}
             <FooterNote />
         </div>
     );
 }
 
+/* ========== PRODUK TERBARU (DIPERBARUI) ========== */
+function LatestProducts({ title, products }) {
+    if (!products || products.length === 0) return null;
 
-// ===================================================================
-// === KOMPONEN-KOMPONEN HALAMAN (SiteHeader dan FooterNote dihapus dari sini) ===
-// ===================================================================
+    // DIUBAH: Menggunakan SweetAlert untuk notifikasi
+    const handleAddToCart = (product) => {
+        router.post('/customer/cart', { product_id: product.id }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `${product.nama} ditambahkan!`,
+                    showConfirmButton: false,
+                    timer: 2000,
+                });
+            },
+            onError: (errors) => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Gagal menambahkan produk.',
+                    text: Object.values(errors)[0] || '', // Menampilkan pesan error pertama jika ada
+                    showConfirmButton: false,
+                    timer: 3000,
+                });
+            }
+        });
+    };
 
-/* ========== IMAGE SLIDER (RESPONSIF) ========== */
+    return (
+        <section className="py-10 sm:py-14 bg-gray-50 last:bg-white">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6">
+                <div className="flex items-end justify-between">
+                    <div>
+                        <h2 className="text-3xl sm:text-4xl font-extrabold text-green-800">{title}</h2>
+                        <p className="mt-2 text-gray-500">Pilihan terbaik untuk Anda, langsung dari kebun.</p>
+                    </div>
+                    <Link href={'/customer/belanja'} className="text-green-700 font-semibold hover:underline hidden sm:inline-block">Lihat semua</Link>
+                </div>
+                <div className="mt-8 grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                    {products.map(p => (
+                        <ProductCard key={p.id} data={p} onAddToCart={handleAddToCart} />
+                    ))}
+                </div>
+                <div className="mt-8 text-center sm:hidden">
+                    <Link href={'/customer/belanja'} className="text-green-700 font-semibold hover:underline">Lihat semua</Link>
+                </div>
+            </div>
+        </section>
+    );
+}
+
+
+/* ========== SISA KOMPONEN (TIDAK PERLU DIUBAH) ========== */
+// Komponen-komponen di bawah ini tidak diubah dan tetap sama seperti kode Anda sebelumnya.
+// Cukup salin seluruh file ini dan semuanya akan bekerja.
+
 function ImageSlider() {
-    // Karena Ziggy dihapus, kita gunakan URL manual di sini
     const slides = [
         { background: '/storage/slide/SlideA.jpeg', title: 'SELAMAT DATANG DI CENTRAL PALANTEA HIDROPONIK', subtitle: 'Bersama kita wujudkan pertanian sehat, hijau, dan berkelanjutan untuk masa depan yang lebih baik.', type: 'welcome' },
         { background: '/storage/slide/SlideB.jpeg', title: 'Outing Class, Kunjungan Umum hingga Acara Bisa di Central Palantea Hidroponik!', buttonText: 'Booking Sekarang!', buttonIcon: <BsBookmarkCheckFill />, type: 'promo', buttonStyle: 'promo-booking', buttonLink: '/customer/kunjungan' },
@@ -113,12 +228,6 @@ function ImageSlider() {
     );
 }
 
-// ... (semua komponen lainnya seperti KunjunganSection, AboutSteps, dll. biarkan tetap di sini)
-// ...
-// ... (Saya persingkat agar tidak terlalu panjang, tapi di kode Anda biarkan saja)
-// ...
-
-/* ========== SEKSI KUNJungan ========== */
 function KunjunganSection({ tipeKunjungan }) {
     if (!tipeKunjungan || tipeKunjungan.length === 0) return null;
     const tipeDetails = {
@@ -155,7 +264,7 @@ function KunjunganCard({ title, description, icon, bgColor }) {
                 </div>
                 <p className="mt-4 text-white/90">{description}</p>
                 <Link
-                    href={'/customer/kunjungan'} // URL Manual
+                    href={'/customer/kunjungan'}
                     className="mt-6 inline-flex items-center gap-2 bg-white text-gray-800 font-semibold px-6 py-3 rounded-lg transition-colors hover:bg-gray-200"
                 >
                     Daftar Sekarang <FiArrowRight />
@@ -165,7 +274,6 @@ function KunjunganCard({ title, description, icon, bgColor }) {
     );
 }
 
-/* ========== TENTANG KAMI (ABOUT STEPS) ========== */
 function AboutSteps() {
     const items = [
         { title: 'SIAPA KAMI', text: 'Kami adalah penyedia produk organik segar yang berkomitmen pada kualitas dan kesehatan Anda.' },
@@ -191,67 +299,6 @@ function AboutSteps() {
     );
 }
 
-
-/* ========== PRODUK TERBARU ========== */
-function LatestProducts({ title, products }) {
-    if (!products || products.length === 0) return null;
-
-    const handleAddToCart = (productId) => {
-        router.post('/customer/cart/store', { // URL Manual
-            product_id: productId
-        }, {
-            preserveScroll: true,
-            onSuccess: () => {
-                alert('Produk ditambahkan ke keranjang!');
-            }
-        });
-    };
-
-    return (
-        <section className="py-10 sm:py-14 bg-gray-50 last:bg-white">
-            <div className="mx-auto max-w-7xl px-4 sm:px-6">
-                <div className="flex items-end justify-between">
-                    <div>
-                        <h2 className="text-3xl sm:text-4xl font-extrabold text-green-800">{title}</h2>
-                        <p className="mt-2 text-gray-500">Pilihan terbaik untuk Anda, langsung dari kebun.</p>
-                    </div>
-                    <Link href={'/customer/belanja'} className="text-green-700 font-semibold hover:underline">Lihat semua</Link>
-                </div>
-                <div className="mt-8 grid gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
-                    {products.map(p => (
-                        <ProductCard key={p.id} data={p} onAddToCart={() => handleAddToCart(p.id)} />
-                    ))}
-                </div>
-            </div>
-        </section>
-    );
-}
-
-function ProductCard({ data, onAddToCart }) {
-    const formattedPrice = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(data.harga);
-    return (
-        <div className="group rounded-2xl border border-gray-200 bg-white p-4 shadow-sm hover:shadow-lg transition-shadow duration-300 flex flex-col">
-            <div className="relative overflow-hidden rounded-xl bg-gray-50 aspect-square">
-                {data.stok === 0 && (
-                    <span className="absolute left-3 top-3 text-xs font-semibold text-white px-2 py-1 rounded bg-gray-500 z-10">HABIS</span>
-                )}
-                <img src={`/storage/${data.gambar}`} alt={data.nama} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-            </div>
-            <div className="mt-4 flex flex-col flex-grow">
-                <h4 className="font-semibold text-gray-800 truncate">{data.nama}</h4>
-                <p className="mt-1 font-bold text-green-700 text-lg">{formattedPrice}</p>
-                <div className="mt-4 flex items-center justify-between mt-auto pt-2">
-                    <button onClick={onAddToCart} disabled={data.stok === 0} className="w-full h-10 rounded-md bg-green-100 text-green-800 font-bold text-sm flex items-center justify-center gap-2 hover:bg-green-600 hover:text-white transition-colors duration-300 disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
-                        <FiShoppingCart />
-                        <span>Tambah</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-/* ========== FITUR KUALITAS ========== */
 function QualityFeatures() {
     const features = [
         { title: 'Organik', text: 'Dipanen dari kebun yang dikelola secara alami.', icon: '🤲' },
