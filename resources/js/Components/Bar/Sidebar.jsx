@@ -45,7 +45,7 @@ export default function Sidebar({ children }) {
     <SidebarItem icon={<FiShoppingBag size={20} />} text="Pesanan" href="/pesanan" active={route().current('pesanan.index')} />
     <SidebarItem icon={<FiFileText size={20} />} text="Laporan" href="/laporan" active={route().current('laporan.index')} />
     <SidebarItem icon={<BsPeople size={20} />} text="Pelanggan" href="/pelanggan" active={route().current('pelanggan.index')} />
-    <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/kunjungan" active={route().current('kunjungan.index')} />
+    <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/kunjungan" active={route().current('kunjunganAdmin.index')} />
 
     {/* Gabungan Setelan & Bantuan */}
     <SidebarItem icon={<FiSettings size={20} />} text="Setelan & Bantuan" href="/setelan" active={route().current('setelan.index') || route().current('bantuan.index')} />

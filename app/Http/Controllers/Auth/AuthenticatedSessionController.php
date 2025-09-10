@@ -37,7 +37,7 @@ class AuthenticatedSessionController extends Controller
         // Kode baru yang sudah benar
         if (Auth::guard('pelanggan')->attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended('/customer/dashboard'); // Arahkan ke dashboard customer
+            return redirect()->intended('/'); // Arahkan ke dashboard customer
         }
 
         // Anda bisa menambahkan pengecekan untuk admin jika perlu
@@ -57,22 +57,24 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        // Cek guard pelanggan terlebih dahulu
-        if (Auth::guard('pelanggan')->check()) {
-            Auth::guard('pelanggan')->logout();
-        }
-        // Jika bukan pelanggan, coba logout dari guard web (admin)
-        else if (Auth::guard('web')->check()) {
+        // Logout dari guard 'web' (admin) jika sedang login
+        if (Auth::guard('web')->check()) {
             Auth::guard('web')->logout();
         }
 
-        // Hancurkan data sesi sepenuhnya
+        // Logout dari guard 'pelanggan' jika sedang login
+        if (Auth::guard('pelanggan')->check()) {
+            Auth::guard('pelanggan')->logout();
+        }
+
+        // Hancurkan semua data session untuk memastikan bersih total
         $request->session()->invalidate();
 
-        // Buat ulang token sesi untuk mencegah serangan
+        // Buat ulang token CSRF untuk keamanan
         $request->session()->regenerateToken();
 
         // Arahkan ke halaman utama
         return redirect('/');
     }
+
 }

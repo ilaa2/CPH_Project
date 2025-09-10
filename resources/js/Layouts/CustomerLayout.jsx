@@ -77,7 +77,7 @@ export function SiteHeader({ auth }) {
                                     </div>
                                     <div className="p-1">
                                         <Link href="/profile" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Profil Saya</Link>
-                                        <Link href="/logout" method="post" as="button" className="block w-full text-left px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50">Logout</Link>
+                                        <Link href={route('logout')} method="post" as="button" className="block w-full text-left px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50">Logout</Link>
                                     </div>
                                 </>) : (<div className="p-1">
                                     <Link href="/login" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Login</Link>

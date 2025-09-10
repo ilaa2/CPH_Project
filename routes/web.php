@@ -32,7 +32,7 @@ Route::get('/', [WelcomeController::class, 'index'])->name('home');
 
 Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(function () {
 
-
+/*
     Route::get('/dashboard', function () {
         $latestBuah = Produk::where('status', 'Aktif')->where('id_kategori', 2)->latest()->take(8)->get();
         $latestSayur = Produk::where('status', 'Aktif')->where('id_kategori', 1)->latest()->take(8)->get();
@@ -44,7 +44,7 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
             'tipeKunjungan' => $tipeKunjungan,
         ]);
     })->name('dashboard');
-
+*/
     // Route Belanja
     Route::get('/belanja', [BelanjaController::class, 'index'])->name('belanja.index');
     Route::get('/belanja/{product}', [BelanjaController::class, 'show'])->name('belanja.show');
@@ -60,7 +60,6 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::post('/kunjungan/handle-form', [KunjunganControllerCust::class, 'handleForm'])->name('kunjungan.handle_form');
     Route::get('/kunjungan/konfirmasi', [KunjunganControllerCust::class, 'showKonfirmasi'])->name('kunjungan.konfirmasi');
     Route::post('/kunjungan', [KunjunganControllerCust::class, 'store'])->name('kunjungan.store');
-    Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 });
 
@@ -86,7 +85,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // CRUD Resources
     Route::resource('produk', ProdukController::class)->except('show');
     Route::resource('pelanggan', PelangganController::class)->except('show');
-    Route::resource('kunjungan', KunjunganController::class)->except(['index', 'show']);
+    Route::resource('kunjungan', KunjunganController::class)->except(['index', 'show', 'store']);
     Route::resource('pesanan', PesananController::class);
 
     // Halaman Lainnya
@@ -96,11 +95,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/ulasan/{id}', [UlasanController::class, 'destroy'])->name('ulasan.destroy');
 
     // Kunjungan (halaman daftar)
-    Route::get('/kunjungan', [KunjunganController::class, 'index'])->name('kunjungan.index');
+    Route::get('/kunjungan', [KunjunganController::class, 'index'])->name('kunjunganAdmin.index');
     Route::get('/kunjungan/jadwal', [KunjunganController::class, 'jadwal'])->name('kunjungan.jadwal');
     Route::get('/kunjungan/kalender', [KunjunganController::class, 'kalender'])->name('kunjungan.kalender');
     Route::get('/kunjungan/riwayat', [KunjunganController::class, 'riwayat'])->name('kunjungan.riwayat');
-
+    Route::post('/kunjungan', [KunjunganController::class, 'riwayat'])->name('kunjunganAdmin.store');
     // Laporan
     Route::prefix('laporan')->controller(LaporanController::class)->group(function () {
         Route::get('/', 'index')->name('laporan.index');

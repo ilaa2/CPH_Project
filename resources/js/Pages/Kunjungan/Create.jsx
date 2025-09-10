@@ -21,7 +21,7 @@ export default function CreateKunjungan() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    post(route('kunjungan.store'), {
+    post(route('kunjunganAdmin.store'), {
       onSuccess: () => router.visit('/kunjungan/jadwal'),
     });
   };
