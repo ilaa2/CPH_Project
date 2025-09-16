@@ -40,4 +40,8 @@ class Kunjungan extends Model
     {
         return $this->belongsTo(TipeKunjungan::class, 'tipe_id');
     }
+    public function tipeKunjungan()
+    {
+        return $this->belongsTo(TipeKunjungan::class, 'tipe_kunjungan_id');
+    }
 }

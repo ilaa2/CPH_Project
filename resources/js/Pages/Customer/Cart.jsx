@@ -1,20 +1,48 @@
-// resources/js/Pages/Customer/Cart.jsx
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { FiTrash2, FiArrowLeft } from 'react-icons/fi';
-import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout'; // Impor layout Anda
+import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
 import { usePage } from '@inertiajs/react';
 
-// Sekarang ini adalah komponen Halaman, bukan lagi Drawer
 export default function Cart({ auth }) {
-    // Ambil data keranjang dari shared props
     const { cart } = usePage().props;
-    const { items, count } = cart;
+    const { items } = cart; // Ambil 'items' langsung, 'count' akan kita hitung ulang
+
+    // State untuk melacak item mana saja yang dicentang
+    const [selectedItems, setSelectedItems] = useState({});
+
+    // Inisialisasi state: Semua item dicentang secara default saat halaman dimuat
+    useEffect(() => {
+        if (items) {
+            const initialSelection = items.reduce((acc, item) => {
+                acc[item.id] = true; // Set semua item menjadi terpilih (true)
+                return acc;
+            }, {});
+            setSelectedItems(initialSelection);
+        }
+    }, [items]); // Dijalankan kembali jika 'items' berubah
+
+    // Fungsi untuk menangani klik pada checkbox (centang/tidak)
+    const handleSelectItem = (itemId) => {
+        setSelectedItems(prevSelectedItems => ({
+            ...prevSelectedItems,
+            [itemId]: !prevSelectedItems[itemId], // Toggle nilai boolean (true -> false, false -> true)
+        }));
+    };
 
     // Fungsi untuk menghapus item
     const handleRemoveItem = (itemId) => {
-        router.delete(route('cart.destroy', itemId), { preserveScroll: true });
+        router.delete(route('cart.destroy', itemId), {
+            preserveScroll: true,
+            onSuccess: () => {
+                // Hapus juga dari state 'selectedItems' jika berhasil dihapus
+                setSelectedItems(prev => {
+                    const newSelection = { ...prev };
+                    delete newSelection[itemId];
+                    return newSelection;
+                });
+            }
+        });
     };
 
     // Fungsi untuk mengubah kuantitas
@@ -26,11 +54,29 @@ export default function Cart({ auth }) {
         router.put(route('cart.update', itemId), { quantity: newQuantity }, { preserveScroll: true });
     };
 
-    const subtotal = items.reduce((total, item) => total + item.product.harga * item.quantity, 0);
+    // Filter item yang dipilih sebelum dihitung
+    const itemsToCalculate = items ? items.filter(item => selectedItems[item.id]) : [];
+    const selectedItemsCount = itemsToCalculate.length;
+
+    // Kalkulasi subtotal hanya untuk item yang dipilih
+    const subtotal = itemsToCalculate.reduce((total, item) => total + item.product.harga * item.quantity, 0);
     const formattedSubtotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subtotal);
 
+    // Fungsi untuk melanjutkan ke checkout
+    const handleCheckout = () => {
+        // Ambil hanya ID dari item yang dicentang
+        const selectedIds = Object.keys(selectedItems).filter(id => selectedItems[id]);
+
+        if (selectedIds.length === 0) {
+            alert('Pilih setidaknya satu produk untuk melanjutkan ke checkout.');
+            return;
+        }
+
+        // Kirim ID item yang dipilih ke backend menggunakan metode POST
+        router.post(route('cart.processSelection'), { items: selectedIds });
+    };
+
     return (
-        // Bungkus dengan div utama
         <div className="min-h-screen bg-gray-50">
             <Head title="Keranjang Belanja" />
             <SiteHeader auth={auth} />
@@ -47,11 +93,18 @@ export default function Cart({ auth }) {
                     <h1 className="text-3xl font-bold text-gray-800 mb-6">Keranjang Anda</h1>
 
                     <div className="bg-white rounded-lg shadow-md">
-                        {/* Daftar Item */}
                         {items && items.length > 0 ? (
                             <div className="divide-y divide-gray-200">
                                 {items.map((item) => (
                                     <div key={item.id} className="flex items-center gap-4 p-4">
+                                        {/* === CHECKBOX DITAMBAHKAN DI SINI === */}
+                                        <input
+                                            type="checkbox"
+                                            className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
+                                            checked={!!selectedItems[item.id]} // !! untuk memastikan nilainya boolean
+                                            onChange={() => handleSelectItem(item.id)}
+                                        />
+
                                         <img src={`/storage/${item.product.gambar}`} alt={item.product.nama} className="w-20 h-20 rounded-md object-cover border" />
                                         <div className="flex-grow">
                                             <p className="font-semibold text-gray-800">{item.product.nama}</p>
@@ -82,12 +135,18 @@ export default function Cart({ auth }) {
                             <div className="p-4 border-t bg-gray-50 rounded-b-lg">
                                 <div className="flex justify-end items-center gap-6">
                                     <div className="text-right">
-                                        <p className="text-gray-600">Total ({count} item)</p>
+                                        {/* Tampilkan jumlah item yang dipilih */}
+                                        <p className="text-gray-600">Total ({selectedItemsCount} item)</p>
                                         <p className="font-bold text-xl">{formattedSubtotal}</p>
                                     </div>
-                                    <Link href="#" className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 transition-colors">
+                                    {/* Ganti <Link> dengan <button> untuk menjalankan fungsi checkout */}
+                                    <button
+                                        onClick={handleCheckout}
+                                        disabled={selectedItemsCount === 0} // Tombol disable jika tidak ada item dipilih
+                                        className={`bg-green-600 text-white font-bold py-3 px-6 rounded-lg transition-colors ${selectedItemsCount > 0 ? 'hover:bg-green-700' : 'opacity-50 cursor-not-allowed'}`}
+                                    >
                                         Checkout
-                                    </Link>
+                                    </button>
                                 </div>
                             </div>
                         )}

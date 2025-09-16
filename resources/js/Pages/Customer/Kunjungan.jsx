@@ -153,29 +153,29 @@ const handleSubmit = (e) => {
                   required
                 />
 
-<div className="space-y-2">
-    <label htmlFor="tipe_kunjungan_id" className="block text-sm font-semibold text-gray-700">Tipe Kunjungan</label>
-    <div className="relative group">
-        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-500 group-focus-within:text-green-600 transition">
-            <FiClipboard />
-        </span>
-        <select
-            id="tipe_kunjungan_id"
-            value={data.tipe_kunjungan_id}
-            onChange={e => setData('tipe_kunjungan_id', e.target.value)}
-            className="block w-full pl-10 pr-3 py-3 rounded-xl border border-gray-300 bg-white/60 backdrop-blur-md shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-400 transition text-sm"
-            required
-        >
-            <option value="">Pilih Tipe Kunjungan</option>
-            {tipeKunjungan.map(tipe => (
-                <option key={tipe.id} value={tipe.id}>
-                    {tipe.nama_tipe}
-                </option>
-            ))}
-        </select>
-    </div>
-    {errors.tipe_kunjungan_id && <div className="text-red-600 text-xs">{errors.tipe_kunjungan_id}</div>}
-</div>
+                <div className="space-y-2">
+                    <label htmlFor="tipe_kunjungan_id" className="block text-sm font-semibold text-gray-700">Tipe Kunjungan</label>
+                    <div className="relative group">
+                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-500 group-focus-within:text-green-600 transition">
+                            <FiClipboard />
+                        </span>
+                        <select
+                            id="tipe_kunjungan_id"
+                            value={data.tipe_kunjungan_id}
+                            onChange={e => setData('tipe_kunjungan_id', e.target.value)}
+                            className="block w-full pl-10 pr-3 py-3 rounded-xl border border-gray-300 bg-white/60 backdrop-blur-md shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-400 transition text-sm"
+                            required
+                        >
+                            <option value="">Pilih Tipe Kunjungan</option>
+                            {tipeKunjungan.map(tipe => (
+                                <option key={tipe.id} value={tipe.id}>
+                                    {tipe.nama_tipe}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    {errors.tipe_kunjungan_id && <div className="text-red-600 text-xs">{errors.tipe_kunjungan_id}</div>}
+                </div>
 
                 <div className="md:col-span-2">
                   <InputField

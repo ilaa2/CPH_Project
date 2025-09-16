@@ -20,6 +20,9 @@ use App\Http\Controllers\BelanjaController;
 use App\Http\Controllers\Cust\KunjunganControllerCust;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
+use App\Http\Controllers\CheckoutController;
+use App\Models\Transaction;
+use App\Http\Controllers\Customer\PesananControllerCust;
 
 /*
 |--------------------------------------------------------------------------
@@ -53,6 +56,28 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::patch('/profile', [CustomerProfileController::class, 'update'])->name('customer.profile.update');
     Route::put('/profile/password', [CustomerProfileController::class, 'updatePassword'])->name('customer.profile.password.update');
     Route::delete('/profile', [CustomerProfileController::class, 'destroy'])->name('customer.profile.destroy');
+
+        // Grup Route untuk Checkout
+    Route::prefix('checkout')->name('checkout.')->group(function () {
+    Route::get('/', [CheckoutController::class, 'index'])->name('index');
+    Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('saveAddress');
+    Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping');
+
+    // <-- TAMBAHKAN BARIS INI
+    Route::post('/shipping', [CheckoutController::class, 'saveShipping'])->name('saveShipping');
+
+    Route::get('/summary', [CheckoutController::class, 'summary'])->name('summary');
+    Route::post('/process', [CheckoutController::class, 'process'])->name('process');
+    });
+
+    Route::post('/cart/process-selection', [CartController::class, 'processSelection'])->name('cart.processSelection');
+
+    Route::get('/pesanan/{pesanan}', [PesananControllerCust::class, 'show'])->name('customer.pesanan.show');
+
+    Route::get('/pesanan', [PesananControllerCust::class, 'index'])->name('customer.pesanan.index');
+
+
+
 
 });
 

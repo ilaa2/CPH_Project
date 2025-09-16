@@ -5,8 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Cart;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB; // <-- Import DB Facade untuk increment yang lebih aman
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\Redirect;
 
 class CartController extends Controller
 {
@@ -14,18 +15,14 @@ class CartController extends Controller
 
     /**
      * Menampilkan halaman keranjang.
-     * Datanya sudah disediakan secara global oleh HandleInertiaRequests.
      */
     public function index()
     {
-        // Kita hanya perlu menampilkan halaman Inertia-nya.
-        // Tidak perlu query database lagi di sini.
         return inertia('Customer/Cart');
     }
 
     /**
      * Menambahkan produk ke keranjang atau mengupdate kuantitasnya.
-     * --- INI BAGIAN YANG DIPERBAIKI ---
      */
     public function store(Request $request)
     {
@@ -38,32 +35,19 @@ class CartController extends Controller
         $productId = $request->product_id;
         $quantityToAdd = $request->quantity;
 
-        // Cari item di keranjang milik pelanggan yang sedang login dengan product_id yang sama
         $cartItem = Cart::where('pelanggan_id', $pelangganId)
-                        ->where('product_id', $productId)
-                        ->first();
+                          ->where('product_id', $productId)
+                          ->first();
 
         if ($cartItem) {
-            // JIKA PRODUK SUDAH ADA DI KERANJANG:
-            // Tambahkan kuantitas yang ada dengan kuantitas baru.
-            // DB::raw() memastikan operasi penambahan terjadi di level database,
-            // ini lebih aman dari race condition.
-            $cartItem->update([
-                'quantity' => DB::raw("quantity + $quantityToAdd")
-            ]);
-            // Alternatif yang lebih sederhana:
-            // $cartItem->increment('quantity', $quantityToAdd);
-
+            $cartItem->increment('quantity', $quantityToAdd);
         } else {
-            // JIKA PRODUK BELUM ADA DI KERANJANG:
-            // Buat entri baru.
             Cart::create([
                 'pelanggan_id' => $pelangganId,
                 'product_id' => $productId,
                 'quantity' => $quantityToAdd,
             ]);
         }
-
         return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
     }
 
@@ -73,13 +57,8 @@ class CartController extends Controller
     public function update(Request $request, Cart $cart)
     {
         $this->authorize('update', $cart);
-
-        $request->validate([
-            'quantity' => 'required|integer|min:1',
-        ]);
-
+        $request->validate(['quantity' => 'required|integer|min:1']);
         $cart->update(['quantity' => $request->quantity]);
-
         return redirect()->back()->with('success', 'Jumlah produk diperbarui.');
     }
 
@@ -89,9 +68,25 @@ class CartController extends Controller
     public function destroy(Cart $cart)
     {
         $this->authorize('delete', $cart);
-
         $cart->delete();
-
         return redirect()->back()->with('success', 'Produk dihapus dari keranjang.');
+    }
+
+    /**
+     * Memproses item yang dipilih dari keranjang untuk checkout.
+     */
+    public function processSelection(Request $request)
+    {
+        $request->validate([
+            'items' => 'required|array',
+            'items.*' => ['integer', function ($attribute, $value, $fail) {
+                if (!Cart::where('id', $value)->where('pelanggan_id', Auth::guard('pelanggan')->id())->exists()) {
+                    $fail("Item dengan ID {$value} tidak valid.");
+                }
+            }],
+        ]);
+
+        session(['selected_cart_items' => $request->input('items')]);
+        return Redirect::route('checkout.index');
     }
 }
