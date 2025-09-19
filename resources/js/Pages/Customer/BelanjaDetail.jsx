@@ -1,5 +1,3 @@
-// resources/js/Pages/Customer/BelanjaDetail.jsx
-
 import { Head, Link, router } from '@inertiajs/react';
 import { FiShoppingCart, FiChevronRight } from 'react-icons/fi';
 import React, { useState } from 'react';
@@ -25,11 +23,7 @@ export default function BelanjaDetail({ auth, product }) {
                 Swal.fire({
                     icon: 'success',
                     title: 'Berhasil!',
-                    // ==========================================================
-                    // INI BAGIAN YANG DIUBAH (quantity dihapus dari teks)
-                    // ==========================================================
-                    text: `"${product.nama}" telah ditambahkan ke keranjang.`,
-                    // ==========================================================
+                    text: `"${product.nama}" (${quantity} item) telah ditambahkan ke keranjang.`,
                     showConfirmButton: false,
                     timer: 1500
                 });
@@ -38,13 +32,15 @@ export default function BelanjaDetail({ auth, product }) {
         });
     };
 
+    // ==========================================================
+    // FUNGSI INI DIUBAH AGAR LANGSUNG KE CHECKOUT TANPA KE KERANJANG
+    // ==========================================================
     const handleBuyNow = () => {
-        Swal.fire({
-            icon: 'info',
-            title: 'Segera Hadir',
-            text: 'Fitur "Beli Langsung" sedang dalam pengembangan.',
-            confirmButtonText: 'Mengerti'
-        });
+        // Langsung arahkan ke halaman checkout dengan data produk
+        router.visit(route('customer.Checkout1', {
+            product_id: product.id,
+            quantity: quantity
+        }));
     };
 
     const formattedPrice = new Intl.NumberFormat('id-ID', {

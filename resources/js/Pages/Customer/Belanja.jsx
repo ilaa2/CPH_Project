@@ -120,7 +120,7 @@ function ProductCard({ product, handleAddToCart }) {
                 {product.stok > 0 && (
                     <p className="text-xs text-gray-500 mb-3">Stok: {product.stok} tersedia</p>
                 )}
-                <div className="flex gap-2 mt-auto">
+                <div className="flex flex-col sm:flex-row gap-2 mt-auto">
                     <Link
                         href={`/customer/belanja/${product.id}`}
                         className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors text-center"

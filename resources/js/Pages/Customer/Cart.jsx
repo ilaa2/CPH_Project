@@ -101,7 +101,7 @@ export default function Cart({ auth }) {
                                         <input
                                             type="checkbox"
                                             className="h-5 w-5 rounded border-gray-300 text-green-600 focus:ring-green-500 cursor-pointer"
-                                            checked={!!selectedItems[item.id]} // !! untuk memastikan nilainya boolean
+                                            checked={!!selectedItems[item.id]}
                                             onChange={() => handleSelectItem(item.id)}
                                         />
 

@@ -1,7 +1,5 @@
-// File: resources/js/Layouts/CustomerLayout.jsx
-
 import { Link, router, usePage } from '@inertiajs/react'; // <-- 1. Tambahkan 'usePage'
-import { FiShoppingCart, FiUser, FiLogIn, FiMenu, FiX } from 'react-icons/fi';
+import { FiShoppingCart, FiUser, FiLogIn, FiMenu, FiX, FiSearch } from 'react-icons/fi';
 import React, { useState, useRef, useEffect } from 'react';
 
 
@@ -47,6 +45,8 @@ export function SiteHeader({ auth }) {
                         <Link href="/" className={`font-semibold ${currentPath === '/' ? 'text-green-700' : 'hover:text-green-700'}`}>Beranda</Link>
                         <Link href="/customer/belanja" className={`font-semibold ${currentPath.startsWith('/customer/belanja') ? 'text-green-700' : 'hover:text-green-700'}`}>Belanja</Link>
                         <Link href="/customer/kunjungan" className={`font-semibold ${currentPath.startsWith('/customer/kunjungan') ? 'text-green-700' : 'hover:text-green-700'}`}>Kunjungan</Link>
+                        {/* Tautan baru untuk Ulasan */}
+                        <Link href="/customer/ulasan" className={`font-semibold ${currentPath.startsWith('/customer/ulasan') ? 'text-green-700' : 'hover:text-green-700'}`}>Ulasan</Link>
                     </nav>
                     <div className="flex items-center gap-3">
                         <form onSubmit={handleSearch}>
@@ -91,9 +91,17 @@ export function SiteHeader({ auth }) {
                 </div>
                 {isMenuOpen && (
                     <nav className="md:hidden pb-4 space-y-2 border-t mt-1 pt-3">
+                        {/* Kolom pencarian untuk mobile */}
+                        <form onSubmit={handleSearch} className="px-4">
+                            <div className="relative">
+                                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                                <input type="search" placeholder="Cari produk..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full h-10 rounded-md border border-gray-300 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
+                            </div>
+                        </form>
                         <Link href="/" onClick={handleLinkClick} className={`block px-4 py-2 rounded-md ${currentPath === '/' ? 'font-semibold bg-green-50 text-green-700' : 'hover:bg-gray-50'}`}>Beranda</Link>
                         <Link href="/customer/belanja" onClick={handleLinkClick} className={`block px-4 py-2 rounded-md ${currentPath.startsWith('/customer/belanja') ? 'font-semibold bg-green-50 text-green-700' : 'hover:bg-gray-50'}`}>Belanja</Link>
                         <Link href="/customer/kunjungan" onClick={handleLinkClick} className={`block px-4 py-2 rounded-md ${currentPath.startsWith('/customer/kunjungan') ? 'font-semibold bg-green-50 text-green-700' : 'hover:bg-gray-50'}`}>Kunjungan</Link>
+                        <Link href="/customer/ulasan" onClick={handleLinkClick} className={`block px-4 py-2 rounded-md ${currentPath.startsWith('/customer/ulasan') ? 'font-semibold bg-green-50 text-green-700' : 'hover:bg-gray-50'}`}>Ulasan</Link>
                         {!user && (<Link href="/login" className="flex items-center justify-center gap-2 h-10 w-full rounded-md bg-green-500 text-sm font-medium text-white hover:bg-green-600 mt-4"><FiLogIn /> Login</Link>)}
                     </nav>
                 )}
@@ -124,6 +132,8 @@ export function FooterNote({ user }) {
                         <li><Link href="/" className="text-gray-600 hover:text-green-600">Beranda</Link></li>
                         <li><Link href="/customer/belanja" className="text-gray-600 hover:text-green-600">Belanja</Link></li>
                         <li><Link href="/customer/kunjungan" className="text-gray-600 hover:text-green-600">Kunjungan</Link></li>
+                        {/* Tautan baru untuk Ulasan di footer */}
+                        <li><Link href="/customer/ulasan" className="text-gray-600 hover:text-green-600">Ulasan</Link></li>
                     </ul>
                 </div>
                 <div>
