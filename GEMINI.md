@@ -114,3 +114,24 @@ Untuk menjalankan proyek ini secara lokal untuk pertama kalinya:
     - Di satu terminal: `php artisan serve`
     - Di terminal lain: `npm run dev`
 9.  Akses aplikasi di `http://localhost:8000` (atau port yang ditentukan oleh `artisan serve`).
+
+
+## 7. Alur Kerja Pembaruan Changelog (Semi-Otomatis)
+
+Proyek ini menggunakan alur kerja semi-otomatis untuk mencatat perkembangan. Tujuannya adalah agar catatan selalu relevan, terstruktur, dan berkualitas tinggi.
+
+### Langkah 1: Pengembang (Anda)
+1.  Selesaikan pekerjaan atau fitur.
+2.  Lakukan git commit dengan *pesan yang jelas dan deskriptif*. Anda bisa menggunakan Git Desktop atau CLI.
+    -   *Contoh Pesan Commit yang Baik:* Feat: Menambahkan fitur login atau Fix: Memperbaiki validasi form produk.
+
+### Langkah 2: Asisten AI (Gemini)
+1.  Setelah Anda siap mencatat kemajuan, berikan perintah sederhana seperti: *"Tolong perbarui changelog"*.
+2.  Asisten akan menganalisis commit terakhir Anda, membuat draf entri changelog, dan meminta persetujuan Anda.
+3.  Setelah Anda setuju, asisten akan secara otomatis menambahkan entri tersebut di bawah ini.
+
+---
+
+### Riwayat Perubahan
+
+(Entri baru akan ditambahkan di sini oleh Asisten AI)
