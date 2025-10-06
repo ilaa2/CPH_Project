@@ -130,6 +130,25 @@ Proyek ini menggunakan alur kerja semi-otomatis untuk mencatat perkembangan. Tuj
 2.  Asisten akan menganalisis commit terakhir Anda, membuat draf entri changelog, dan meminta persetujuan Anda.
 3.  Setelah Anda setuju, asisten akan secara otomatis menambahkan entri tersebut di bawah ini.
 
+## 8. Alur Kerja Pengembangan Fitur Baru
+
+Untuk memastikan pengembangan fitur baru berjalan terstruktur, transparan, dan terdokumentasi dengan baik, kita akan mengikuti alur kerja berbasis instruksi.
+
+### Langkah 1: Permintaan Fitur
+Saat Anda meminta untuk dibuatkan fitur baru (misalnya, "buatkan saya fitur manajemen inventaris"), Asisten AI akan memulai proses perencanaan.
+
+### Langkah 2: Pembuatan Rencana Eksekusi (`INTRUKSI.md`)
+1.  Asisten AI akan menganalisis permintaan Anda dan menyusun rencana pengembangan langkah demi langkah.
+2.  Rencana ini akan ditulis ke dalam file baru bernama `INTRUKSI.md` di root proyek.
+3.  Setiap langkah dalam file tersebut akan didesain agar jelas, terperinci, dan dapat dieksekusi secara mandiri. Tujuannya adalah agar Anda dapat memahami keseluruhan proses dan bahkan melanjutkannya sendiri jika diperlukan.
+
+### Langkah 3: Eksekusi Berdasarkan `INTRUKSI.md`
+1.  Setelah file `INTRUKSI.md` dibuat dan disetujui, Asisten AI akan mulai mengeksekusi setiap langkah yang tertulis di dalamnya secara berurutan.
+2.  Asisten akan memberikan laporan singkat setelah setiap langkah selesai sebelum melanjutkan ke langkah berikutnya.
+3.  Dengan cara ini, Anda dapat memantau kemajuan dan melihat bagaimana fitur tersebut dibangun dari awal hingga akhir.
+
+Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak perencanaan yang jelas dan memungkinkan kolaborasi yang lebih baik antara Anda dan Asisten AI.
+
 ---
 
 ### Riwayat Perubahan
