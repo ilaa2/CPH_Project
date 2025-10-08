@@ -41,4 +41,12 @@ class Pesanan extends Model
     {
         return $this->hasMany(PesananItem::class, 'pesanan_id');
     }
+
+    /**
+     * Relasi ke model Ulasan.
+     */
+    public function ulasan()
+    {
+        return $this->hasOne(Ulasan::class, 'pesanan_id');
+    }
 }

@@ -93,9 +93,16 @@ export default function Belanja({ auth, products, filters }) {
 // -- KOMPONEN KARTU PRODUK --
 function ProductCard({ product, handleAddToCart }) {
     const imageUrl = `/storage/${product.gambar}`;
+
+    const onAddToCartClick = (e) => {
+        e.stopPropagation(); // Mencegah event klik menyebar ke Link parent
+        e.preventDefault(); // Mencegah aksi default dari Link jika ada
+        handleAddToCart(product);
+    };
+
     return (
-        <div
-            key={product.id}
+        <Link
+            href={`/customer/belanja/${product.id}`}
             className="group bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 flex flex-col"
         >
             <div className="relative w-full aspect-square overflow-hidden">
@@ -120,23 +127,17 @@ function ProductCard({ product, handleAddToCart }) {
                 {product.stok > 0 && (
                     <p className="text-xs text-gray-500 mb-3">Stok: {product.stok} tersedia</p>
                 )}
-                <div className="flex flex-col sm:flex-row gap-2 mt-auto">
-                    <Link
-                        href={`/customer/belanja/${product.id}`}
-                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors text-center"
-                    >
-                        Detail
-                    </Link>
+                <div className="mt-auto">
                     <button
-                        onClick={() => handleAddToCart(product)}
+                        onClick={onAddToCartClick}
                         disabled={product.stok === 0}
-                        className="flex-1 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-full hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
                     >
-                        <FaCartPlus className="mr-2" />
+                        <FaCartPlus />
                         Keranjang
                     </button>
                 </div>
             </div>
-        </div>
+        </Link>
     );
 }

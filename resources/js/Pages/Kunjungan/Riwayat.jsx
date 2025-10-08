@@ -53,7 +53,7 @@ export default function RiwayatKunjungan() {
                   <td className="px-4 py-2">{item.tipe?.nama_tipe || '-'}</td>
                   <td className="px-4 py-2">{item.tanggal}</td>
                   <td className="px-4 py-2 capitalize">{item.status}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-4 py-2 space-x-2">
                     <button
                       onClick={() => setSelected(item)}
                       className="text-gray-600 hover:text-blue-600"
@@ -61,6 +61,14 @@ export default function RiwayatKunjungan() {
                     >
                       ℹ️
                     </button>
+                    {item.status === 'Selesai' && !item.ulasan && (
+                      <Link
+                        href={route('customer.kunjungan.ulasan.create', item.id)}
+                        className="text-sm text-green-600 hover:underline"
+                      >
+                        Beri Ulasan
+                      </Link>
+                    )}
                   </td>
                 </tr>
               )) : (

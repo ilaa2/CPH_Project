@@ -76,11 +76,19 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
 
     Route::get('/pesanan', [PesananControllerCust::class, 'index'])->name('customer.pesanan.index');
 
+    // Route Ulasan
+    Route::get('/ulasan', [UlasanController::class, 'indexCust'])->name('customer.ulasan.index');
+    Route::get('/pesanan/{id}/ulasan/create', [UlasanController::class, 'createCust'])->name('customer.ulasan.create');
+    Route::post('/ulasan', [UlasanController::class, 'storeCust'])->name('customer.ulasan.store');
 
+    // Route Ulasan Kunjungan
+    Route::get('/kunjungan/{kunjungan}/ulasan/create', [UlasanController::class, 'createForKunjungan'])->name('customer.kunjungan.ulasan.create');
+    Route::post('/kunjungan/ulasan', [UlasanController::class, 'storeForKunjungan'])->name('customer.kunjungan.ulasan.store');
 
+    // Route Detail Kunjungan
+    Route::get('/kunjungan/{kunjungan}', [KunjunganControllerCust::class, 'show'])->name('customer.kunjungan.show');
 
-
-
+    Route::post('/profile/update-photo', [CustomerProfileController::class, 'updatePhoto'])->name('customer.profile.update-photo');
 });
 
 

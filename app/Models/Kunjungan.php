@@ -40,8 +40,13 @@ class Kunjungan extends Model
     {
         return $this->belongsTo(TipeKunjungan::class, 'tipe_id');
     }
-    public function tipeKunjungan()
+
+
+    /**
+     * Relasi ke Ulasan. Satu kunjungan hanya punya satu ulasan.
+     */
+    public function ulasan()
     {
-        return $this->belongsTo(TipeKunjungan::class, 'tipe_kunjungan_id');
+        return $this->hasOne(Ulasan::class);
     }
 }

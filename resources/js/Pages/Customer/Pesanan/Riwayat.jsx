@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
-import { FiArchive, FiCalendar, FiShoppingBag, FiMapPin } from 'react-icons/fi';
+import { FiArchive, FiCalendar, FiShoppingBag, FiMapPin, FiUsers } from 'react-icons/fi';
 
 // Komponen untuk menampilkan kartu pesanan produk
 const PesananProdukCard = ({ pesanan }) => {
@@ -16,83 +16,116 @@ const PesananProdukCard = ({ pesanan }) => {
     };
 
     return (
-        <Link href={route('customer.pesanan.show', pesanan.id)} className="block bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-green-500 transition-all duration-300 overflow-hidden">
-            <div className="p-5">
-                <div className="flex justify-between items-center">
-                    <div>
-                        <p className="font-semibold text-green-600 text-sm flex items-center"><FiArchive className="mr-2"/>{pesanan.nomor_pesanan}</p>
-                        <p className="text-xs text-gray-500 mt-1">{formatDate(pesanan.created_at)}</p>
-                    </div>
-                    <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusStyles[pesanan.status] || 'bg-gray-100 text-gray-800'}`}>
-                        {pesanan.status}
-                    </span>
-                </div>
-                <div className="border-t my-4"></div>
-                <div className="flex items-center">
-                    <div className="flex -space-x-4">
-                        {pesanan.items.slice(0, 3).map(item => (
-                            <img key={item.id} src={`/storage/${item.produk.gambar}`} alt={item.produk.nama} className="w-12 h-12 rounded-full border-2 border-white object-cover"/>
-                        ))}
-                    </div>
-                    {pesanan.items.length > 3 && (
-                        <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-600 border-2 border-white">
-                            +{pesanan.items.length - 3}
+        <div className="block bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-green-500 transition-all duration-300 overflow-hidden">
+            <Link href={route('customer.pesanan.show', pesanan.id)}>
+                <div className="p-5">
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <p className="font-semibold text-green-600 text-sm flex items-center"><FiArchive className="mr-2"/>{pesanan.nomor_pesanan}</p>
+                            <p className="text-xs text-gray-500 mt-1">{formatDate(pesanan.created_at)}</p>
                         </div>
-                    )}
-                    <div className="ml-4 flex-grow">
-                        <p className="text-sm font-medium text-gray-800">{pesanan.items.length} Produk</p>
-                        <p className="text-xs text-gray-500">Lihat detail pesanan</p>
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusStyles[pesanan.status] || 'bg-gray-100 text-gray-800'}`}>
+                            {pesanan.status}
+                        </span>
+                    </div>
+                    <div className="border-t my-4"></div>
+                    <div className="flex items-center">
+                        <div className="flex -space-x-4">
+                            {pesanan.items.slice(0, 3).map(item => (
+                                <img key={item.id} src={`/storage/${item.produk.gambar}`} alt={item.produk.nama} className="w-12 h-12 rounded-full border-2 border-white object-cover"/>
+                            ))}
+                        </div>
+                        {pesanan.items.length > 3 && (
+                            <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-sm font-semibold text-gray-600 border-2 border-white">
+                                +{pesanan.items.length - 3}
+                            </div>
+                        )}
+                        <div className="ml-4 flex-grow">
+                            <p className="text-sm font-medium text-gray-800">{pesanan.items.length} Produk</p>
+                            <p className="text-xs text-gray-500">Lihat detail pesanan</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </Link>
             <div className="bg-gray-50/70 px-5 py-3 flex justify-between items-center text-sm">
-                <span className="text-gray-600">Total Pembayaran</span>
-                <span className="font-bold text-gray-900">{formatCurrency(pesanan.total)}</span>
+                <div>
+                    <span className="text-gray-600">Total Pembayaran</span>
+                    <p className="font-bold text-gray-900">{formatCurrency(pesanan.total)}</p>
+                </div>
+                {pesanan.status === 'Selesai' && (
+                    pesanan.ulasan ? (
+                        <Link href={route('customer.ulasan.index')} className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-xs">
+                            Lihat Ulasan
+                        </Link>
+                    ) : (
+                        <Link href={route('customer.ulasan.create', pesanan.id)} className="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-xs">
+                            Beri Ulasan
+                        </Link>
+                    )
+                )}
             </div>
-        </Link>
+        </div>
     );
 };
 
-// Komponen untuk menampilkan kartu pesanan kunjungan
+// Komponen untuk menampilkan kartu pesanan kunjungan (Desain Baru)
 const PesananKunjunganCard = ({ kunjungan }) => {
     const formatCurrency = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
-    const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
 
     const statusStyles = {
-        'Dikonfirmasi': 'bg-green-100 text-green-800',
-        'Menunggu Konfirmasi': 'bg-yellow-100 text-yellow-800',
+        'Selesai': 'bg-green-100 text-green-800',
+        'Direncanakan': 'bg-blue-100 text-blue-800',
         'Dibatalkan': 'bg-red-100 text-red-800',
     };
 
     return (
-         <div className="block bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-            <div className="p-5">
+        <div className="block bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-green-500 transition-all duration-300 overflow-hidden">
+            <Link href={route('customer.kunjungan.show', kunjungan.id)} className="block p-5">
                 <div className="flex justify-between items-center">
                     <div>
-                        {/* --- BAGIAN YANG DIPERBAIKI ADA DI SINI --- */}
                         <p className="font-semibold text-green-600 text-sm flex items-center">
-                            <FiMapPin className="mr-2"/>
-                            {/* Tambahkan pengecekan: jika tipe_kunjungan ada, tampilkan namanya. Jika tidak, tampilkan teks pengganti. */}
-                            {kunjungan.tipe_kunjungan ? kunjungan.tipe_kunjungan.nama : 'Tipe Kunjungan Dihapus'}
+                            <FiCalendar className="mr-2"/>
+                            {kunjungan.tipe ? kunjungan.tipe.nama_tipe : 'Kunjungan'}
                         </p>
-                        <p className="text-xs text-gray-500 mt-1">{kunjungan.jumlah_pengunjung} Pengunjung</p>
+                        <p className="text-xs text-gray-500 mt-1">{formatDate(kunjungan.tanggal)}</p>
                     </div>
                     <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusStyles[kunjungan.status] || 'bg-gray-100 text-gray-800'}`}>
                         {kunjungan.status}
                     </span>
                 </div>
                 <div className="border-t my-4"></div>
-                <div className="flex items-start">
-                     <FiCalendar className="text-green-500 text-2xl mt-1"/>
-                     <div className="ml-4 flex-grow">
-                        <p className="text-sm font-medium text-gray-800">Jadwal Kunjungan</p>
-                        <p className="text-sm text-gray-600">{formatDate(kunjungan.tanggal_kunjungan)}</p>
-                    </div>
+                <div className="flex items-center text-sm text-gray-700">
+                    <FiUsers className="mr-2"/>
+                    <span>{kunjungan.jumlah_pengunjung} Pengunjung</span>
+                    <span className="mx-2 text-gray-300">|</span>
+                    <span className="font-medium">Lihat Detail Kunjungan</span>
                 </div>
-            </div>
-             <div className="bg-gray-50/70 px-5 py-3 flex justify-between items-center text-sm">
-                <span className="text-gray-600">Total Biaya</span>
-                <span className="font-bold text-gray-900">{formatCurrency(kunjungan.total_biaya)}</span>
+            </Link>
+            <div className="bg-gray-50/70 px-5 py-3 flex justify-between items-center text-sm">
+                <div>
+                    <span className="text-gray-600">Total Biaya</span>
+                    <p className="font-bold text-gray-900">{formatCurrency(kunjungan.total_biaya)}</p>
+                </div>
+                {kunjungan.status === 'Selesai' && (
+                    kunjungan.has_ulasan ? (
+                        <Link
+                            href={route('customer.ulasan.index')}
+                            className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-xs"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            Lihat Ulasan
+                        </Link>
+                    ) : (
+                        <Link
+                            href={route('customer.kunjungan.ulasan.create', kunjungan.id)}
+                            className="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-xs"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            Beri Ulasan
+                        </Link>
+                    )
+                )}
             </div>
         </div>
     );

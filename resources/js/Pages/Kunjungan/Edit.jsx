@@ -1,165 +1,113 @@
-import { Head, Link, useForm, usePage, router } from '@inertiajs/react';
 import Mainbar from '@/Components/Bar/Mainbar';
-import { useEffect } from 'react';
+import { Head, useForm, Link } from '@inertiajs/react';
+import TextInput from '@/Components/TextInput';
+import InputLabel from '@/Components/InputLabel';
+import InputError from '@/Components/InputError';
+import PrimaryButton from '@/Components/PrimaryButton';
+import SecondaryButton from '@/Components/SecondaryButton';
 
-export default function EditKunjungan() {
-  const { kunjungan, pelanggan: pelangganList, tipe: tipeList } = usePage().props;
-
-  const { data, setData, put, processing, errors } = useForm({
-    pelanggan_id: kunjungan.pelanggan_id || '',
-    tipe_id: kunjungan.tipe_id || '',
-    judul: kunjungan.judul || '',
-    deskripsi: kunjungan.deskripsi || '',
-    tanggal: kunjungan.tanggal || '',
-    jam: kunjungan.jam || '',
-    jumlah_pengunjung: kunjungan.jumlah_pengunjung || '',
-    total_biaya: kunjungan.total_biaya || '',
-    status: kunjungan.status || 'dijadwalkan',
-  });
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    put(route('kunjungan.update', kunjungan.id), {
-      onSuccess: () => router.visit('/kunjungan/jadwal'),
+export default function Edit({ auth, kunjungan }) {
+    const { data, setData, put, processing, errors } = useForm({
+        pelanggan_id: kunjungan.pelanggan_id || '',
+        tipe_id: kunjungan.tipe_id || '',
+        judul: kunjungan.judul || '',
+        deskripsi: kunjungan.deskripsi || '',
+        tanggal: kunjungan.tanggal || '',
+        jam: kunjungan.jam || '',
+        jumlah_pengunjung: kunjungan.jumlah_pengunjung || 1,
+        total_biaya: kunjungan.total_biaya || 0,
+        status: kunjungan.status || 'Direncanakan',
     });
-  };
 
-  useEffect(() => {
-    const jumlah = parseInt(data.jumlah_pengunjung);
-    if (!isNaN(jumlah)) {
-      setData('total_biaya', jumlah * 15000);
-    } else {
-      setData('total_biaya', '');
-    }
-  }, [data.jumlah_pengunjung]);
+    const submit = (e) => {
+        e.preventDefault();
+        // Gunakan metode PUT untuk update
+        put(route('kunjungan.update', kunjungan.id));
+    };
 
-  return (
-    <Mainbar header={<h2 className="text-xl font-semibold text-gray-800">Edit Kunjungan</h2>}>
-      <Head title="Edit Kunjungan" />
+    return (
+        <Mainbar
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Edit Kunjungan</h2>}
+        >
+            <Head title="Edit Kunjungan" />
 
-      <div className="p-6 max-w-xl space-y-6">
-        <form onSubmit={handleSubmit} className="space-y-4 bg-white shadow rounded p-6">
-          {/* Pelanggan */}
-          <div>
-            <label className="block mb-1 font-semibold">Pelanggan</label>
-            <select
-              value={data.pelanggan_id}
-              onChange={(e) => setData('pelanggan_id', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="">-- Pilih Pelanggan --</option>
-              {pelangganList.map(p => (
-                <option key={p.id} value={p.id}>{p.nama}</option>
-              ))}
-            </select>
-            {errors.pelanggan_id && <div className="text-red-600 text-sm">{errors.pelanggan_id}</div>}
-          </div>
+            <div className="py-12">
+                <div className="max-w-2xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-8 text-gray-900">
+                            <h3 className="text-lg font-medium text-gray-900 mb-6">
+                                Form Edit Status Kunjungan
+                            </h3>
+                            <form onSubmit={submit} className="space-y-6">
+                                <div>
+                                    <InputLabel htmlFor="judul" value="Judul Kunjungan" />
+                                    <TextInput
+                                        id="judul"
+                                        name="judul"
+                                        value={data.judul}
+                                        className="mt-1 block w-full bg-gray-100"
+                                        autoComplete="judul"
+                                        isFocused={true}
+                                        onChange={(e) => setData('judul', e.target.value)}
+                                        required
+                                        disabled
+                                    />
+                                    <InputError message={errors.judul} className="mt-2" />
+                                </div>
 
-          {/* Tipe Kunjungan */}
-          <div>
-            <label className="block mb-1 font-semibold">Tipe Kunjungan</label>
-            <select
-              value={data.tipe_id}
-              onChange={(e) => setData('tipe_id', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            >
-              <option value="">-- Pilih Tipe --</option>
-              {tipeList.map(t => (
-                <option key={t.id} value={t.id}>{t.nama}</option>
-              ))}
-            </select>
-            {errors.tipe_id && <div className="text-red-600 text-sm">{errors.tipe_id}</div>}
-          </div>
+                                <div>
+                                    <InputLabel htmlFor="status" value="Status Kunjungan" />
+                                    <select
+                                        id="status"
+                                        name="status"
+                                        value={data.status}
+                                        className="mt-1 block w-full border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm"
+                                        onChange={(e) => setData('status', e.target.value)}
+                                    >
+                                        <option value="Direncanakan">Direncanakan</option>
+                                        <option value="Selesai">Selesai</option>
+                                        <option value="Dibatalkan">Dibatalkan</option>
+                                    </select>
+                                    <InputError message={errors.status} className="mt-2" />
+                                </div>
+                                
+                                <div className="border-t border-gray-200 my-6"></div>
 
-          {/* Judul */}
-          <div>
-            <label className="block mb-1 font-semibold">Judul</label>
-            <input
-              type="text"
-              value={data.judul}
-              onChange={(e) => setData('judul', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-            {errors.judul && <div className="text-red-600 text-sm">{errors.judul}</div>}
-          </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4 text-sm">
+                                    <div>
+                                        <p className="font-semibold text-gray-600">Pelanggan</p>
+                                        <p>{kunjungan.pelanggan.nama}</p>
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-gray-600">Tipe Kunjungan</p>
+                                        <p>{kunjungan.tipe.nama_tipe}</p>
+                                    </div>
+                                    <div>
+                                        <p className="font-semibold text-gray-600">Tanggal & Jam</p>
+                                        <p>{kunjungan.tanggal} pukul {kunjungan.jam}</p>
+                                    </div>
+                                     <div>
+                                        <p className="font-semibold text-gray-600">Total Biaya</p>
+                                        <p>Rp {parseInt(kunjungan.total_biaya).toLocaleString('id-ID')}</p>
+                                    </div>
+                                </div>
 
-          {/* Deskripsi */}
-          <div>
-            <label className="block mb-1 font-semibold">Deskripsi</label>
-            <textarea
-              value={data.deskripsi}
-              onChange={(e) => setData('deskripsi', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-            {errors.deskripsi && <div className="text-red-600 text-sm">{errors.deskripsi}</div>}
-          </div>
 
-          {/* Tanggal & Jam */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block mb-1 font-semibold">Tanggal</label>
-              <input
-                type="date"
-                value={data.tanggal}
-                onChange={(e) => setData('tanggal', e.target.value)}
-                className="w-full border rounded px-3 py-2"
-              />
-              {errors.tanggal && <div className="text-red-600 text-sm">{errors.tanggal}</div>}
+                                <div className="flex items-center justify-end mt-8">
+                                    <Link href={route('kunjungan.jadwal')}>
+                                        <SecondaryButton className="ms-4" disabled={processing}>
+                                            Batal
+                                        </SecondaryButton>
+                                    </Link>
+                                    <PrimaryButton className="ms-4 bg-green-600 hover:bg-green-700" disabled={processing}>
+                                        Simpan Perubahan
+                                    </PrimaryButton>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div>
-              <label className="block mb-1 font-semibold">Jam</label>
-              <input
-                type="time"
-                value={data.jam}
-                onChange={(e) => setData('jam', e.target.value)}
-                className="w-full border rounded px-3 py-2"
-              />
-              {errors.jam && <div className="text-red-600 text-sm">{errors.jam}</div>}
-            </div>
-          </div>
-
-          {/* Jumlah Pengunjung */}
-          <div>
-            <label className="block mb-1 font-semibold">Jumlah Pengunjung</label>
-            <input
-              type="number"
-              min={1}
-              value={data.jumlah_pengunjung}
-              onChange={(e) => setData('jumlah_pengunjung', e.target.value)}
-              className="w-full border rounded px-3 py-2"
-            />
-            {errors.jumlah_pengunjung && <div className="text-red-600 text-sm">{errors.jumlah_pengunjung}</div>}
-          </div>
-
-          {/* Total Biaya */}
-          <div>
-            <label className="block mb-1 font-semibold">Total Biaya (Rp)</label>
-            <input
-              type="text"
-              value={data.total_biaya.toLocaleString('id-ID')}
-              readOnly
-              className="w-full border rounded px-3 py-2 bg-gray-100 cursor-not-allowed"
-            />
-          </div>
-
-          {/* Tombol Aksi */}
-          <div className="flex justify-end gap-2 pt-4">
-            <Link
-              href={route('kunjungan.jadwal')}
-              className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
-            >
-              Batal
-            </Link>
-            <button
-              type="submit"
-              disabled={processing}
-              className="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
-            >
-              Perbarui
-            </button>
-          </div>
-        </form>
-      </div>
-    </Mainbar>
-  );
+        </Mainbar>
+    );
 }

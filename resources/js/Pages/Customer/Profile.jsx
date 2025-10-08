@@ -35,6 +35,11 @@ export default function Edit({ user, status }) {
         password: '',
     });
 
+    // Form untuk update foto profil
+    const { data: photoData, setData: setPhotoData, post: updatePhoto, errors: photoErrors, processing: photoProcessing, recentlySuccessful: photoRecentlySuccessful } = useForm({
+        foto_profil: null,
+    });
+
 
     // 3. Tambahkan useEffect hook untuk notifikasi
     useEffect(() => {
@@ -59,6 +64,16 @@ export default function Edit({ user, status }) {
                     timer: 3000,
                 });
             }
+            if (status === 'photo-updated') {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: 'Foto profil berhasil diperbarui!',
+                    showConfirmButton: false,
+                    timer: 3000,
+                });
+            }
         }
     }, [recentlySuccessful, status]); // Efek ini berjalan saat recentlySuccessful atau status berubah
 
@@ -73,6 +88,13 @@ export default function Edit({ user, status }) {
         updatePassword('/customer/profile/password', {
             preserveScroll: true,
             onSuccess: () => resetPasswordForm(),
+        });
+    };
+
+    const submitPhoto = (e) => {
+        e.preventDefault();
+        updatePhoto('/customer/profile/update-photo', {
+            preserveScroll: true,
         });
     };
 
@@ -100,6 +122,36 @@ export default function Edit({ user, status }) {
 
             <div className="bg-gray-50 py-12 sm:py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
+
+                    {/* Kartu Foto Profil */}
+                    <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 sm:p-8">
+                        <header>
+                            <h2 className="text-lg font-medium text-gray-900">Foto Profil</h2>
+                            <p className="mt-1 text-sm text-gray-600">Perbarui foto profil Anda.</p>
+                        </header>
+                        <div className="mt-6">
+                            <img
+                                src={user.foto_profil ? `/storage/${user.foto_profil}` : `https://ui-avatars.com/api/?name=${user.nama}&color=7F9CF5&background=EBF4FF`}
+                                alt="Foto Profil"
+                                className="w-24 h-24 rounded-full object-cover"
+                            />
+                        </div>
+                        <form onSubmit={submitPhoto} className="mt-6 space-y-6">
+                            <div>
+                                <InputLabel htmlFor="foto_profil" value="Ganti Foto Profil" />
+                                <TextInput
+                                    id="foto_profil"
+                                    type="file"
+                                    className="mt-1 block w-full"
+                                    onChange={(e) => setPhotoData('foto_profil', e.target.files[0])}
+                                />
+                                <InputError message={photoErrors.foto_profil} className="mt-2" />
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <PrimaryButton disabled={photoProcessing}>Simpan Foto</PrimaryButton>
+                            </div>
+                        </form>
+                    </div>
 
                     {/* Kartu Informasi Profil */}
                     <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-6 sm:p-8">

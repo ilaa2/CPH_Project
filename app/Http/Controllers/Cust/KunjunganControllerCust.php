@@ -111,4 +111,22 @@ class KunjunganControllerCust extends Controller
         return redirect()->route('kunjungan.index')
             ->with('success', 'Kunjungan Anda telah berhasil dijadwalkan!');
     }
+
+    /**
+     * Menampilkan detail satu kunjungan milik pelanggan.
+     */
+    public function show(Kunjungan $kunjungan)
+    {
+        // Pastikan kunjungan ini milik pelanggan yang sedang login
+        if ($kunjungan->pelanggan_id !== Auth::guard('pelanggan')->id()) {
+            abort(403, 'AKSES DITOLAK');
+        }
+
+        // Load relasi yang dibutuhkan
+        $kunjungan->load(['tipe', 'ulasan']);
+
+        return Inertia::render('Customer/Kunjungan/Show', [
+            'kunjungan' => $kunjungan,
+        ]);
+    }
 }

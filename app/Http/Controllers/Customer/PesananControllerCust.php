@@ -7,6 +7,7 @@ use App\Models\Pesanan;
 use App\Models\Kunjungan; // Import the Kunjungan model
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB; // Import DB Facade
 use Inertia\Inertia;
 
 class PesananControllerCust extends Controller
@@ -21,17 +22,19 @@ class PesananControllerCust extends Controller
 
         // Fetch all product order history for this customer
         // Ambil semua riwayat pesanan produk, HANYA untuk pelanggan ini
-        $pesananProduk = Pesanan::with('items.produk')
+        $pesananProduk = Pesanan::with(['items.produk', 'ulasan'])
             ->where('id_pelanggan', $pelangganId)
             ->orderByDesc('created_at')
             ->get();
 
-        // Fetch all visit history for this customer
-        // Ambil semua riwayat kunjungan, HANYA untuk pelanggan ini
-        $pesananKunjungan = Kunjungan::with('tipeKunjungan')
-            ->where('pelanggan_id', $pelangganId)
-            ->orderByDesc('tanggal')
+        // Fetch all visit history for this customer using a reliable Left Join
+        $pesananKunjungan = Kunjungan::with('tipe')
+            ->leftJoin('ulasan', 'kunjungan.id', '=', 'ulasan.kunjungan_id')
+            ->where('kunjungan.pelanggan_id', $pelangganId)
+            ->select('kunjungan.*', DB::raw('ulasan.id IS NOT NULL as has_ulasan'))
+            ->orderByDesc('kunjungan.tanggal')
             ->get();
+
 
         // Ubah 'Index' menjadi 'Riwayat'
         return Inertia::render('Customer/Pesanan/Riwayat', [

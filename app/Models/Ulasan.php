@@ -11,9 +11,11 @@ class Ulasan extends Model
 
     protected $fillable = [
         'pelanggan_id',
+        'kunjungan_id',
+        'pesanan_id',
         'komentar',
         'rating',
-        'tanggal'
+        'tanggal',
     ];
 
     public function pelanggan()
@@ -21,4 +23,18 @@ class Ulasan extends Model
         return $this->belongsTo(Pelanggan::class);
     }
 
+    public function kunjungan()
+    {
+        return $this->belongsTo(Kunjungan::class);
+    }
+
+    public function pesanan()
+    {
+        return $this->belongsTo(Pesanan::class);
+    }
+
+    public function fotos()
+    {
+        return $this->hasMany(UlasanFoto::class, 'ulasan_id');
+    }
 }
