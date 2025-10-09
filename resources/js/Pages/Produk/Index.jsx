@@ -62,15 +62,65 @@ export default function ProdukList({ produk }) {
           </Link>
         </div>
 
-        {/* Tabel */}
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
+        {/* Konten Responsif */}
+        {/* Tampilan Card untuk Mobile */}
+        <div className="sm:hidden space-y-4">
+          {produk && produk.length > 0 ? (
+            produk.map((item) => (
+              <div key={item.id} className="bg-white rounded-lg shadow p-4 space-y-3">
+                <div className="flex items-start gap-4">
+                  {item.gambar ? (
+                    <img
+                      src={`/storage/${item.gambar}`}
+                      alt={item.nama}
+                      className="w-20 h-20 object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 bg-gray-100 rounded flex items-center justify-center text-gray-400 italic">No Img</div>
+                  )}
+                  <div className="flex-grow">
+                    <h4 className="font-bold text-gray-800">{item.nama}</h4>
+                    <p className="text-sm text-gray-500">{item.kategori ? item.kategori.charAt(0).toUpperCase() + item.kategori.slice(1) : '-'}</p>
+                    <p className="text-lg font-semibold text-green-600 mt-1">
+                      Rp {Number(item.harga).toLocaleString('id-ID')}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-600">
+                  <p className="truncate" title={item.deskripsi}><strong>Deskripsi:</strong> {item.deskripsi || '-'}</p>
+                  <p><strong>Stok:</strong> {item.stok}</p>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t">
+                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                    (item.status || '').toLowerCase() === 'aktif'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-red-100 text-red-700'
+                  }`}>
+                    {item.status || 'Tidak Ada'}
+                  </span>
+                  <div className="flex items-center gap-4">
+                    <Link href={`/produk/${item.id}/edit`} className="text-blue-600 hover:underline font-medium">Edit</Link>
+                    <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline font-medium">Hapus</button>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              Tidak ada produk tersedia.
+            </div>
+          )}
+        </div>
+
+        {/* Tampilan Tabel untuk Desktop */}
+        <div className="hidden sm:block overflow-x-auto bg-white rounded-lg shadow">
           <table className="min-w-full text-sm text-left text-gray-700">
             <thead className="text-xs uppercase bg-green-100 text-green-800">
               <tr>
                 <th className="px-4 py-2">No</th>
                 <th className="px-4 py-2">Gambar</th>
                 <th className="px-4 py-2">Nama Produk</th>
-                <th className="px-4 py-2">Deskripsi</th> {/* <-- KOLOM BARU DITAMBAHKAN */}
+                <th className="px-4 py-2">Deskripsi</th>
                 <th className="px-4 py-2">Kategori</th>
                 <th className="px-4 py-2">Harga</th>
                 <th className="px-4 py-2">Stok</th>
@@ -88,14 +138,13 @@ export default function ProdukList({ produk }) {
                         <img
                           src={`/storage/${item.gambar}`}
                           alt={item.nama}
-                          className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded"
+                          className="w-16 h-16 object-cover rounded"
                         />
                       ) : (
                         <span className="text-gray-400 italic">-</span>
                       )}
                     </td>
                     <td className="px-4 py-2">{item.nama}</td>
-                    {/* KOLOM BARU DITAMBAHKAN */}
                     <td className="px-4 py-2 max-w-[200px] truncate" title={item.deskripsi}>
                       {item.deskripsi || '-'}
                     </td>
@@ -137,7 +186,6 @@ export default function ProdukList({ produk }) {
                 ))
               ) : (
                 <tr>
-                  {/* COLSPAN DIUBAH MENJADI 9 */}
                   <td colSpan="9" className="text-center py-4 text-gray-500">
                     Tidak ada produk tersedia.
                   </td>

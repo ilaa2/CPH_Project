@@ -1,47 +1,37 @@
-import { Head, useForm, usePage } from '@inertiajs/react';
-import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
-import { FiUser, FiPhone, FiCalendar, FiUsers, FiClipboard, FiSend, FiCheckCircle } from 'react-icons/fi';
-import React, { useEffect } from 'react';
-import Swal from 'sweetalert2';
-import 'sweetalert2/dist/sweetalert2.min.css';
+import CustomerLayout from '@/Layouts/CustomerLayout';
+import { useForm, usePage, Head } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { FiUser, FiPhone, FiCalendar, FiUsers, FiSend, FiCheckCircle, FiClipboard } from 'react-icons/fi';
+import Swal from 'sweetalert2';
 
-// Komponen Input
-const InputField = ({ id, label, type, value, error, onChange, icon, children, ...props }) => (
-  <div className="space-y-2">
-    <label htmlFor={id} className="block text-sm font-semibold text-gray-700">{label}</label>
-    <div className="relative group">
-      <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-500 group-focus-within:text-green-600 transition">
-        {icon}
-      </span>
-      {children ? (
-        React.cloneElement(children, {
-          id,
-          value,
-          onChange,
-          className: `block w-full pl-10 pr-3 py-3 rounded-xl border border-gray-300 bg-white/60 backdrop-blur-md shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-400 transition text-sm`,
-          ...props
-        })
-      ) : (
-        <input
-          type={type}
-          id={id}
-          value={value}
-          onChange={onChange}
-          className="block w-full pl-10 pr-3 py-3 rounded-xl border border-gray-300 bg-white/60 backdrop-blur-md shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-400 transition text-sm"
-          {...props}
-        />
-      )}
+// Komponen InputField yang digunakan di form
+const InputField = ({ id, label, type, value, onChange, error, icon, ...props }) => (
+    <div className="space-y-2">
+        <label htmlFor={id} className="block text-sm font-semibold text-gray-700">{label}</label>
+        <div className="relative group">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-500 group-focus-within:text-green-600 transition">
+                {icon}
+            </span>
+            <input
+                id={id}
+                type={type}
+                value={value}
+                onChange={onChange}
+                className={`block w-full pl-10 pr-3 py-3 rounded-xl border ${error ? 'border-red-500' : 'border-gray-300'} bg-white/60 backdrop-blur-md shadow-sm focus:border-green-500 focus:ring-2 focus:ring-green-400 transition text-sm`}
+                {...props}
+            />
+        </div>
+        {error && <div className="text-red-600 text-xs">{error}</div>}
     </div>
-    {error && <div className="text-red-600 text-xs">{error}</div>}
-  </div>
 );
 
 export default function Kunjungan({ auth, tipeKunjungan }) {
+  // ... (kode form logic tetap sama)
   const { flash } = usePage().props;
 
   const { data, setData, post, processing, errors } = useForm({
-    nama_lengkap: auth.user.name || '',
+    nama_lengkap: auth.pelanggan.nama || '',
     no_hp: '',
     tanggal_kunjungan: '',
     tipe_kunjungan_id: '',
@@ -74,9 +64,8 @@ const handleSubmit = (e) => {
 
 
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-green-50 to-green-100 text-gray-800">
+    <>
       <Head title="Jadwalkan Kunjungan" />
-      <SiteHeader auth={auth} />
 
       <section className="relative h-[350px] sm:h-[450px] bg-cover bg-center" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=1600&q=80)' }}>
         <div className="absolute inset-0 bg-gradient-to-r from-green-900/70 to-green-600/60"></div>
@@ -208,8 +197,8 @@ const handleSubmit = (e) => {
           </div>
         </motion.div>
       </main>
-
-      <FooterNote user={auth.user} />
-    </div>
+    </>
   );
 }
+
+Kunjungan.layout = page => <CustomerLayout auth={page.props.auth}>{page}</CustomerLayout>;

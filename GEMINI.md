@@ -142,10 +142,11 @@ Saat Anda meminta untuk dibuatkan fitur baru (misalnya, "buatkan saya fitur mana
 2.  Rencana ini akan ditulis ke dalam file baru bernama `INTRUKSI.md` di root proyek.
 3.  Setiap langkah dalam file tersebut akan didesain agar jelas, terperinci, dan dapat dieksekusi secara mandiri. Tujuannya adalah agar Anda dapat memahami keseluruhan proses dan bahkan melanjutkannya sendiri jika diperlukan.
 
-### Langkah 3: Eksekusi Berdasarkan `INTRUKSI.md`
+### Langkah 3: Eksekusi dan Pencatatan di `INTRUKSI.md`
 1.  Setelah file `INTRUKSI.md` dibuat dan disetujui, Asisten AI akan mulai mengeksekusi setiap langkah yang tertulis di dalamnya secara berurutan.
-2.  Asisten akan memberikan laporan singkat setelah setiap langkah selesai sebelum melanjutkan ke langkah berikutnya.
-3.  Dengan cara ini, Anda dapat memantau kemajuan dan melihat bagaimana fitur tersebut dibangun dari awal hingga akhir.
+2.  **Setelah setiap langkah berhasil dieksekusi**, Asisten akan **memperbarui file `INTRUKSI.md`** untuk mencatat bahwa langkah tersebut telah selesai. Ini mengubah `INTRUKSI.md` dari sekadar rencana menjadi catatan perkembangan (living document).
+3.  Asisten juga akan memberikan laporan singkat kepada Anda setelah setiap langkah selesai sebelum melanjutkan ke langkah berikutnya.
+4.  Dengan cara ini, Anda dapat memantau kemajuan secara real-time dan memiliki catatan historis yang akurat tentang apa yang telah dilakukan di dalam file `INTRUKSI.md`.
 
 Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak perencanaan yang jelas dan memungkinkan kolaborasi yang lebih baik antara Anda dan Asisten AI.
 
@@ -153,4 +154,34 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 
 ### Riwayat Perubahan
 
+**Kamis, 9 Oktober 2025**
+*   **Peningkatan Tampilan & Responsivitas (UI/UX Enhancement)**
+    *   **Desain Ulang Halaman "Tentang Kami":**
+        *   Merombak total bagian "Liputan Media" dengan layout kartu modern yang menampilkan logo media, judul lengkap, dan tombol "Baca Selengkapnya".
+        *   Memperbarui dan menambahkan beberapa tautan liputan media dari berbagai sumber (DETAK24COM, Classnews, Riau24Jam, dll).
+        *   Mendesain ulang bagian profil "Tentang CPH" menjadi layout dua kolom dengan gambar dan teks, serta menambahkan bagian baru "Keunggulan Kami" yang dilengkapi ikon untuk menyorot poin-poin utama (100% Hidroponik, Bebas Pestisida, Edukasi & Wisata).
+    *   **Peningkatan Responsivitas Halaman:**
+        *   **Halaman Belanja Pelanggan:** Menyesuaikan grid produk, tombol filter, dan ukuran judul agar tampil optimal di perangkat mobile.
+        *   **Halaman Daftar Produk (Admin):** Mengganti tampilan tabel yang lebar dengan layout kartu yang ringkas dan mudah dibaca di mobile, sementara tampilan tabel tetap dipertahankan untuk desktop.
+        *   **Halaman Daftar Pelanggan (Admin):** Menerapkan perbaikan responsivitas yang sama dengan mengubah tabel menjadi layout kartu di mobile.
+        *   **Halaman Formulir (Tambah Produk & Tambah Pelanggan):** Menyempurnakan layout formulir agar memenuhi lebar layar di mobile dan memperbarui gaya input untuk tampilan yang lebih modern dan konsisten di seluruh aplikasi.
+
 (Entri baru akan ditambahkan di sini oleh Asisten AI)
+*   **Perbaikan Fungsionalitas Keranjang Belanja (Cart)**
+    *   Memperbaiki bug di mana panel keranjang belanja tidak dapat dibuka dari halaman Dashboard Pelanggan (`DashboardCust.jsx`).
+    *   Masalah disebabkan oleh `DashboardCust.jsx` yang tidak menggunakan `CustomerLayout` sebagai layout utama, sehingga state untuk membuka dan menutup panel keranjang tidak terhubung.
+    *   Solusinya adalah dengan melakukan refaktor pada `DashboardCust.jsx`, membungkus seluruh konten halaman dengan `CustomerLayout`, dan menghapus pemanggilan `SiteHeader` dan `FooterNote` yang redundan. Hal ini memastikan komponen dashboard terintegrasi dengan benar ke dalam arsitektur layout aplikasi.
+*   **Perbaikan Alur Checkout dan Keranjang (End-to-End)**
+    *   **Fix Error Database:** Menyelesaikan error `SQLSTATE[42S02]: Table 'produks' not found` dengan memperbaiki nama tabel pada aturan validasi di `CartController.php` dari `produks` menjadi `products`.
+    *   **Implementasi "Beli Langsung":** Memperbaiki fungsionalitas tombol "Beli Langsung" pada halaman detail produk (`BelanjaDetail.jsx`). Perubahan meliputi:
+        *   Mengubah event handler untuk mengirim data via `POST` request.
+        *   Menambahkan route `POST /checkout/buy-now` baru di `routes/web.php`.
+        *   Membuat method `buyNow` di `CheckoutController.php` untuk menangani logika penambahan item sementara ke sesi dan mengarahkan ke halaman checkout.
+    *   **Refaktor Arsitektur Frontend:** Melakukan refaktor pada halaman `BelanjaDetail.jsx` untuk menggunakan `CustomerLayout` sebagai komponen induk, menyelaraskan strukturnya dengan halaman lain dan memastikan konsistensi UI serta state management yang benar.
+*   **Penyempurnaan Teks (Copywriting)**
+    *   Menghapus teks `(Mode Dummy)!` dari pesan konfirmasi pesanan yang muncul di `CheckoutController.php` untuk memberikan pengalaman pengguna yang lebih bersih dan profesional.
+*   **Perbaikan Fungsionalitas Keranjang Belanja (Lanjutan)**
+    *   Memperbaiki bug kritis pada halaman belanja utama (`Belanja.jsx`) di mana tombol "Masukkan ke Keranjang" tidak berfungsi. Masalah ini disebabkan oleh pemanggilan nama route yang salah (`cart.add` seharusnya `cart.store`).
+    *   Menambahkan notifikasi *pop-up* (SweetAlert) pada halaman belanja utama setelah berhasil menambahkan produk ke keranjang untuk meningkatkan *user feedback* dan konsistensi dengan halaman detail produk.
+*   **Koreksi Logika Bisnis (Filter Produk)**
+    *   Mengoreksi logika filter produk di `BelanjaController.php`. Filter status produk yang sebelumnya diubah ke `Tersedia` ternyata tidak sesuai dengan data di database. Perubahan dikembalikan ke `Aktif` untuk memastikan semua produk yang seharusnya tampil di halaman belanja dapat dimuat dengan benar.

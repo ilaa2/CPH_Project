@@ -55,7 +55,37 @@ export default function PelangganList({ pelanggan }) {
           </Link>
         </div>
 
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
+        {/* Konten Responsif */}
+        {/* Tampilan Card untuk Mobile */}
+        <div className="sm:hidden space-y-4">
+          {pelanggan.length > 0 ? (
+            pelanggan.map((item) => (
+              <div key={item.id} className="bg-white rounded-lg shadow p-4 space-y-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="font-bold text-gray-800">{item.nama}</h4>
+                    <p className="text-sm text-gray-500">{item.email}</p>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1">
+                    <Link href={route('pelanggan.edit', item.id)} className="text-blue-600 hover:underline font-medium text-sm">Edit</Link>
+                    <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline font-medium text-sm">Hapus</button>
+                  </div>
+                </div>
+                <div className="text-sm text-gray-700 pt-2 border-t">
+                  <p><strong>Telepon:</strong> {item.telepon || '-'}</p>
+                  <p><strong>Alamat:</strong> {item.alamat || '-'}</p>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8 text-gray-500">
+              Tidak ada data pelanggan.
+            </div>
+          )}
+        </div>
+
+        {/* Tampilan Tabel untuk Desktop */}
+        <div className="hidden sm:block overflow-x-auto bg-white rounded-lg shadow">
           <table className="min-w-full text-sm text-left text-gray-700">
             <thead className="text-xs uppercase bg-green-100 text-green-800">
               <tr>

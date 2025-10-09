@@ -32,6 +32,7 @@ use App\Http\Controllers\Customer\PesananControllerCust;
 
 // === ROUTE UNTUK PUBLIK & PELANGGAN ===
 Route::get('/', [WelcomeController::class, 'index'])->name('home');
+Route::get('/tentang-kami', [WelcomeController::class, 'tentangKami'])->name('tentang.kami');
 
 
 Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(function () {
@@ -60,6 +61,7 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
         // Grup Route untuk Checkout
     Route::prefix('checkout')->name('checkout.')->group(function () {
     Route::get('/', [CheckoutController::class, 'index'])->name('index');
+    Route::post('/buy-now', [CheckoutController::class, 'buyNow'])->name('buyNow');
     Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('saveAddress');
     Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping');
 

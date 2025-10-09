@@ -1,26 +1,26 @@
-// File: resources/js/Pages/Customer/Profile.jsx
-
-import React, { useState, useEffect } from 'react'; // 1. Tambahkan useEffect
-import { useForm, Head } from '@inertiajs/react';
-import Swal from 'sweetalert2'; // 2. Import SweetAlert2
-import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
+import CustomerLayout from '@/Layouts/CustomerLayout';
+import { useState, useEffect } from 'react';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import InputError from '@/Components/InputError';
+import InputLabel from '@/Components/InputLabel';
+import PrimaryButton from '@/Components/PrimaryButton';
+import TextInput from '@/Components/TextInput';
+import { Transition } from '@headlessui/react';
 import DangerButton from '@/Components/DangerButton';
 import Modal from '@/Components/Modal';
-import TextInput from '@/Components/TextInput';
-import InputLabel from '@/Components/InputLabel';
 import SecondaryButton from '@/Components/SecondaryButton';
-import PrimaryButton from '@/Components/PrimaryButton';
-import InputError from '@/Components/InputError';
+import Swal from 'sweetalert2';
 
-export default function Edit({ user, status }) {
+export default function Edit({ auth, mustVerifyEmail, status }) {
+    // ... (kode form logic tetap sama)
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
 
     // Form untuk update informasi profil
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
-        nama: user.nama,
-        email: user.email,
-        telepon: user.telepon || '',
-        alamat: user.alamat || '',
+        nama: auth.pelanggan.nama,
+        email: auth.pelanggan.email,
+        telepon: auth.pelanggan.telepon || '',
+        alamat: auth.pelanggan.alamat || '',
     });
 
     // Form untuk update password
@@ -80,12 +80,12 @@ export default function Edit({ user, status }) {
 
     const submitProfile = (e) => {
         e.preventDefault();
-        patch('/customer/profile');
+        patch(route('customer.profile.update'));
     };
 
     const submitPassword = (e) => {
         e.preventDefault();
-        updatePassword('/customer/profile/password', {
+        updatePassword(route('customer.profile.password.update'), {
             preserveScroll: true,
             onSuccess: () => resetPasswordForm(),
         });
@@ -93,7 +93,7 @@ export default function Edit({ user, status }) {
 
     const submitPhoto = (e) => {
         e.preventDefault();
-        updatePhoto('/customer/profile/update-photo', {
+        updatePhoto(route('customer.profile.update-photo'), {
             preserveScroll: true,
         });
     };
@@ -109,7 +109,7 @@ export default function Edit({ user, status }) {
 
     const submitDeleteUser = (e) => {
         e.preventDefault();
-        deleteUser('/customer/profile', {
+        deleteUser(route('customer.profile.destroy'), {
             preserveScroll: true,
             onSuccess: () => closeModal(),
         });
@@ -118,9 +118,8 @@ export default function Edit({ user, status }) {
     return (
         <>
             <Head title="Profil Saya" />
-            <SiteHeader auth={{ user }} />
 
-            <div className="bg-gray-50 py-12 sm:py-16">
+            <div className="py-12 sm:py-16">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-8">
 
                     {/* Kartu Foto Profil */}
@@ -131,7 +130,7 @@ export default function Edit({ user, status }) {
                         </header>
                         <div className="mt-6">
                             <img
-                                src={user.foto_profil ? `/storage/${user.foto_profil}` : `https://ui-avatars.com/api/?name=${user.nama}&color=7F9CF5&background=EBF4FF`}
+                                src={auth.pelanggan.foto_profil ? `/storage/${auth.pelanggan.foto_profil}` : `https://ui-avatars.com/api/?name=${auth.pelanggan.nama}&color=7F9CF5&background=EBF4FF`}
                                 alt="Foto Profil"
                                 className="w-24 h-24 rounded-full object-cover"
                             />
@@ -189,8 +188,6 @@ export default function Edit({ user, status }) {
                             </div>
                             <div className="flex items-center gap-4">
                                 <PrimaryButton disabled={processing}>Simpan</PrimaryButton>
-                                {/* 4. Hapus notifikasi teks yang lama */}
-                                {/* {recentlySuccessful && status === 'profile-updated' && <p>Tersimpan.</p>} */}
                             </div>
                         </form>
                     </div>
@@ -219,8 +216,6 @@ export default function Edit({ user, status }) {
                             </div>
                             <div className="flex items-center gap-4">
                                 <PrimaryButton disabled={passwordProcessing}>Ubah Password</PrimaryButton>
-                                {/* 4. Hapus notifikasi teks yang lama */}
-                                {/* {recentlySuccessful && status === 'password-updated' && <p>Tersimpan.</p>} */}
                             </div>
                         </form>
                     </div>
@@ -252,7 +247,8 @@ export default function Edit({ user, status }) {
                     </div>
                 </div>
             </div>
-            <FooterNote />
         </>
     );
 }
+
+Edit.layout = page => <CustomerLayout auth={page.props.auth}>{page}</CustomerLayout>;

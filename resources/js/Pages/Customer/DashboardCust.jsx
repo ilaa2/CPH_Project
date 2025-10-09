@@ -1,12 +1,11 @@
 // File: resources/js/Pages/Customer/DashboardCust.jsx
 
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     FiShoppingCart, FiHeart, FiEye, FiArrowRight,
-    FiUsers, FiSun, FiCheck
+    FiUsers, FiSun
 } from 'react-icons/fi';
 import { BsBookmarkCheckFill, BsFillCartFill, BsStar, BsStarFill } from 'react-icons/bs';
-import { useState } from 'react';
 import Swal from 'sweetalert2';
 
 // Import Swiper React components & styles
@@ -16,7 +15,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 
-import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
+import CustomerLayout from '@/Layouts/CustomerLayout';
 
 
 // ===================================================================
@@ -93,12 +92,9 @@ function ProductCard({ data, onAddToCart }) {
 
 // Komponen utama Dashboard
 export default function CustomerDashboard({ latestBuah, latestSayur, tipeKunjungan }) {
-    const { auth } = usePage().props;
-
     return (
-        <div className="min-h-screen w-full bg-white text-gray-800">
+        <CustomerLayout>
             <Head title="Central Palantea Hidroponik" />
-            <SiteHeader auth={auth} />
             <main className="w-full overflow-hidden">
                 <ImageSlider />
                 <KunjunganSection tipeKunjungan={tipeKunjungan} />
@@ -107,8 +103,7 @@ export default function CustomerDashboard({ latestBuah, latestSayur, tipeKunjung
                 <LatestProducts title="Sayuran Segar Terbaru" products={latestSayur} />
                 <QualityFeatures />
             </main>
-            <FooterNote />
-        </div>
+        </CustomerLayout>
     );
 }
 

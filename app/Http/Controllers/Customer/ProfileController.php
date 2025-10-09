@@ -22,7 +22,6 @@ class ProfileController extends Controller
     {
         return Inertia::render('Customer/Profile', [
             'status' => session('status'),
-            'user' => $request->user(), // Mengirim data user ke frontend
         ]);
     }
 

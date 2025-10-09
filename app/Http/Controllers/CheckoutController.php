@@ -75,6 +75,33 @@ class CheckoutController extends Controller
         return redirect()->route('checkout.summary');
     }
 
+    public function buyNow(Request $request)
+    {
+        $validated = $request->validate([
+            'product_id' => 'required|exists:products,id',
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $pelangganId = Auth::guard('pelanggan')->id();
+
+        // Buat item keranjang sementara atau update yang sudah ada
+        $cartItem = Cart::updateOrCreate(
+            [
+                'pelanggan_id' => $pelangganId,
+                'product_id' => $validated['product_id'],
+            ],
+            [
+                'quantity' => $validated['quantity'],
+            ]
+        );
+
+        // Simpan hanya ID item ini ke sesi untuk di-checkout
+        session(['selected_cart_items' => [$cartItem->id]]);
+
+        // Arahkan ke langkah pertama checkout
+        return redirect()->route('checkout.index');
+    }
+
     // === METHOD summary() SEKARANG ADA DI SINI (TEMPAT YANG BENAR) ===
     public function summary()
     {
@@ -195,7 +222,7 @@ public function process(Request $request)
             $transaction->update(['payment_status' => 'success']);
 
             return redirect()->route('customer.pesanan.show', $pesanan->id)
-                             ->with('success', 'Pesanan Anda berhasil dibuat (Mode Dummy)!');
+                             ->with('success', 'Pesanan Anda berhasil dibuat!');
         }
     });
 }
