@@ -28,27 +28,25 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1',
         ]);
 
         $pelangganId = Auth::guard('pelanggan')->id();
         $productId = $request->product_id;
-        $quantityToAdd = $request->quantity;
 
         $cartItem = Cart::where('pelanggan_id', $pelangganId)
                           ->where('product_id', $productId)
                           ->first();
 
         if ($cartItem) {
-            $cartItem->increment('quantity', $quantityToAdd);
+            $cartItem->increment('quantity');
         } else {
             Cart::create([
                 'pelanggan_id' => $pelangganId,
                 'product_id' => $productId,
-                'quantity' => $quantityToAdd,
+                'quantity' => 1,
             ]);
         }
-        return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
+        return redirect()->back();
     }
 
     /**
@@ -57,9 +55,14 @@ class CartController extends Controller
     public function update(Request $request, Cart $cart)
     {
         $this->authorize('update', $cart);
-        $request->validate(['quantity' => 'required|integer|min:1']);
-        $cart->update(['quantity' => $request->quantity]);
-        return redirect()->back()->with('success', 'Jumlah produk diperbarui.');
+
+        $validated = $request->validate([
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        $cart->update(['quantity' => $validated['quantity']]);
+
+        return redirect()->back();
     }
 
     /**
@@ -69,7 +72,7 @@ class CartController extends Controller
     {
         $this->authorize('delete', $cart);
         $cart->delete();
-        return redirect()->back()->with('success', 'Produk dihapus dari keranjang.');
+        return redirect()->back();
     }
 
     /**

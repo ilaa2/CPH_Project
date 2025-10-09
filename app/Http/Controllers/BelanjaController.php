@@ -11,7 +11,7 @@ class BelanjaController extends Controller
     public function index(Request $request)
     {
         // Ambil nilai filter 'kategori' dan 'search' dari URL
-        $kategoriFilter = $request->query('kategori');
+        $kategoriFilter = $request->query('category');
         $searchFilter = $request->query('search');
 
         // Query produk yang statusnya Aktif

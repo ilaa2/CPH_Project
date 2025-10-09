@@ -34,27 +34,37 @@ class HandleInertiaRequests extends Middleware
     {
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => Auth::guard('pelanggan')->user() ?: Auth::guard('web')->user(),
+                'user' => Auth::guard('web')->user(),
+                'pelanggan' => Auth::guard('pelanggan')->user(),
             ],
 
             'cart' => function () {
                 try {
                     $pelanggan = Auth::guard('pelanggan')->user();
                     if ($pelanggan) {
+                        // 1. Ambil semua item dalam satu query yang efisien
+                        $cartItems = Cart::with('product')
+                                         ->where('pelanggan_id', $pelanggan->id)
+                                         ->latest()
+                                         ->get();
+
+                        // 2. Hitung subtotal dari koleksi yang sudah ada
+                        $subtotal = $cartItems->reduce(function ($carry, $item) {
+                            return $carry + ($item->product->harga * $item->quantity);
+                        }, 0);
+
                         return [
-                            'items' => Cart::with('product')
-                                           ->where('pelanggan_id', $pelanggan->id)
-                                           ->latest()
-                                           ->get(),
-                            'count' => Cart::where('pelanggan_id', $pelanggan->id)
-                                           ->sum('quantity') ?? 0,
+                            'items' => $cartItems,
+                            'count' => $cartItems->count(), // 3. Hitung jumlah dari koleksi
+                            'subtotal' => $subtotal,
                         ];
                     }
                 } catch (\Exception $e) {
                     Log::error('Gagal mengambil data keranjang: ' . $e->getMessage());
                 }
 
-                return ['items' => [], 'count' => 0];
+                // Jika tidak ada pelanggan atau terjadi error
+                return ['items' => [], 'count' => 0, 'subtotal' => 0];
             },
 
             'flash' => [
