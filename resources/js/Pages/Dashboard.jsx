@@ -1,153 +1,140 @@
+import Mainbar from '@/Components/Bar/Mainbar';
 import { Head } from '@inertiajs/react';
-import Mainbar from "@/Components/Bar/Mainbar";
-import { BsBoxSeam, BsPeople } from "react-icons/bs";
-import { FiShoppingBag, FiCalendar } from "react-icons/fi";
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    LineElement,
-    PointElement,
-    Title,
-    Tooltip,
-    Legend
-} from 'chart.js';
-import { Chart } from 'react-chartjs-2';
+import { FiBox, FiUsers, FiShoppingCart, FiCalendar } from 'react-icons/fi';
+import { format } from 'date-fns';
+import { id } from 'date-fns/locale';
 
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    BarElement,
-    LineElement,
-    PointElement,
-    Title,
-    Tooltip,
-    Legend
-);
+// Komponen Kartu Statistik
+const StatCard = ({ icon, title, value, color }) => {
+    return (
+        <div className={`bg-white p-6 rounded-lg shadow-sm border-l-4 ${color}`}>
+            <div className="flex items-center">
+                <div className="mr-4">{icon}</div>
+                <div>
+                    <p className="text-sm font-medium text-gray-500">{title}</p>
+                    <p className="text-2xl font-bold text-gray-800">{value}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
 
-export default function Dashboard() {
-    const chartLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+// Komponen Tabel Aktivitas Terbaru
+const ActivityTable = ({ title, headers, items, renderRow }) => {
+    return (
+        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+                <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                        <tr>
+                            {headers.map((header) => (
+                                <th key={header} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    {header}
+                                </th>
+                            ))}
+                        </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                        {items.length > 0 ? (
+                            items.map(renderRow)
+                        ) : (
+                            <tr>
+                                <td colSpan={headers.length} className="px-6 py-4 text-center text-gray-500">
+                                    Tidak ada data.
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    );
+};
 
-    const productChartData = {
-        labels: chartLabels,
-        datasets: [
-            {
-                label: 'Penjualan Produk',
-                data: [120, 150, 180, 90, 200, 170],
-                backgroundColor: 'rgba(34,197,94,0.8)',
-                hoverBackgroundColor: 'rgba(34,197,94,1)',
-                borderRadius: 8,
-                borderSkipped: false,
-            }
-        ],
-    };
-
-    const visitChartData = {
-        labels: chartLabels,
-        datasets: [
-            {
-                label: 'Jumlah Kunjungan',
-                data: [60, 80, 75, 40, 100, 90],
-                borderColor: 'rgba(34,197,94,0.9)',
-                backgroundColor: 'rgba(34,197,94,0.2)',
-                pointBackgroundColor: 'rgba(34,197,94,1)',
-                pointBorderColor: '#fff',
-                fill: true,
-                tension: 0.4,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-            }
-        ],
-    };
-
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                backgroundColor: '#f0fdf4',
-                titleColor: '#15803d',
-                bodyColor: '#14532d',
-                borderColor: '#86efac',
-                borderWidth: 1,
-            },
+export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbaru }) {
+    const statCards = [
+        {
+            icon: <FiBox className="w-8 h-8 text-green-500" />,
+            title: 'Total Produk',
+            value: stats.totalProduk,
+            color: 'border-green-500',
         },
-        scales: {
-            x: {
-                ticks: {
-                    font: { family: 'Poppins', size: 12 },
-                    color: '#4d4d4d',
-                },
-                grid: { display: false }
-            },
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 50,
-                    font: { family: 'Poppins', size: 12 },
-                    color: '#4d4d4d',
-                },
-                grid: { color: '#e2e8f0', borderDash: [4, 4] }
-            }
-        }
+        {
+            icon: <FiUsers className="w-8 h-8 text-blue-500" />,
+            title: 'Total Pelanggan',
+            value: stats.totalPelanggan,
+            color: 'border-blue-500',
+        },
+        {
+            icon: <FiShoppingCart className="w-8 h-8 text-yellow-500" />,
+            title: 'Total Pesanan',
+            value: stats.totalPesanan,
+            color: 'border-yellow-500',
+        },
+        {
+            icon: <FiCalendar className="w-8 h-8 text-purple-500" />,
+            title: 'Total Kunjungan',
+            value: stats.totalKunjungan,
+            color: 'border-purple-500',
+        },
+    ];
+
+    const formatCurrency = (number) => {
+        return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     };
 
     return (
         <Mainbar
-            header={
-                <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200 truncate">
-                    Dashboard
-                </h2>
-            }
+            header={<h2 className="font-semibold text-xl text-gray-800 leading-tight">Dashboard Admin</h2>}
         >
-            <Head title="Dashboard" />
+            <Head title="Dashboard Admin" />
 
-            <div className="p-4 sm:p-6 space-y-6">
-                {/* Ringkasan Statistik */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <StatCard icon={<BsBoxSeam size={24} className="text-green-700" />} title="Total Produk" value="128" />
-                    <StatCard icon={<FiShoppingBag size={24} className="text-green-700" />} title="Total Pesanan" value="450" />
-                    <StatCard icon={<BsPeople size={24} className="text-green-700" />} title="Total Pelanggan" value="300" />
-                    <StatCard icon={<FiCalendar size={24} className="text-green-700" />} title="Total Kunjungan" value="95" />
-                </div>
-
-                {/* Chart Penjualan Produk */}
-                <div className="bg-white rounded-lg shadow p-4 sm:p-6 w-full">
-                    <h3 className="text-lg font-semibold text-gray-700 mb-4 truncate">
-                        Penjualan Produk per Bulan
-                    </h3>
-                    <div className="w-full h-64 sm:h-72">
-                        <Chart type="bar" data={productChartData} options={chartOptions} />
+            <div className="py-12">
+                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                    {/* Grid Kartu Statistik */}
+                    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+                        {statCards.map((card, index) => (
+                            <StatCard key={index} {...card} />
+                        ))}
                     </div>
-                </div>
 
-                {/* Chart Jumlah Kunjungan */}
-                <div className="bg-white rounded-lg shadow p-4 sm:p-6 w-full">
-                    <h3 className="text-lg font-semibold text-gray-700 mb-4 truncate">
-                        Jumlah Kunjungan per Bulan
-                    </h3>
-                    <div className="w-full h-64 sm:h-72">
-                        <Chart type="line" data={visitChartData} options={chartOptions} />
+                    {/* Grid Aktivitas Terbaru */}
+                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+                        <ActivityTable
+                            title="Pesanan Terbaru"
+                            headers={['ID Pesanan', 'Pelanggan', 'Total', 'Tanggal']}
+                            items={pesananTerbaru}
+                            renderRow={(pesanan) => (
+                                <tr key={pesanan.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{pesanan.id}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{pesanan.pelanggan.nama}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{formatCurrency(pesanan.total_harga)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {format(new Date(pesanan.created_at), 'd MMM yyyy', { locale: id })}
+                                    </td>
+                                </tr>
+                            )}
+                        />
+                        <ActivityTable
+                            title="Pelanggan Baru"
+                            headers={['Nama', 'Email', 'Bergabung']}
+                            items={pelangganTerbaru}
+                            renderRow={(pelanggan) => (
+                                <tr key={pelanggan.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{pelanggan.nama}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{pelanggan.email}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        {format(new Date(pelanggan.created_at), 'd MMM yyyy', { locale: id })}
+                                    </td>
+                                </tr>
+                            )}
+                        />
                     </div>
                 </div>
             </div>
         </Mainbar>
-    );
-}
-
-// Komponen stat kartu ringkasan
-function StatCard({ icon, title, value }) {
-    return (
-        <div className="bg-gradient-to-br from-green-100 to-green-50 rounded-lg shadow p-3 sm:p-4 flex items-center">
-            <div className="p-2 sm:p-3 bg-white rounded-full shadow-md mr-3 sm:mr-4 flex-shrink-0">
-                {icon}
-            </div>
-            <div className="truncate">
-                <h3 className="text-sm sm:text-base text-gray-600 truncate">{title}</h3>
-                <p className="text-xl sm:text-2xl font-bold text-gray-800">{value}</p>
-            </div>
-        </div>
     );
 }

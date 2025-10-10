@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\TipeKunjungan;
 use App\Models\Kunjungan;
 use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia; // Jangan lupa import Inertia
+use Inertia\Inertia;
 
 class KunjunganControllerCust extends Controller
 {
@@ -37,7 +37,9 @@ class KunjunganControllerCust extends Controller
             'no_hp'             => 'required|string|max:15',
             'tanggal_kunjungan' => 'required|date|after_or_equal:today',
             'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
-            'jumlah_pengunjung' => 'required|integer|min:1',
+            'jumlah_dewasa'     => 'required|integer|min:1',
+            'jumlah_anak'       => 'required|integer|min:0',
+            'jumlah_balita'     => 'required|integer|min:0',
         ]);
 
         // Simpan data yang valid ke dalam session untuk dibawa ke halaman konfirmasi
@@ -61,9 +63,8 @@ class KunjunganControllerCust extends Controller
 
         $detailTipe = TipeKunjungan::find($dataFromSession['tipe_kunjungan_id']);
 
-        // Kalkulasi biaya
-        $biayaPerOrang = 15000; // Anda bisa ubah ini
-        $totalBiaya = $biayaPerOrang * $dataFromSession['jumlah_pengunjung'];
+        // Kalkulasi biaya di backend, meniru logika frontend
+        $totalBiaya = $this->calculateTotalCost($detailTipe, $dataFromSession);
 
         // Siapkan data lengkap untuk dikirim ke view React
         $dataKunjungan = array_merge($dataFromSession, [
@@ -87,21 +88,27 @@ class KunjunganControllerCust extends Controller
             'no_hp'             => 'required|string|max:15',
             'tanggal_kunjungan' => 'required|date',
             'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
-            'jumlah_pengunjung' => 'required|integer|min:1',
-            'total_biaya'       => 'required|numeric',
+            'jumlah_dewasa'     => 'required|integer|min:1',
+            'jumlah_anak'       => 'required|integer|min:0',
+            'jumlah_balita'     => 'required|integer|min:0',
         ]);
 
         $tipeKunjungan = TipeKunjungan::find($validated['tipe_kunjungan_id']);
 
+        // PERHITUNGAN ULANG BIAYA DI BACKEND (PENTING UNTUK KEAMANAN)
+        $finalTotalBiaya = $this->calculateTotalCost($tipeKunjungan, $validated);
+
         Kunjungan::create([
-            'pelanggan_id'      => Auth::guard('pelanggan')->id(), // Mengambil ID pelanggan yang login
+            'pelanggan_id'      => Auth::guard('pelanggan')->id(),
             'tipe_id'           => $validated['tipe_kunjungan_id'],
-            'judul'             => $tipeKunjungan->nama_tipe,
+            'judul'             => $tipeKunjungan->nama_tipe . ' oleh ' . $validated['nama_lengkap'],
             'deskripsi'         => 'Kunjungan oleh ' . $validated['nama_lengkap'],
             'tanggal'           => $validated['tanggal_kunjungan'],
             'jam'               => '09:00:00', // Jam default
-            'jumlah_pengunjung' => $validated['jumlah_pengunjung'],
-            'total_biaya'       => $validated['total_biaya'],
+            'jumlah_dewasa'     => $validated['jumlah_dewasa'],
+            'jumlah_anak'       => $validated['jumlah_anak'],
+            'jumlah_balita'     => $validated['jumlah_balita'],
+            'total_biaya'       => $finalTotalBiaya,
             'status'            => 'Dijadwalkan',
         ]);
 
@@ -128,5 +135,33 @@ class KunjunganControllerCust extends Controller
         return Inertia::render('Customer/Kunjungan/Show', [
             'kunjungan' => $kunjungan,
         ]);
+    }
+
+    /**
+     * Helper function untuk menghitung total biaya.
+     * Logika ini harus sama persis dengan yang ada di frontend.
+     */
+    private function calculateTotalCost(TipeKunjungan $tipe, array $data): float
+    {
+        $biaya = 0;
+        $jumlah_dewasa = $data['jumlah_dewasa'] ?? 0;
+        $jumlah_anak = $data['jumlah_anak'] ?? 0;
+
+        if ($tipe->nama_tipe === 'Sewa Tempat') {
+            $totalOrangBayar = $jumlah_dewasa + $jumlah_anak;
+            $biaya = $totalOrangBayar * 10000;
+        } elseif ($tipe->nama_tipe === 'Kunjungan Sekolah') {
+            if ($jumlah_anak < 30) {
+                $biaya = 300000;
+            } else {
+                $biaya = $jumlah_anak * 10000;
+            }
+        } else {
+            // Fallback ke logika default jika ada tipe lain
+            $totalPengunjung = $jumlah_dewasa + $jumlah_anak + ($data['jumlah_balita'] ?? 0);
+            $biaya = $totalPengunjung * ($tipe->biaya ?? 0);
+        }
+
+        return $biaya;
     }
 }

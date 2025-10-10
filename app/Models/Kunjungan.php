@@ -18,7 +18,9 @@ class Kunjungan extends Model
         'deskripsi',
         'tanggal',
         'jam',
-        'jumlah_pengunjung',
+        'jumlah_dewasa',
+        'jumlah_anak',
+        'jumlah_balita',
         'total_biaya',
         'status',
     ];

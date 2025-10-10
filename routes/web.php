@@ -100,12 +100,14 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
 require __DIR__.'/auth.php';
 
 // Grup untuk semua route admin yang memerlukan login
-Route::middleware(['auth', 'verified'])->group(function () {
+use App\Http\Controllers\DashboardController;
 
+// ... (kode lain di atas)
+
+Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard Admin
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

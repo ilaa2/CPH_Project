@@ -1,93 +1,103 @@
-### **Rencana Eksekusi: Fitur Ulasan dan Feedback Pelanggan**
+# Rencana Eksekusi: Integrasi Midtrans Payment Gateway
 
-Dokumen ini merinci langkah-langkah teknis yang akan diambil untuk mengimplementasikan sistem ulasan dan feedback oleh pelanggan, serta mengintegrasikannya dengan dasbor admin.
+Dokumen ini adalah blueprint langkah demi langkah untuk mengintegrasikan Midtrans sebagai payment gateway ke dalam aplikasi CPH_Project. Setiap langkah akan dieksekusi secara berurutan untuk memastikan implementasi yang mulus dan terdokumentasi.
 
-**Tujuan Utama:**
-1.  Memungkinkan pelanggan mengunggah foto profil.
-2.  Menambahkan tombol "Beri Ulasan" pada pesanan yang telah selesai.
-3.  Membuat halaman formulir untuk pengisian ulasan (bintang, teks, foto).
-4.  Membuat halaman dasbor pelanggan untuk menampilkan semua ulasan yang masuk.
-5.  Memperbarui halaman ulasan di dasbor admin untuk menampilkan data ulasan yang baru, termasuk foto.
+**Tujuan Akhir:** Menggantikan alur checkout saat ini dengan proses pembayaran nyata melalui Midtrans. Pelanggan akan diarahkan ke pop-up pembayaran Midtrans, dan setelah pembayaran berhasil, pesanan akan dibuat di sistem dengan status yang sesuai.
 
 ---
 
-### **Fase 1: Persiapan Backend dan Database**
+## Tahap 1: Persiapan dan Konfigurasi Backend (Laravel)
 
-Langkah pertama adalah memastikan struktur database dan logika backend siap untuk mendukung fitur-fitur baru.
+Pada tahap ini, kita akan menyiapkan sisi server untuk dapat berkomunikasi dengan Midtrans.
 
-*   **Langkah 1.1: Migrasi Database untuk Foto Profil Pelanggan**
-    *   Saya akan membuat file migrasi baru menggunakan `php artisan make:migration`.
-    *   Migrasi ini akan menambahkan kolom `foto_profil` (tipe `string`, nullable) ke tabel `pelanggans`.
-    *   Setelah itu, saya akan menjalankan `php artisan migrate`.
+*   [ ] **Langkah 1.1: Instal Library Midtrans PHP**
+    *   **Tugas:** Menambahkan library resmi Midtrans ke dalam proyek menggunakan Composer.
+    *   **Perintah:** `composer require midtrans/midtrans-php`
 
-*   **Langkah 1.2: Migrasi Database untuk Foto Ulasan**
-    *   Saya akan membuat file migrasi baru.
-    *   Migrasi ini akan menambahkan kolom `foto_ulasan` (tipe `string`, nullable) ke tabel `ulasans`.
-    *   Ini akan digunakan untuk menyimpan path gambar yang diunggah oleh pelanggan saat memberikan ulasan.
+*   [ ] **Langkah 1.2: Konfigurasi Kunci API Midtrans**
+    *   **Tugas:** Menyimpan kunci API Midtrans (Server Key & Client Key) di file `.env` dan membuat file konfigurasi khusus untuk Midtrans.
+    *   **Aksi:**
+        1.  Dapatkan **Client Key** dan **Server Key** dari dashboard Sandbox Midtrans Anda.
+        2.  Tambahkan variabel berikut ke dalam file `.env`:
+            ```env
+            MIDTRANS_MERCHANT_ID=GANTI_DENGAN_MERCHANT_ID_ANDA
+            MIDTRANS_CLIENT_KEY=GANTI_DENGAN_CLIENT_KEY_ANDA
+            MIDTRANS_SERVER_KEY=GANTI_DENGAN_SERVER_KEY_ANDA
+            MIDTRANS_IS_PRODUCTION=false
+            ```
+        3.  Buat file konfigurasi baru di `config/midtrans.php` untuk memuat variabel-variabel ini.
 
-*   **Langkah 1.3: Perbarui Model Eloquent**
-    *   Saya akan memperbarui file model `app/Models/Pelanggan.php` dengan menambahkan `foto_profil` ke dalam properti `$fillable`.
-    *   Saya juga akan memperbarui `app/Models/Ulasan.php` dengan menambahkan `foto_ulasan` ke dalam properti `$fillable`.
+*   [ ] **Langkah 1.3: Buat Rute (Routes) untuk Pembayaran**
+    *   **Tugas:** Mendefinisikan dua rute baru di `routes/web.php`: satu untuk memulai proses pembayaran dan satu lagi untuk menerima notifikasi (webhook) dari Midtrans.
+    *   **Aksi:**
+        1.  Tambahkan rute `POST` untuk `checkout.process` yang akan memanggil metode di `CheckoutController` untuk mendapatkan Snap Token.
+        2.  Tambahkan rute `POST` untuk `midtrans.notification` yang akan menangani pembaruan status pesanan dari Midtrans.
 
-*   **Langkah 1.4: Buat Route (Rute) Baru**
-    *   Saya akan menambahkan rute baru di `routes/web.php` untuk menangani logika ulasan dari sisi pelanggan.
-        *   `GET /customer/ulasan`: Menampilkan halaman daftar ulasan pelanggan.
-        *   `GET /customer/pesanan/{id}/ulasan/create`: Menampilkan formulir untuk membuat ulasan baru.
-        *   `POST /customer/ulasan`: Menyimpan ulasan baru ke database.
-        *   `POST /customer/profile/update-photo`: Rute khusus untuk memperbarui foto profil pelanggan.
+*   [ ] **Langkah 1.4: Modifikasi `CheckoutController` untuk Membuat Transaksi**
+    *   **Tugas:** Mengubah `CheckoutController` untuk menangani logika pembuatan transaksi Midtrans.
+    *   **Aksi:**
+        1.  Buat metode baru `processPayment`.
+        2.  Di dalam metode ini:
+            *   Ambil data dari sesi (keranjang, alamat, pengiriman).
+            *   Buat pesanan baru di tabel `pesanan` dengan status awal "pending" atau "unpaid".
+            *   Siapkan parameter transaksi untuk Midtrans (detail item, detail pelanggan, total pembayaran).
+            *   Gunakan library Midtrans untuk menghasilkan `snap_token`.
+            *   Kirim `snap_token` kembali ke frontend sebagai respons.
 
-*   **Langkah 1.5: Kembangkan Logika Controller**
-    *   **`ProfileController` (Pelanggan):** Saya akan membuat atau memodifikasi metode untuk menangani unggahan foto profil. Ini termasuk validasi file (gambar, ukuran maks) dan penyimpanan file di `storage/app/public`.
-    *   **`UlasanController` (Pelanggan):** Saya akan membuat controller baru atau metode baru untuk:
-        *   `create`: Menampilkan halaman formulir ulasan, dengan data pesanan terkait.
-        *   `store`: Memvalidasi input (bintang, ulasan, foto), menyimpan file foto ulasan, dan membuat entri baru di tabel `ulasans`.
-    *   **`PesananController` (Pelanggan):** Saya akan memodifikasi metode yang menampilkan riwayat pesanan untuk menambahkan flag atau status yang menandakan apakah sebuah pesanan sudah "selesai" dan berhak untuk diulas.
-
----
-
-### **Fase 2: Implementasi Frontend (Sisi Pelanggan)**
-
-Setelah backend siap, saya akan membangun antarmuka pengguna untuk pelanggan.
-
-*   **Langkah 2.1: Halaman Profil Pelanggan (Update Foto)**
-    *   Saya akan memodifikasi komponen React di `resources/js/Pages/Customer/Profile/Edit.jsx` (atau yang setara).
-    *   Saya akan menambahkan input file untuk memilih gambar, area pratinjau gambar, dan tombol untuk menyimpan. Logika akan menggunakan hook `useForm` dari Inertia.js untuk menangani unggahan.
-
-*   **Langkah 2.2: Halaman Riwayat Pesanan**
-    *   Saya akan menemukan halaman riwayat pesanan pelanggan (kemungkinan di `resources/js/Pages/Customer/Pesanan/Index.jsx`).
-    *   Saya akan menambahkan tombol `<Link>` (dari Inertia) "Beri Ulasan" secara kondisional. Tombol ini hanya akan muncul jika pesanan memiliki status "selesai".
-
-*   **Langkah 2.3: Halaman Formulir Ulasan Baru**
-    *   Saya akan membuat komponen React baru: `resources/js/Pages/Customer/Ulasan/Create.jsx`.
-    *   Halaman ini akan berisi formulir yang didesain dengan baik, mencakup:
-        *   Komponen Peringkat Bintang (1-5 bintang).
-        *   `Textarea` untuk isi feedback.
-        *   Input file untuk mengunggah foto ulasan.
-        *   Tombol "Kirim Ulasan".
-    *   Formulir ini akan menggunakan `useForm` untuk pengiriman data, termasuk file.
-
-*   **Langkah 2.4: Halaman Dasbor Ulasan Pelanggan**
-    *   Saya akan membuat komponen React baru: `resources/js/Pages/Customer/Ulasan/Index.jsx`.
-    *   Halaman ini akan menampilkan daftar semua ulasan yang telah diberikan oleh pelanggan lain, dengan desain modern seperti e-commerce.
-    *   Setiap item ulasan akan menampilkan: Foto profil pemberi ulasan, nama, tanggal, peringkat bintang, teks ulasan, dan foto ulasan (jika ada).
+*   [ ] **Langkah 1.5: Buat Controller untuk Menangani Notifikasi Midtrans**
+    *   **Tugas:** Membuat logika untuk menerima dan memvalidasi notifikasi dari Midtrans.
+    *   **Aksi:**
+        1.  Buat `MidtransController` baru atau tambahkan metode di `CheckoutController`.
+        2.  Metode ini akan:
+            *   Menerima data `POST` dari Midtrans.
+            *   Memvalidasi *signature key* untuk memastikan notifikasi tersebut asli.
+            *   Mengecek status transaksi (`settlement`, `pending`, `expire`, `cancel`).
+            *   Memperbarui status pesanan di database berdasarkan notifikasi yang diterima.
 
 ---
 
-### **Fase 3: Integrasi dan Pembaruan Dasbor Admin**
+## Tahap 2: Implementasi Frontend (React)
 
-Terakhir, saya akan memastikan semua ulasan baru dari pelanggan ditampilkan dengan benar di dasbor admin.
+Sekarang kita akan menghubungkan antarmuka pengguna dengan backend yang sudah disiapkan.
 
-*   **Langkah 3.1: Analisis Halaman Ulasan Admin yang Ada**
-    *   Saya akan mempelajari kode di `app/Http/Controllers/UlasanController.php` (metode `index` untuk admin) dan komponen React terkait di `resources/js/Pages/Ulasan/Index.jsx`.
+*   [ ] **Langkah 2.1: Perbarui Halaman Checkout (`Checkout3.jsx`)**
+    *   **Tugas:** Mengubah fungsi `handleBayar` untuk berkomunikasi dengan backend dan memicu pop-up Midtrans Snap.
+    *   **Aksi:**
+        1.  Pastikan `useEffect` untuk memuat `snap.js` sudah benar dan menggunakan Client Key dari `import.meta.env`.
+        2.  Ubah `handleBayar` untuk mengirim request `POST` ke rute `checkout.process` yang baru dibuat.
+        3.  Setelah menerima `snap_token` dari backend, panggil `window.snap.pay(snap_token, { ... })`.
+        4.  Implementasikan callback `onSuccess`, `onPending`, `onError`, dan `onClose` untuk memberikan umpan balik kepada pengguna dan mengarahkannya ke halaman yang sesuai.
 
-*   **Langkah 3.2: Perbarui Controller Admin**
-    *   Saya akan memodifikasi query Eloquent di `UlasanController.php` untuk mengambil data tambahan melalui relasi, seperti nama pelanggan, foto profil pelanggan, dan foto ulasan.
-
-*   **Langkah 3.3: Modifikasi Tampilan Ulasan Admin**
-    *   Saya akan memperbarui komponen React `resources/js/Pages/Ulasan/Index.jsx`.
-    *   Saya akan menambahkan kolom atau bagian baru pada tabel atau daftar ulasan untuk menampilkan:
-        *   Foto profil pelanggan.
-        *   Nama pelanggan.
-        *   Foto ulasan (sebagai thumbnail yang bisa diklik untuk diperbesar).
+*   [ ] **Langkah 2.2: Buat Halaman Konfirmasi Pesanan**
+    *   **Tugas:** Membuat halaman baru yang akan ditampilkan setelah pelanggan menyelesaikan (atau menunggu) pembayaran.
+    *   **Aksi:**
+        1.  Buat komponen React baru, misalnya `resources/js/Pages/Customer/Pesanan/Konfirmasi.jsx`.
+        2.  Halaman ini akan menampilkan ringkasan pesanan, status pembayaran (misalnya, "Pembayaran Berhasil" atau "Menunggu Pembayaran"), dan instruksi selanjutnya.
+        3.  Arahkan pengguna ke halaman ini dari callback `onSuccess` dan `onPending` di `Checkout3.jsx`.
 
 ---
+
+## Tahap 3: Finalisasi dan Pengujian
+
+*   [ ] **Langkah 3.1: Penyesuaian Skema Database**
+    *   **Tugas:** Memastikan tabel `pesanan` memiliki kolom yang diperlukan untuk menyimpan status pembayaran dan ID transaksi dari Midtrans.
+    *   **Aksi:**
+        1.  Periksa migrasi tabel `pesanan`. Pastikan ada kolom `status` (string) dan `midtrans_order_id` (string, opsional).
+        2.  Jika belum ada, buat migrasi baru untuk menambahkannya.
+
+*   [ ] **Langkah 3.2: Pengujian End-to-End**
+    *   **Tugas:** Menguji keseluruhan alur pembayaran menggunakan mode Sandbox Midtrans.
+    *   **Aksi:**
+        1.  Lakukan proses checkout dari awal.
+        2.  Gunakan nomor kartu uji atau metode pembayaran sandbox lainnya yang disediakan Midtrans.
+        3.  Simulasikan pembayaran yang berhasil, tertunda, dan gagal.
+        4.  Verifikasi bahwa status pesanan di database Anda diperbarui dengan benar melalui webhook.
+        5.  Pastikan pengguna diarahkan ke halaman konfirmasi yang benar setelah setiap skenario.
+
+---
+*   [ ] **Langkah 4: Pembaruan `GEMINI.md`**
+    *   **Tugas:** Mencatat semua perubahan yang telah dilakukan ke dalam `GEMINI.md`.
+    *   **Aksi:**
+        1.  Buat ringkasan fitur baru yang telah diimplementasikan.
+        2.  Jelaskan perubahan pada model, view, dan controller.
+        3.  Tambahkan entri changelog baru di bawah tanggal hari ini.
