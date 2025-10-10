@@ -16,7 +16,7 @@ export default function CreateKunjungan() {
     jam: '',
     jumlah_pengunjung: '',
     total_biaya: '',
-    status: 'dijadwalkan',
+    status: 'Dijadwalkan',
   });
 
   const handleSubmit = (e) => {

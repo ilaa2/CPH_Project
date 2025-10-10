@@ -108,11 +108,10 @@ const PesananKunjunganCard = ({ kunjungan }) => {
                     <p className="font-bold text-gray-900">{formatCurrency(kunjungan.total_biaya)}</p>
                 </div>
                 {kunjungan.status === 'Selesai' && (
-                    kunjungan.has_ulasan ? (
+                    kunjungan.ulasan ? (
                         <Link
                             href={route('customer.ulasan.index')}
                             className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-xs"
-                            onClick={(e) => e.stopPropagation()}
                         >
                             Lihat Ulasan
                         </Link>
@@ -120,9 +119,8 @@ const PesananKunjunganCard = ({ kunjungan }) => {
                         <Link
                             href={route('customer.kunjungan.ulasan.create', kunjungan.id)}
                             className="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-xs"
-                            onClick={(e) => e.stopPropagation()}
                         >
-                            Beri Ulasan
+                            Ulasan
                         </Link>
                     )
                 )}

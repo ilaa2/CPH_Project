@@ -1,123 +1,146 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Head } from '@inertiajs/react';
 import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
-import Modal from '@/Components/Modal';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { FiStar, FiMessageSquare, FiCheckCircle } from 'react-icons/fi';
 
-// --- Komponen yang Diimpor dari Halaman Admin ---
-
-// Komponen untuk menampilkan bintang rating
-const StarRating = ({ rating }) => (
-    <div className="flex items-center">
-        {[...Array(5)].map((_, i) => (
-            <svg
-                key={i}
-                className={`w-5 h-5 ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                fill="currentColor"
-                viewBox="0 0 20 20"
-            >
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.39 2.46a1 1 0 00-.364 1.118l1.286 3.966c.3.922-.755 1.688-1.54 1.118l-3.39-2.46a1 1 0 00-1.175 0l-3.39 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.045 9.394c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.287-3.967z" />
-            </svg>
+// Komponen Bintang Rating
+const StarRating = ({ rating, className = '' }) => (
+    <div className={`flex items-center ${className}`}>
+        {Array.from({ length: 5 }).map((_, i) => (
+            <FiStar key={i} className={`w-5 h-5 ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`} style={{ fill: i < rating ? 'currentColor' : 'none' }} />
         ))}
     </div>
 );
 
-// Komponen Card yang sudah didesain ulang
+// Komponen Kartu Ulasan Individual
 const UlasanCard = ({ ulasan }) => {
-    const formattedDate = format(new Date(ulasan.tanggal), 'd MMMM yyyy', { locale: id });
-    const cardColorClass = ulasan.type === 'Produk' ? 'bg-green-500' : 'bg-purple-500';
-    const cardAccentColorClass = ulasan.type === 'Produk' ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800';
+    const formattedDate = format(new Date(ulasan.tanggal), 'dd MMMM yyyy', { locale: id });
 
     return (
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden transform transition-all hover:shadow-2xl hover:-translate-y-1.5 flex flex-col">
-            <div className={`h-2 ${cardColorClass}`}></div>
-            <div className="p-4 relative flex-grow">
-                <svg className="absolute top-4 right-4 w-16 h-16 text-gray-100 opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 3a1 1 0 011 1v2.586l2.293-2.293a1 1 0 111.414 1.414L12.414 8H15a1 1 0 110 2h-2.586l2.293 2.293a1 1 0 11-1.414 1.414L11 11.414V14a1 1 0 11-2 0v-2.586l-2.293 2.293a1 1 0 11-1.414-1.414L7.586 10H5a1 1 0 110-2h2.586L5.293 5.707a1 1 0 011.414-1.414L9 6.586V4a1 1 0 011-1z" clipRule="evenodd" />
-                </svg>
-
-                <div className="relative z-10">
-                    <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-4">
-                            <img
-                                src={ulasan.foto_profil || `https://ui-avatars.com/api/?name=${ulasan.nama}&color=7F9CF5&background=EBF4FF`}
-                                alt={ulasan.nama}
-                                className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-md"
-                            />
-                            <div>
-                                <h4 className="font-bold text-base text-gray-800">{ulasan.nama}</h4>
-                                <p className="text-sm text-gray-500">{formattedDate}</p>
-                            </div>
-                        </div>
-                        <StarRating rating={ulasan.rating} />
+        <div className="bg-gray-50 rounded-lg shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full">
+            {/* Card Header */}
+            <div className="bg-white p-4 border-b border-gray-200">
+                <div className="flex items-center">
+                    <img
+                        src={ulasan.foto_profil || `https://ui-avatars.com/api/?name=${encodeURIComponent(ulasan.nama)}&color=7F9CF5&background=EBF4FF`}
+                        alt={ulasan.nama}
+                        className="w-10 h-10 rounded-full object-cover"
+                    />
+                    <div className="ml-3">
+                        <h4 className="font-semibold text-sm text-gray-900">{ulasan.nama}</h4>
+                        <p className="text-xs text-gray-500">{formattedDate}</p>
                     </div>
+                </div>
+            </div>
 
-                    <div className="mb-4">
-                        <span className={`inline-block px-3 py-1 text-xs font-semibold rounded-full ${cardAccentColorClass}`}>
-                            Ulasan {ulasan.type}
-                        </span>
-                        <p className="font-semibold text-gray-700 mt-2 truncate">{ulasan.subject}</p>
+            {/* Card Body */}
+            <div className="p-4 flex-grow">
+                <StarRating rating={ulasan.rating} />
+                
+                <div className="flex items-center text-xs text-green-600 mt-3">
+                    <FiCheckCircle className="mr-1.5" />
+                    <span className="font-semibold">Pembelian Terverifikasi</span>
+                </div>
+
+                <p className="text-gray-800 text-sm leading-relaxed mt-3">{ulasan.komentar}</p>
+            </div>
+
+            {/* Card Footer with Photos */}
+            {ulasan.foto_ulasan && ulasan.foto_ulasan.length > 0 && (
+                <div className="px-4 pb-4 pt-1">
+                    <div className="grid grid-cols-4 gap-2">
+                        {ulasan.foto_ulasan.map((foto, index) => (
+                            <a key={index} href={foto} target="_blank" rel="noopener noreferrer" className="block">
+                                <img
+                                    src={foto}
+                                    alt={`Foto Ulasan ${index + 1}`}
+                                    className="rounded-md w-full h-16 object-cover border border-gray-200 hover:opacity-80 transition-opacity"
+                                />
+                            </a>
+                        ))}
                     </div>
+                </div>
+            )}
+        </div>
+    );
+};
 
-                    <p className="text-gray-600 text-sm leading-relaxed mb-4">
-                        {ulasan.komentar}
-                    </p>
-
-                    {ulasan.foto_ulasan && ulasan.foto_ulasan.length > 0 && (
-                        <div className="mt-4">
-                            {ulasan.foto_ulasan.length === 1 ? (
-                                <a href={ulasan.foto_ulasan[0]} target="_blank" rel="noopener noreferrer">
-                                    <img
-                                        src={ulasan.foto_ulasan[0]}
-                                        alt="Foto Ulasan"
-                                        className="rounded-lg w-full h-auto max-h-64 object-cover border transition-transform hover:scale-105"
-                                    />
-                                </a>
-                            ) : (
-                                <div className="grid grid-cols-2 gap-2">
-                                    {ulasan.foto_ulasan.map((foto, index) => (
-                                        <a key={index} href={foto} target="_blank" rel="noopener noreferrer">
-                                            <img
-                                                src={foto}
-                                                alt={`Foto Ulasan ${index + 1}`}
-                                                className="rounded-md w-full h-32 object-cover border transition-transform hover:scale-105"
-                                            />
-                                        </a>
-                                    ))}
+// Komponen Ringkasan Rating
+const RatingSummary = ({ stats }) => {
+    return (
+        <div className="bg-white rounded-lg p-6 mb-8 border border-gray-200">
+            <div className="flex flex-col md:flex-row items-start md:space-x-10">
+                {/* Left Side */}
+                <div className="w-full md:w-1/3 text-center mb-6 md:mb-0">
+                    <p className="text-5xl font-bold text-gray-800">{stats.average.toFixed(1)}</p>
+                    <p className="text-sm text-gray-500 mb-2">dari 5</p>
+                    <StarRating rating={stats.average} className="justify-center" />
+                    <p className="text-sm text-gray-600 mt-3">{stats.total} Ulasan</p>
+                </div>
+                
+                {/* Right Side */}
+                <div className="w-full md:w-2/3">
+                    {Object.entries(stats.counts).sort((a, b) => b[0] - a[0]).map(([star, count]) => {
+                        const percentage = stats.total > 0 ? (count / stats.total) * 100 : 0;
+                        return (
+                            <div key={star} className="flex items-center space-x-3 my-1.5">
+                                <span className="text-sm text-gray-700 font-medium">{star}</span>
+                                <FiStar className="w-4 h-4 text-yellow-400 fill-current" />
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div className="bg-yellow-400 h-2 rounded-full" style={{ width: `${percentage}%` }}></div>
                                 </div>
-                            )}
-                        </div>
-                    )}
+                                <span className="text-sm text-gray-600 w-12 text-right">{count}</span>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
     );
 };
 
+// Komponen Halaman Utama
+export default function UlasanIndex({ auth, ulasanList, ulasanStats }) {
+    const [filter, setFilter] = useState(0); // 0 for all, 1-5 for specific ratings
+    const [sort, setSort] = useState('terbaru'); // 'terbaru', 'terlama'
 
-// --- Komponen Halaman Utama ---
+    const filteredAndSortedUlasan = useMemo(() => {
+        return ulasanList
+            .filter(ulasan => filter === 0 || ulasan.rating === filter)
+            .sort((a, b) => {
+                if (sort === 'terbaru') {
+                    return new Date(b.tanggal) - new Date(a.tanggal);
+                }
+                return new Date(a.tanggal) - new Date(b.tanggal);
+            });
+    }, [ulasanList, filter, sort]);
 
-export default function UlasanIndex({ auth, ulasanList }) {
     return (
         <>
             <Head title="Ulasan Pelanggan" />
             <SiteHeader auth={auth} />
 
-            <main className="bg-gray-50 font-sans min-h-screen">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-8">Ulasan Pelanggan</h1>
-
+            <main className="bg-gray-50 font-sans">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                    <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-4">Ulasan Pelanggan</h1>
+                    
                     {ulasanList.length > 0 ? (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {ulasanList.map((item) => (
-                                <UlasanCard key={item.id} ulasan={item} />
-                            ))}
-                        </div>
+                        <>
+                            <RatingSummary stats={ulasanStats} />
+                            
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-2">
+                                    {filteredAndSortedUlasan.map((item) => (
+                                        <UlasanCard key={item.id} ulasan={item} />
+                                    ))}
+                                </div>
+                        </>
                     ) : (
-                        <div className="text-center py-16 bg-white rounded-lg shadow-sm border">
-                            <h3 className="text-lg font-medium text-gray-800">Belum Ada Ulasan</h3>
-                            <p className="mt-1 text-sm text-gray-500">Jadilah yang pertama memberikan ulasan!</p>
+                        <div className="text-center py-20 px-6 bg-white rounded-lg border border-gray-200">
+                            <FiMessageSquare className="mx-auto text-6xl text-gray-300"/>
+                            <h3 className="mt-4 text-xl font-medium text-gray-800">Belum Ada Ulasan</h3>
+                            <p className="mt-2 text-base text-gray-500">Jadilah yang pertama memberikan ulasan untuk pengalaman Anda!</p>
                         </div>
                     )}
                 </div>

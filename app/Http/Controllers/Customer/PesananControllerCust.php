@@ -27,12 +27,10 @@ class PesananControllerCust extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        // Fetch all visit history for this customer using a reliable Left Join
-        $pesananKunjungan = Kunjungan::with('tipe')
-            ->leftJoin('ulasan', 'kunjungan.id', '=', 'ulasan.kunjungan_id')
-            ->where('kunjungan.pelanggan_id', $pelangganId)
-            ->select('kunjungan.*', DB::raw('ulasan.id IS NOT NULL as has_ulasan'))
-            ->orderByDesc('kunjungan.tanggal')
+        // Fetch all visit history for this customer
+        $pesananKunjungan = Kunjungan::with(['tipe', 'ulasan'])
+            ->where('pelanggan_id', $pelangganId)
+            ->orderByDesc('tanggal')
             ->get();
 
 

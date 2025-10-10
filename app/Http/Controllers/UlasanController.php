@@ -90,40 +90,58 @@ class UlasanController extends Controller
 
     public function indexCust()
     {
-        $ulasan = Ulasan::with('pelanggan:id,nama,foto_profil', 'fotos') // Eager load customer and photos data
-            ->orderBy('tanggal', 'desc')
-            ->get()
-            ->map(function ($item) {
-                $subject = 'N/A';
-                $type = 'Tidak Diketahui';
+        $ulasanQuery = Ulasan::with('pelanggan:id,nama,foto_profil', 'fotos', 'pesanan', 'kunjungan.tipe')
+            ->orderBy('tanggal', 'desc');
 
-                if ($item->pesanan_id) {
-                    $type = 'Produk';
-                    // You might want to load pesanan relation to get more details
-                    $subject = 'Ulasan Produk';
-                } elseif ($item->kunjungan_id) {
-                    $type = 'Kunjungan';
-                    // You might want to load kunjungan relation to get more details
-                    $subject = 'Ulasan Kunjungan';
-                }
+        $semuaUlasan = $ulasanQuery->get();
 
-                return [
-                    'id' => $item->id,
-                    'nama' => $item->pelanggan->nama,
-                    'foto_profil' => $item->pelanggan->foto_profil ? asset('storage/' . $item->pelanggan->foto_profil) : null,
-                    'komentar' => $item->komentar,
-                    'rating' => $item->rating,
-                    'tanggal' => $item->tanggal,
-                    'foto_ulasan' => $item->fotos->map(function ($foto) {
-                        return asset('storage/' . $foto->foto_path);
-                    })->toArray(),
-                    'type' => $type,
-                    'subject' => $subject, // Simplified subject
-                ];
-            });
+        $ulasanList = $semuaUlasan->map(function ($item) {
+            $subject = 'N/A';
+            $type = 'Tidak Diketahui';
+
+            if ($item->pesanan) {
+                $type = 'Produk';
+                $subject = 'Pesanan #' . $item->pesanan->nomor_pesanan;
+            } elseif ($item->kunjungan) {
+                $type = 'Kunjungan';
+                $subject = $item->kunjungan->tipe ? $item->kunjungan->tipe->nama_tipe : 'Kunjungan';
+            }
+
+            return [
+                'id' => $item->id,
+                'nama' => $item->pelanggan->nama,
+                'foto_profil' => $item->pelanggan->foto_profil ? asset('storage/' . $item->pelanggan->foto_profil) : null,
+                'komentar' => $item->komentar,
+                'rating' => $item->rating,
+                'tanggal' => $item->tanggal,
+                'foto_ulasan' => $item->fotos->map(function ($foto) {
+                    return asset('storage/' . $foto->foto_path);
+                })->toArray(),
+                'type' => $type,
+                'subject' => $subject,
+            ];
+        });
+
+        $totalUlasan = $semuaUlasan->count();
+        $averageRating = $totalUlasan > 0 ? $semuaUlasan->avg('rating') : 0;
+
+        $ratingCounts = [
+            5 => $semuaUlasan->where('rating', 5)->count(),
+            4 => $semuaUlasan->where('rating', 4)->count(),
+            3 => $semuaUlasan->where('rating', 3)->count(),
+            2 => $semuaUlasan->where('rating', 2)->count(),
+            1 => $semuaUlasan->where('rating', 1)->count(),
+        ];
+
+        $ulasanStats = [
+            'total' => $totalUlasan,
+            'average' => round($averageRating, 1),
+            'counts' => $ratingCounts,
+        ];
 
         return Inertia::render('Customer/Ulasan/Index', [
-            'ulasanList' => $ulasan
+            'ulasanList' => $ulasanList,
+            'ulasanStats' => $ulasanStats,
         ]);
     }
 
@@ -215,6 +233,6 @@ class UlasanController extends Controller
             }
         }
 
-        return redirect()->route('kunjungan.riwayat')->with('success', 'Ulasan untuk kunjungan berhasil dikirim.');
+        return redirect()->route('customer.pesanan.index')->with('success', 'Ulasan untuk kunjungan berhasil dikirim.');
     }
 }

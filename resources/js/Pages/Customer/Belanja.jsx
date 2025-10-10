@@ -1,8 +1,8 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react'; // DIUBAH: Hapus useForm
 import { GiFruitTree, GiHerbsBundle } from "react-icons/gi";
 import { VscChecklist } from "react-icons/vsc";
 import { FaCartPlus } from 'react-icons/fa';
-import React from 'react';
+import React, { useState } from 'react'; // DIUBAH: Tambah useState
 import CustomerLayout from '@/Layouts/CustomerLayout';
 import Swal from 'sweetalert2';
 
@@ -19,58 +19,27 @@ export default function Belanja({ auth, products, filters }) {
         </button>
     );
 
-    return (
-        <>
-            <Head title="Belanja" />
-            <div className="bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-                    <div className="text-center mb-12">
-                        <h1 className="text-4xl font-extrabold text-green-800 tracking-tight">Jelajahi Produk Segar Kami</h1>
-                        <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
-                            Pilih sayuran hidroponik favorit Anda yang ditanam secara lokal dan bebas pestisida.
-                        </p>
-                    </div>
+    // DITAMBAHKAN: Logika handleAddToCart dipindah ke sini, meniru DashboardCust.jsx
+    const handleAddToCart = (product) => {
+        if (!auth.pelanggan) {
+            Swal.fire({
+                title: 'Anda Belum Login',
+                text: "Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Login Sekarang',
+                cancelButtonText: 'Nanti Saja'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.visit(route('login'));
+                }
+            });
+            return;
+        }
 
-                    <div className="flex justify-center items-center gap-4 mb-10 flex-wrap">
-                        <FilterButton categoryId="" label="Semua Produk" icon={<VscChecklist size={20} />} />
-                        <FilterButton categoryId="1" label="Sayuran Daun" icon={<GiHerbsBundle size={20} />} />
-                        <FilterButton categoryId="2" label="Sayuran Buah" icon={<GiFruitTree size={20} />} />
-                    </div>
-
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-                        {products.length > 0 ? (
-                            products.map((product) => (
-                                <ProductCard 
-                                    key={product.id} 
-                                    product={product} 
-                                />
-                            ))
-                        ) : (
-                            <div className="col-span-full text-center py-12">
-                                <p className="text-gray-500 text-lg">Belum ada produk yang tersedia.</p>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-        </>
-    );
-}
-
-Belanja.layout = page => <CustomerLayout auth={page.props.auth}>{page}</CustomerLayout>;
-
-// -- KOMPONEN KARTU PRODUK (DENGAN LOGIKA useForm SENDIRI) --
-function ProductCard({ product }) {
-    const { post, processing } = useForm();
-    const imageUrl = `/storage/${product.gambar}`;
-
-    const handleAddToCart = (e) => {
-        e.stopPropagation(); 
-        e.preventDefault(); 
-        
-        post(route('cart.store'), { 
-            product_id: product.id 
-        }, {
+        router.post(route('cart.store'), { product_id: product.id }, {
             preserveScroll: true,
             onSuccess: () => {
                 Swal.fire({
@@ -94,6 +63,61 @@ function ProductCard({ product }) {
                 });
             }
         });
+    };
+
+    return (
+        <>
+            <Head title="Belanja" />
+            <div className="bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                    <div className="text-center mb-12">
+                        <h1 className="text-4xl font-extrabold text-green-800 tracking-tight">Jelajahi Produk Segar Kami</h1>
+                        <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+                            Pilih sayuran hidroponik favorit Anda yang ditanam secara lokal dan bebas pestisida.
+                        </p>
+                    </div>
+
+                    <div className="flex justify-center items-center gap-4 mb-10 flex-wrap">
+                        <FilterButton categoryId="" label="Semua Produk" icon={<VscChecklist size={20} />} />
+                        <FilterButton categoryId="1" label="Sayuran Daun" icon={<GiHerbsBundle size={20} />} />
+                        <FilterButton categoryId="2" label="Sayuran Buah" icon={<GiFruitTree size={20} />} />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+                        {products.length > 0 ? (
+                            products.map((product) => (
+                                <ProductCard
+                                    key={product.id}
+                                    product={product}
+                                    onAddToCart={handleAddToCart} // DIUBAH: Kirim fungsi sebagai prop
+                                />
+                            ))
+                        ) : (
+                            <div className="col-span-full text-center py-12">
+                                <p className="text-gray-500 text-lg">Belum ada produk yang tersedia.</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </>
+    );
+}
+
+Belanja.layout = page => <CustomerLayout auth={page.props.auth}>{page}</CustomerLayout>;
+
+// -- KOMPONEN KARTU PRODUK (DISEDERHANAKAN) --
+function ProductCard({ product, onAddToCart }) { // DIUBAH: Hapus auth, tambah onAddToCart
+    const [isProcessing, setIsProcessing] = useState(false); // DIUBAH: State lokal untuk status loading
+    const imageUrl = `/storage/${product.gambar}`;
+
+    const handleButtonClick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setIsProcessing(true);
+        onAddToCart(product);
+        // Set timeout untuk mengembalikan state tombol setelah beberapa saat
+        setTimeout(() => setIsProcessing(false), 2500);
     };
 
     return (
@@ -125,12 +149,12 @@ function ProductCard({ product }) {
                 )}
                 <div className="mt-auto">
                     <button
-                        onClick={handleAddToCart}
-                        disabled={product.stok === 0 || processing}
+                        onClick={handleButtonClick}
+                        disabled={product.stok === 0 || isProcessing}
                         className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-full hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
                     >
                         <FaCartPlus />
-                        {processing ? 'Menambahkan...' : 'Keranjang'}
+                        {isProcessing ? 'Menambahkan...' : 'Keranjang'}
                     </button>
                 </div>
             </div>

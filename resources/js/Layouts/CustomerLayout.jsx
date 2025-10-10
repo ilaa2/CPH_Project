@@ -149,13 +149,38 @@ export function FooterNote({ user }) {
     );
 }
 
+import Swal from 'sweetalert2';
+
 // Layout Utama Pelanggan
 export default function CustomerLayout({ children }) {
-    const { auth, cart } = usePage().props;
+    const { auth, cart, flash } = usePage().props;
     const [isCartOpen, setIsCartOpen] = useState(false);
 
     const cartItems = cart?.items ?? [];
     const subtotal = cart?.subtotal ?? 0;
+
+    useEffect(() => {
+        if (flash?.success) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: flash.success,
+                showConfirmButton: false,
+                timer: 2500,
+            });
+        }
+        if (flash?.error) {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'error',
+                title: flash.error,
+                showConfirmButton: false,
+                timer: 3000,
+            });
+        }
+    }, [flash]);
 
     return (
         <div className="min-h-screen bg-gray-50">

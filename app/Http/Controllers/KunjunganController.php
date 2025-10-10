@@ -36,7 +36,7 @@ class KunjunganController extends Controller
 
     public function riwayat()
     {
-        $data = Kunjungan::with(['pelanggan', 'tipe', 'ulasan'])->where('status', 'selesai')->get();
+        $data = Kunjungan::with(['pelanggan', 'tipe', 'ulasan'])->where('status', 'Selesai')->get();
 
         return Inertia::render('Kunjungan/Riwayat', [
             'riwayat' => $data,
@@ -65,7 +65,7 @@ class KunjunganController extends Controller
             'jam' => 'required',
             'jumlah_pengunjung' => 'required|integer|min:1',
             'total_biaya' => 'required|numeric|min:0',
-            'status' => 'required|in:Direncanakan,Selesai,Dibatalkan',
+            'status' => 'required|in:Dijadwalkan,Selesai,Dibatalkan',
         ]);
 
         Kunjungan::create($request->all());
@@ -105,7 +105,7 @@ class KunjunganController extends Controller
             'jam' => 'required',
             'jumlah_pengunjung' => 'required|integer|min:1',
             'total_biaya' => 'required|numeric',
-            'status' => 'required|string|in:Direncanakan,Selesai,Dibatalkan',
+            'status' => 'required|string|in:Dijadwalkan,Selesai,Dibatalkan',
         ]);
 
         $kunjungan = Kunjungan::findOrFail($id);

@@ -154,17 +154,32 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 
 ### Riwayat Perubahan
 
+**Jumat, 10 Oktober 2025**
+*   **Peningkatan UI/UX Halaman Ulasan Pelanggan:**
+    *   Mendesain ulang total tampilan kartu ulasan (`UlasanCard`) agar lebih modern, ringkas, dan informatif, mengikuti standar e-commerce internasional.
+    *   Mengganti layout daftar vertikal dengan **grid responsif** (3 kolom di desktop, 2 di tablet, 1 di mobile) untuk mengatasi masalah kartu yang terlihat "terlalu besar".
+    *   Menyempurnakan hierarki visual di dalam kartu, termasuk header, rating bintang, subjek ulasan, dan galeri foto yang lebih ringkas.
+*   **Perbaikan Alur Ulasan Kunjungan:**
+    *   Memperbaiki bug di mana pelanggan dialihkan ke halaman login setelah mengirimkan ulasan untuk kunjungan.
+    *   Masalah disebabkan oleh `UlasanController` yang mengarahkan pengguna ke rute yang salah (`kunjungan.riwayat` atau `customer.pesanan.riwayat` yang tidak ada).
+    *   Pengalihan (redirect) diperbaiki untuk mengarah ke rute yang benar, yaitu `customer.pesanan.index`, memastikan alur pengguna tetap lancar dan konsisten dengan alur ulasan produk.
+*   **Konsistensi Status Kunjungan:**
+    *   Mengubah nilai status pada modul "Kunjungan" dari huruf kecil (`dijadwalkan`, `selesai`, `dibatalkan`) menjadi diawali huruf besar (`Dijadwalkan`, `Selesai`, `Dibatalkan`) agar seragam dengan modul "Produk".
+    *   Membuat dan menjalankan migrasi database baru untuk memperbarui skema tabel `kunjungan` dan mengonversi data yang ada.
+    *   Menyesuaikan semua referensi status di backend (Controller, Seeder) dan frontend (React Components) untuk menggunakan format kapital yang baru.
+    *   Memperbaiki kesalahan ketik pada aturan validasi status di `KunjunganController` dari `Direncanakan` menjadi `Dijadwalkan`.
+
 **Kamis, 9 Oktober 2025**
 *   **Peningkatan Tampilan & Responsivitas (UI/UX Enhancement)**
     *   **Desain Ulang Halaman "Tentang Kami":**
         *   Merombak total bagian "Liputan Media" dengan layout kartu modern yang menampilkan logo media, judul lengkap, dan tombol "Baca Selengkapnya".
         *   Memperbarui dan menambahkan beberapa tautan liputan media dari berbagai sumber (DETAK24COM, Classnews, Riau24Jam, dll).
-        *   Mendesain ulang bagian profil "Tentang CPH" menjadi layout dua kolom dengan gambar dan teks, serta menambahkan bagian baru "Keunggulan Kami" yang dilengkapi ikon untuk menyorot poin-poin utama (100% Hidroponik, Bebas Pestisida, Edukasi & Wisata).
+        *   Mendesain ulang bagian profil "Tentang CPH" menjadi layout dua kolom dengan gambar dan teks, serta menambahkan bagian baru "Keunggulan Kami" yang dilengkapi ikon untuk menyorot poin-poin utama (100% Hidroponik, Bebas Pestida, Edukasi & Wisata).
     *   **Peningkatan Responsivitas Halaman:**
         *   **Halaman Belanja Pelanggan:** Menyesuaikan grid produk, tombol filter, dan ukuran judul agar tampil optimal di perangkat mobile.
-        *   **Halaman Daftar Produk (Admin):** Mengganti tampilan tabel yang lebar dengan layout kartu yang ringkas dan mudah dibaca di mobile, sementara tampilan tabel tetap dipertahankan untuk desktop.
-        *   **Halaman Daftar Pelanggan (Admin):** Menerapkan perbaikan responsivitas yang sama dengan mengubah tabel menjadi layout kartu di mobile.
-        *   **Halaman Formulir (Tambah Produk & Tambah Pelanggan):** Menyempurnakan layout formulir agar memenuhi lebar layar di mobile dan memperbarui gaya input untuk tampilan yang lebih modern dan konsisten di seluruh aplikasi.
+        - **Halaman Daftar Produk (Admin):** Mengganti tampilan tabel yang lebar dengan layout kartu yang ringkas dan mudah dibaca di mobile, sementara tampilan tabel tetap dipertahankan untuk desktop.
+        - **Halaman Daftar Pelanggan (Admin):** Menerapkan perbaikan responsivitas yang sama dengan mengubah tabel menjadi layout kartu di mobile.
+        - **Halaman Formulir (Tambah Produk & Tambah Pelanggan):** Menyempurnakan layout formulir agar memenuhi lebar layar di mobile dan memperbarui gaya input untuk tampilan yang lebih modern dan konsisten di seluruh aplikasi.
 
 (Entri baru akan ditambahkan di sini oleh Asisten AI)
 *   **Perbaikan Fungsionalitas Keranjang Belanja (Cart)**

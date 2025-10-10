@@ -46,7 +46,7 @@ class CartController extends Controller
                 'quantity' => 1,
             ]);
         }
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
     }
 
     /**

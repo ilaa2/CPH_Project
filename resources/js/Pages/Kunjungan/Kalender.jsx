@@ -10,17 +10,17 @@ export default function Kalender({ kunjungan = [] }) {
   const [modalData, setModalData] = useState(null);
 
   const statusColor = {
-    'dijadwalkan': '#34d399',
-    'selesai': '#60a5fa',
-    'dibatalkan': '#f87171',
+    'Dijadwalkan': '#34d399',
+    'Selesai': '#60a5fa',
+    'Dibatalkan': '#f87171',
   };
 
   const events = kunjungan.map(k => ({
     id: k.id,
     title: `${k.pelanggan.nama} (${k.status})`,
     start: k.tanggal,
-    backgroundColor: statusColor[k.status.toLowerCase()] || '#e5e7eb',
-    borderColor: statusColor[k.status.toLowerCase()] || '#e5e7eb',
+    backgroundColor: statusColor[k.status] || '#e5e7eb',
+    borderColor: statusColor[k.status] || '#e5e7eb',
     textColor: '#1f2937',
     extendedProps: {
       alamat: k.pelanggan.alamat,

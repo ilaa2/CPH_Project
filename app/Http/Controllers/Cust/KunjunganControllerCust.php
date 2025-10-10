@@ -102,7 +102,7 @@ class KunjunganControllerCust extends Controller
             'jam'               => '09:00:00', // Jam default
             'jumlah_pengunjung' => $validated['jumlah_pengunjung'],
             'total_biaya'       => $validated['total_biaya'],
-            'status'            => 'dijadwalkan',
+            'status'            => 'Dijadwalkan',
         ]);
 
         // Hapus data dari sesi setelah berhasil disimpan
