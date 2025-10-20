@@ -72,9 +72,16 @@ export default function KunjunganKonfirmasi({ auth, dataKunjungan }) {
                             <DetailRow icon={<FiPhone size={20} />} label="No HP" value={dataKunjungan.no_hp} />
                             <DetailRow icon={<FiCalendar size={20} />} label="Tanggal" value={dataKunjungan.tanggal_kunjungan} />
                             <DetailRow icon={<FiClipboard size={20} />} label="Tipe Kunjungan" value={dataKunjungan.nama_tipe} />
-                            <DetailRow icon={<FiUsers size={20} />} label="Jumlah Dewasa" value={`${dataKunjungan.jumlah_dewasa} Orang`} />
-                            <DetailRow icon={<FiUsers size={20} />} label="Jumlah Anak (>2 thn)" value={`${dataKunjungan.jumlah_anak} Orang`} />
-                            <DetailRow icon={<FiUsers size={20} />} label="Jumlah Balita (0-2 thn)" value={`${dataKunjungan.jumlah_balita} Orang`} />
+                            {dataKunjungan.nama_tipe !== 'Outing Class' && (
+                                <>
+                                    <DetailRow icon={<FiUsers size={20} />} label="Jumlah Dewasa" value={`${dataKunjungan.jumlah_dewasa} Orang`} />
+                                    <DetailRow icon={<FiUsers size={20} />} label="Jumlah Anak (>2 thn)" value={`${dataKunjungan.jumlah_anak} Orang`} />
+                                    <DetailRow icon={<FiUsers size={20} />} label="Jumlah Balita (0-2 thn)" value={`${dataKunjungan.jumlah_balita} Orang`} />
+                                </>
+                            )}
+                            {dataKunjungan.nama_tipe === 'Outing Class' && (
+                                <DetailRow icon={<FiUsers size={20} />} label="Jumlah Anak" value={`${dataKunjungan.jumlah_anak} Orang`} />
+                            )}
                             <DetailRow icon={<FiDollarSign size={20} />} label="Total Biaya" value={formatCurrency(dataKunjungan.total_biaya)} />
                         </div>
 

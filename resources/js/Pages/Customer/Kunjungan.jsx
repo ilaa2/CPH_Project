@@ -60,7 +60,7 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     };
 
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing, errors, reset } = useForm({
         nama_lengkap: auth.pelanggan.nama || '',
         no_hp: auth.pelanggan.telepon || '',
         tanggal_kunjungan: '',
@@ -74,6 +74,32 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
         return tipeKunjungan.find(t => t.id === data.tipe_kunjungan_id);
     }, [data.tipe_kunjungan_id, tipeKunjungan]);
 
+    // --- PERUBAHAN DIMULAI DI SINI ---
+    // useEffect untuk me-reset jumlah pengunjung saat tipe kunjungan berubah
+    useEffect(() => {
+        if (!selectedTipe) return;
+
+        if (selectedTipe.nama_tipe === 'Outing Class') {
+            setData(currentData => ({
+                ...currentData,
+                jumlah_dewasa: 0,
+                jumlah_anak: 0, // Reset ke 0, atau 1 jika Anda mau
+                jumlah_balita: 0,
+            }));
+        } else if (selectedTipe.nama_tipe === 'Umum') {
+            setData(currentData => ({
+                ...currentData,
+                jumlah_dewasa: 1, // Default 1 dewasa untuk sewa tempat
+                jumlah_anak: 0,
+                jumlah_balita: 0,
+            }));
+        }
+        // Hapus error terkait field yang mungkin disembunyikan
+        reset('jumlah_dewasa', 'jumlah_anak', 'jumlah_balita');
+    }, [selectedTipe]); // Hanya bergantung pada selectedTipe
+    // --- PERUBAHAN SELESAI DI SINI ---
+
+
     const { totalBiaya, rincianBiaya } = useMemo(() => {
         if (!selectedTipe) return { totalBiaya: 0, rincianBiaya: null };
 
@@ -81,14 +107,14 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
         let rincian = {};
 
         // Menggunakan nama_tipe untuk logika, ini harus konsisten dengan data di database
-        if (selectedTipe.nama_tipe === 'Sewa Tempat') {
+        if (selectedTipe.nama_tipe === 'Umum') {
             const totalOrangBayar = data.jumlah_dewasa + data.jumlah_anak;
             biaya = totalOrangBayar * 10000; // Rp 10.000 per orang (dewasa + anak > 2th)
             rincian = {
                 deskripsi: `${totalOrangBayar} Orang x ${formatCurrency(10000)}`,
                 catatan: `Termasuk sound system. Balita (0-2 thn) gratis. Tidak dapat buket sayur.`
             };
-        } else if (selectedTipe.nama_tipe === 'Kunjungan Sekolah') {
+        } else if (selectedTipe.nama_tipe === 'Outing Class') {
             if (data.jumlah_anak < 30) {
                 biaya = 300000; // Biaya flat
                 rincian = {
@@ -189,39 +215,68 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
                                     <InputField id="no_hp" label="Nomor HP (WhatsApp)" type="tel" value={data.no_hp} onChange={e => setData('no_hp', e.target.value)} error={errors.no_hp} icon={<FiPhone />} placeholder="08xxxxxxxxxx" required />
                                     <InputField id="tanggal_kunjungan" label="Tanggal Kunjungan" type="date" value={data.tanggal_kunjungan} onChange={e => setData('tanggal_kunjungan', e.target.value)} error={errors.tanggal_kunjungan} icon={<FiCalendar />} min={new Date().toISOString().split("T")[0]} required />
                                 </div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
-                                    <InputField id="jumlah_dewasa" label="Jumlah Dewasa" type="number" value={data.jumlah_dewasa} onChange={e => setData('jumlah_dewasa', Math.max(1, Number(e.target.value)))} error={errors.jumlah_dewasa} icon={<FiBriefcase />} min="1" required />
-                                    <InputField id="jumlah_anak" label="Jumlah Anak" description="Usia di atas 2 tahun" type="number" value={data.jumlah_anak} onChange={e => setData('jumlah_anak', Math.max(0, Number(e.target.value)))} error={errors.jumlah_anak} icon={<FiUsers />} min="0" required />
-                                    <InputField id="jumlah_balita" label="Jumlah Balita" description="Usia 0-2 tahun" type="number" value={data.jumlah_balita} onChange={e => setData('jumlah_balita', Math.max(0, Number(e.target.value)))} error={errors.jumlah_balita} icon={<FiSmile />} min="0" required />
-                                </div>
+
+                                {/* --- PERUBAHAN DIMULAI DI SINI --- */}
+                                {/* Input Jumlah Pengunjung Dinamis */}
+                                {selectedTipe && selectedTipe.nama_tipe === 'Umum' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 items-end">
+                                        <InputField id="jumlah_dewasa" label="Jumlah Dewasa" type="number" value={data.jumlah_dewasa} onChange={e => setData('jumlah_dewasa', Math.max(1, Number(e.target.value)))} error={errors.jumlah_dewasa} icon={<FiBriefcase />} min="1" required />
+                                        <InputField id="jumlah_anak" label="Jumlah Anak" description="Usia di atas 2 tahun" type="number" value={data.jumlah_anak} onChange={e => setData('jumlah_anak', Math.max(0, Number(e.target.value)))} error={errors.jumlah_anak} icon={<FiUsers />} min="0" required />
+                                        <InputField id="jumlah_balita" label="Jumlah Balita" description="Usia 0-2 tahun" type="number" value={data.jumlah_balita} onChange={e => setData('jumlah_balita', Math.max(0, Number(e.target.value)))} error={errors.jumlah_balita} icon={<FiSmile />} min="0" required />
+                                    </div>
+                                )}
+
+                                {selectedTipe?.nama_tipe === 'Outing Class' && (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
+                                        <div className="md:col-span-1"> {/* Dibuat agar lebarnya sama */}
+                                            <InputField id="jumlah_anak" label="Jumlah Anak" description="Total peserta anak" type="number" value={data.jumlah_anak} onChange={e => setData('jumlah_anak', Math.max(0, Number(e.target.value)))} error={errors.jumlah_anak} icon={<FiUsers />} min="0" required />
+                                        </div>
+                                    </div>
+                                )}
+                                {/* --- PERUBAHAN SELESAI DI SINI --- */}
+
                             </div>
 
                             {/* KOLOM KANAN: RINGKASAN BIAYA */}
                             <div className="lg:col-span-1">
                                 <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 sticky top-24">
                                     <h2 className="text-2xl font-bold text-gray-800 mb-6">Ringkasan Biaya</h2>
-                                    
+
                                     {selectedTipe ? (
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-center">
                                                 <span className="text-gray-600">Tipe Kunjungan</span>
                                                 <span className="font-semibold text-gray-800">{selectedTipe.nama_tipe}</span>
                                             </div>
-                                            
+
+                                            {/* --- PERUBAHAN DIMULAI DI SINI --- */}
+                                            {/* Tampilkan rincian jumlah hanya jika relevan */}
                                             <div className="border-t border-gray-200 pt-4 mt-4 space-y-2">
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-gray-600">Dewasa</span>
-                                                    <span className="font-medium text-gray-800">x {data.jumlah_dewasa}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-gray-600">Anak (>2th)</span>
-                                                    <span className="font-medium text-gray-800">x {data.jumlah_anak}</span>
-                                                </div>
-                                                <div className="flex justify-between items-center text-sm">
-                                                    <span className="text-gray-600">Balita (0-2th)</span>
-                                                    <span className="font-medium text-gray-800">x {data.jumlah_balita}</span>
-                                                </div>
+                                                {selectedTipe.nama_tipe === 'Umum' && (
+                                                    <>
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-gray-600">Dewasa</span>
+                                                            <span className="font-medium text-gray-800">x {data.jumlah_dewasa}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-gray-600">Anak (2th)</span>
+                                                            <span className="font-medium text-gray-800">x {data.jumlah_anak}</span>
+                                                        </div>
+                                                        <div className="flex justify-between items-center text-sm">
+                                                            <span className="text-gray-600">Balita (0-2th)</span>
+                                                            <span className="font-medium text-gray-800">x {data.jumlah_balita}</span>
+                                                        </div>
+                                                    </>
+                                                )}
+                                                {selectedTipe.nama_tipe === 'Outing Class' && (
+                                                    <div className="flex justify-between items-center text-sm">
+                                                        <span className="text-gray-600">Anak</span>
+                                                        <span className="font-medium text-gray-800">x {data.jumlah_anak}</span>
+                                                    </div>
+                                                )}
                                             </div>
+                                            {/* --- PERUBAHAN SELESAI DI SINI --- */}
+
 
                                             {rincianBiaya && (
                                                 <div className="bg-green-50 p-3 rounded-lg text-center">

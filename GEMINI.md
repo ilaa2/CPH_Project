@@ -154,6 +154,24 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 
 ### Riwayat Perubahan
 
+**Senin, 20 Oktober 2025**
+*   **Penyempurnaan Alur Kunjungan "Outing Class":**
+    *   Memperbaiki inkonsistensi tampilan pada halaman konfirmasi kunjungan untuk tipe "Outing Class".
+    *   **Masalah:** Halaman konfirmasi menampilkan rincian "Jumlah Dewasa" dan "Jumlah Balita" yang tidak relevan untuk "Outing Class", sehingga membingungkan pengguna.
+    *   **Solusi:** Menerapkan *conditional rendering* di `KunjunganKonfirmasi.jsx`. Sekarang, rincian jumlah pengunjung akan secara dinamis menyesuaikan dengan tipe kunjungan. Untuk "Outing Class", hanya "Jumlah Anak" yang ditampilkan, sementara untuk tipe lain, semua rincian (dewasa, anak, balita) akan muncul. Hal ini memastikan informasi yang disajikan selalu relevan dan akurat.
+*   **Perbaikan Visual Form Kunjungan (CSS):**
+    *   Memperbaiki masalah layout di mana input field jumlah pengunjung (Dewasa, Anak, Balita) tidak sejajar secara horizontal.
+    *   **Solusi:** Menambahkan utility class `items-end` dari Tailwind CSS ke `div` pembungkus ketiga input tersebut di `Kunjungan.jsx`. Class ini memaksa semua item di dalam grid untuk sejajar di bagian bawah, menghasilkan tampilan input yang rata dan rapi secara visual.
+*   **Perbaikan Kritis Kalkulasi Biaya Kunjungan:**
+    *   Memperbaiki bug di mana total biaya pada halaman booking kunjungan selalu Rp 0.
+    *   **Akar Masalah:** Adanya ketidakcocokan nama tipe kunjungan yang di-hardcode dalam logika. Kode menggunakan "Kunjungan Sekolah" dan "Sewa Tempat", sementara data aktual di database adalah "Outing Class" dan "Umum".
+    *   **Frontend (`Kunjungan.jsx`):** Menyesuaikan kondisi di dalam `useEffect` hook untuk menggunakan `Outing Class` dan `Umum`, memastikan state jumlah pengunjung di-reset dengan benar saat tipe kunjungan dipilih.
+    *   **Backend (`KunjunganControllerCust.php`):** Menyelaraskan logika kalkulasi biaya di dalam method `calculateTotalCost` dan validasi di `handleForm` & `store` untuk juga menggunakan `Outing Class` dan `Umum`. Ini memastikan konsistensi data dan kalkulasi yang akurat dari sisi server.
+*   **Perbaikan Fungsionalitas Pengajuan Kunjungan Pelanggan:**
+    *   **Backend:** Menambahkan method `handleForm` baru di `KunjunganController` untuk menangani pengajuan jadwal kunjungan dari halaman pelanggan. Logika ini mencakup validasi input, kalkulasi biaya yang aman di sisi server, dan pembuatan record kunjungan baru dengan status "Dijadwalkan".
+    *   **Frontend:** Memperbaiki bug di halaman `Customer/Kunjungan.jsx` di mana input untuk jumlah pengunjung (dewasa, anak, balita) tidak muncul untuk tipe kunjungan umum. Sekarang, input tersebut akan tampil untuk semua tipe kunjungan kecuali "Kunjungan Sekolah", memastikan pelanggan dapat memasukkan jumlah peserta dengan benar.
+    *   **Peningkatan UX:** Menambahkan logika untuk memperbarui nama dan nomor telepon pelanggan jika mereka mengubahnya di form, menyederhanakan proses pembaruan data kontak.
+
 **Jumat, 10 Oktober 2025**
 *   **Peningkatan UI/UX Halaman Ulasan Pelanggan:**
     *   Mendesain ulang total tampilan kartu ulasan (`UlasanCard`) agar lebih modern, ringkas, dan informatif, mengikuti standar e-commerce internasional.

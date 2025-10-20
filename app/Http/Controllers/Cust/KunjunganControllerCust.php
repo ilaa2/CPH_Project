@@ -8,6 +8,7 @@ use App\Models\TipeKunjungan;
 use App\Models\Kunjungan;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
+use Illuminate\Validation\Rule; // Tambahkan ini jika belum ada
 
 class KunjunganControllerCust extends Controller
 {
@@ -32,15 +33,24 @@ class KunjunganControllerCust extends Controller
      */
     public function handleForm(Request $request)
     {
+        // --- PERUBAHAN DIMULAI DI SINI ---
         $validated = $request->validate([
             'nama_lengkap'      => 'required|string|max:255',
             'no_hp'             => 'required|string|max:15',
             'tanggal_kunjungan' => 'required|date|after_or_equal:today',
             'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
-            'jumlah_dewasa'     => 'required|integer|min:1',
+            'jumlah_dewasa'     => 'required|integer|min:0', // Ubah min:1 menjadi min:0
             'jumlah_anak'       => 'required|integer|min:0',
             'jumlah_balita'     => 'required|integer|min:0',
         ]);
+
+        // Validasi kustom: jika Sewa Tempat, dewasa harus min 1
+        $tipe = TipeKunjungan::find($validated['tipe_kunjungan_id']);
+        if ($tipe && $tipe->nama_tipe === 'Umum' && $validated['jumlah_dewasa'] < 1) {
+            return back()->withInput()->withErrors(['jumlah_dewasa' => 'Sewa Tempat memerlukan minimal 1 orang dewasa.']);
+        }
+        // --- PERUBAHAN SELESAI DI SINI ---
+
 
         // Simpan data yang valid ke dalam session untuk dibawa ke halaman konfirmasi
         session()->put('form_data_kunjungan', $validated);
@@ -82,18 +92,27 @@ class KunjunganControllerCust extends Controller
      */
     public function store(Request $request)
     {
+        // --- PERUBAHAN DIMULAI DI SINI ---
         // Validasi ulang data yang dikirim dari halaman konfirmasi
         $validated = $request->validate([
             'nama_lengkap'      => 'required|string|max:255',
             'no_hp'             => 'required|string|max:15',
             'tanggal_kunjungan' => 'required|date',
             'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
-            'jumlah_dewasa'     => 'required|integer|min:1',
+            'jumlah_dewasa'     => 'required|integer|min:0', // Ubah min:1 menjadi min:0
             'jumlah_anak'       => 'required|integer|min:0',
             'jumlah_balita'     => 'required|integer|min:0',
         ]);
 
         $tipeKunjungan = TipeKunjungan::find($validated['tipe_kunjungan_id']);
+
+        // Validasi kustom: jika Sewa Tempat, dewasa harus min 1
+        if ($tipeKunjungan && $tipeKunjungan->nama_tipe === 'Umum' && $validated['jumlah_dewasa'] < 1) {
+             // Seharusnya ini tidak terjadi jika handleForm benar, tapi sebagai pengaman
+            return back()->withInput()->withErrors(['jumlah_dewasa' => 'Sewa Tempat memerlukan minimal 1 orang dewasa.']);
+        }
+        // --- PERUBAHAN SELESAI DI SINI ---
+
 
         // PERHITUNGAN ULANG BIAYA DI BACKEND (PENTING UNTUK KEAMANAN)
         $finalTotalBiaya = $this->calculateTotalCost($tipeKunjungan, $validated);
@@ -147,10 +166,10 @@ class KunjunganControllerCust extends Controller
         $jumlah_dewasa = $data['jumlah_dewasa'] ?? 0;
         $jumlah_anak = $data['jumlah_anak'] ?? 0;
 
-        if ($tipe->nama_tipe === 'Sewa Tempat') {
+        if ($tipe->nama_tipe === 'Umum') {
             $totalOrangBayar = $jumlah_dewasa + $jumlah_anak;
             $biaya = $totalOrangBayar * 10000;
-        } elseif ($tipe->nama_tipe === 'Kunjungan Sekolah') {
+        } elseif ($tipe->nama_tipe === 'Outing Class') {
             if ($jumlah_anak < 30) {
                 $biaya = 300000;
             } else {
