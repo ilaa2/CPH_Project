@@ -155,6 +155,11 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 ### Riwayat Perubahan
 
 **Senin, 20 Oktober 2025**
+*   **Peningkatan UI/UX Halaman Admin Jadwal Kunjungan:**
+    *   Merombak tabel jadwal kunjungan (`Kunjungan/Jadwal.jsx`) agar lebih informatif dan ringkas.
+    *   **Perubahan Kolom:** Menghapus kolom "Alamat" yang tidak relevan, lalu menambahkan kolom "Peserta" (total pengunjung) dan "Total Biaya" untuk menyajikan data kunci secara langsung.
+    *   **Desain Ulang Aksi:** Mengganti tautan "Edit" dan "Hapus" menjadi tombol modern dengan ikon (✏️, 🗑️) dan menambahkan tombol "Detail" (👁️) untuk meningkatkan interaktivitas dan konsistensi visual.
+    *   **Pembersihan Navigasi:** Menghapus semua tautan navigasi "Kembali ke..." dari seluruh halaman admin (`Jadwal.jsx`, `Riwayat.jsx`, dll.) untuk menyederhanakan antarmuka dan menghilangkan elemen yang berlebihan.
 *   **Penyempurnaan Alur Kunjungan "Outing Class":**
     *   Memperbaiki inkonsistensi tampilan pada halaman konfirmasi kunjungan untuk tipe "Outing Class".
     *   **Masalah:** Halaman konfirmasi menampilkan rincian "Jumlah Dewasa" dan "Jumlah Balita" yang tidak relevan untuk "Outing Class", sehingga membingungkan pengguna.
@@ -184,8 +189,8 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 *   **Konsistensi Status Kunjungan:**
     *   Mengubah nilai status pada modul "Kunjungan" dari huruf kecil (`dijadwalkan`, `selesai`, `dibatalkan`) menjadi diawali huruf besar (`Dijadwalkan`, `Selesai`, `Dibatalkan`) agar seragam dengan modul "Produk".
     *   Membuat dan menjalankan migrasi database baru untuk memperbarui skema tabel `kunjungan` dan mengonversi data yang ada.
-    *   Menyesuaikan semua referensi status di backend (Controller, Seeder) dan frontend (React Components) untuk menggunakan format kapital yang baru.
-    *   Memperbaiki kesalahan ketik pada aturan validasi status di `KunjunganController` dari `Direncanakan` menjadi `Dijadwalkan`.
+    - Menyesuaikan semua referensi status di backend (Controller, Seeder) dan frontend (React Components) untuk menggunakan format kapital yang baru.
+    - Memperbaiki kesalahan ketik pada aturan validasi status di `KunjunganController` dari `Direncanakan` menjadi `Dijadwalkan`.
 
 **Kamis, 9 Oktober 2025**
 *   **Peningkatan Tampilan & Responsivitas (UI/UX Enhancement)**

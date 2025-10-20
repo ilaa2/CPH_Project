@@ -42,15 +42,7 @@ export default function JadwalKunjungan({ kunjungan }) {
       <Head title="Jadwal Kunjungan" />
 
       <div className="p-6 space-y-6">
-        <Link
-          href="/kunjungan"
-          className="inline-flex items-center text-sm text-green-600 hover:underline"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Kembali ke Kunjungan
-        </Link>
+
 
         <div className="flex justify-between items-center">
           <h3 className="text-lg font-semibold text-gray-700">Daftar Kunjungan Pelanggan</h3>
@@ -70,7 +62,8 @@ export default function JadwalKunjungan({ kunjungan }) {
                 <th className="px-4 py-2">Nama Pelanggan</th>
                 <th className="px-4 py-2">Tanggal</th>
                 <th className="px-4 py-2">Jam</th>
-                <th className="px-4 py-2">Alamat</th>
+                <th className="px-4 py-2">Peserta</th>
+                <th className="px-4 py-2">Total Biaya</th>
                 <th className="px-4 py-2">Tipe</th>
                 <th className="px-4 py-2">Status</th>
                 <th className="px-4 py-2">Aksi</th>
@@ -83,28 +76,31 @@ export default function JadwalKunjungan({ kunjungan }) {
                   <td className="px-4 py-2">{item.pelanggan?.nama}</td>
                   <td className="px-4 py-2">{item.tanggal}</td>
                   <td className="px-4 py-2">{item.jam}</td>
-                  <td className="px-4 py-2">{item.pelanggan?.alamat}</td>
+                  <td className="px-4 py-2">{`${(item.jumlah_dewasa || 0) + (item.jumlah_anak || 0) + (item.jumlah_balita || 0)} Orang`}</td>
+                  <td className="px-4 py-2">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.total_biaya)}</td>
                   <td className="px-4 py-2">{item.tipe?.nama_tipe || '-'}</td>
                   <td className="px-4 py-2 capitalize">{item.status}</td>
-                  <td className="px-4 py-2 space-x-2">
+                  <td className="px-4 py-2 flex items-center gap-2">
                     <button
                       onClick={() => setSelected(item)}
-                      className="text-gray-600 hover:text-blue-600"
-                      title="Lihat Detail"
+                      className="p-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-full transition"
+                      title="Detail"
                     >
-                      ℹ️
+                      👁️
                     </button>
                     <Link
                       href={route('kunjungan.edit', item.id)}
-                      className="text-blue-600 hover:underline"
+                      className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-full transition"
+                      title="Edit"
                     >
-                      Edit
+                      ✏️
                     </Link>
                     <button
                       onClick={() => handleDelete(item.id)}
-                      className="text-red-600 hover:underline"
+                      className="p-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-full transition"
+                      title="Hapus"
                     >
-                      Hapus
+                      🗑️
                     </button>
                   </td>
                 </tr>

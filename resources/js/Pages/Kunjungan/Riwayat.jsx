@@ -18,13 +18,7 @@ export default function RiwayatKunjungan() {
 
       <div className="p-4 space-y-6">
         {/* Tombol kembali */}
-        <Link
-          href="/kunjungan"
-          className="inline-flex items-center text-sm text-green-600 hover:underline"
-        >
-          <FiArrowLeft className="mr-1" />
-          Kembali ke Kunjungan
-        </Link>
+
 
         <p className="text-gray-600 text-sm">
           Berikut adalah riwayat kunjungan yang telah selesai dilakukan.
