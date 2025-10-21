@@ -124,14 +124,6 @@ export default function JadwalKunjungan({ kunjungan }) {
               <td className="px-4 py-2">{selected.pelanggan?.nama}</td>
             </tr>
             <tr className="border-b">
-              <td className="px-4 py-2 font-medium">Alamat</td>
-              <td className="px-4 py-2">{selected.pelanggan?.alamat}</td>
-            </tr>
-            <tr className="border-b">
-              <td className="px-4 py-2 font-medium">Judul</td>
-              <td className="px-4 py-2">{selected.judul}</td>
-            </tr>
-            <tr className="border-b">
               <td className="px-4 py-2 font-medium">Deskripsi</td>
               <td className="px-4 py-2">{selected.deskripsi || '-'}</td>
             </tr>
@@ -147,10 +139,27 @@ export default function JadwalKunjungan({ kunjungan }) {
               <td className="px-4 py-2 font-medium">Jam</td>
               <td className="px-4 py-2">{selected.jam}</td>
             </tr>
-            <tr className="border-b">
-              <td className="px-4 py-2 font-medium">Jumlah Pengunjung</td>
-              <td className="px-4 py-2">{selected.jumlah_pengunjung}</td>
-            </tr>
+            {selected.tipe?.nama_tipe === 'Outing Class' ? (
+              <tr className="border-b">
+                <td className="px-4 py-2 font-medium">Jumlah Anak</td>
+                <td className="px-4 py-2">{selected.jumlah_anak} Orang</td>
+              </tr>
+            ) : (
+              <>
+                <tr className="border-b">
+                  <td className="px-4 py-2 font-medium">Jumlah Dewasa</td>
+                  <td className="px-4 py-2">{selected.jumlah_dewasa} Orang</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="px-4 py-2 font-medium">Jumlah Anak</td>
+                  <td className="px-4 py-2">{selected.jumlah_anak} Orang</td>
+                </tr>
+                <tr className="border-b">
+                  <td className="px-4 py-2 font-medium">Jumlah Balita</td>
+                  <td className="px-4 py-2">{selected.jumlah_balita} Orang</td>
+                </tr>
+              </>
+            )}
             <tr className="border-b">
               <td className="px-4 py-2 font-medium">Total Biaya</td>
               <td className="px-4 py-2">Rp {selected.total_biaya.toLocaleString('id-ID')}</td>

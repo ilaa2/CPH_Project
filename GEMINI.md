@@ -154,7 +154,16 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 
 ### Riwayat Perubahan
 
+**Selasa, 21 Oktober 2025**
+*   **Penyesuaian Tampilan Form Kunjungan Berdasarkan Tipe:**
+    *   **Halaman Edit:** Menerapkan *conditional rendering* pada form `Kunjungan/Edit.jsx`. Kini, form secara cerdas hanya akan menampilkan input "Jumlah Anak" untuk tipe kunjungan "Outing Class", sementara menyembunyikan input "Dewasa" dan "Balita" yang tidak relevan. Untuk tipe kunjungan lainnya, semua input jumlah pengunjung tetap ditampilkan seperti biasa.
+    *   **Modal Detail:** Melakukan verifikasi pada modal detail di halaman `Kunjungan/Jadwal.jsx` dan memastikan logika serupa sudah terimplementasi dengan benar, sehingga informasi yang ditampilkan selalu konsisten dan relevan dengan tipe kunjungannya.
+
 **Senin, 20 Oktober 2025**
+*   **Konsistensi Data di Halaman Admin Kunjungan:**
+    *   Menyelaraskan tampilan data di modal "Detail Kunjungan" dan halaman "Edit Kunjungan" agar konsisten dengan tabel utama di `Jadwal.jsx`.
+    *   **Detail Modal:** Menghapus field "Alamat" yang tidak relevan dan mengganti "Jumlah Pengunjung" dengan rincian spesifik (Dewasa, Anak, Balita) untuk memberikan informasi yang lebih akurat.
+    *   **Halaman Edit:** Melakukan refaktor pada form edit (`Edit.jsx`) untuk hanya mengizinkan perubahan status. Informasi lain, termasuk rincian jumlah peserta yang baru ditambahkan, kini ditampilkan sebagai data statis yang tidak dapat diubah, mencegah inkonsistensi data.
 *   **Peningkatan UI/UX Halaman Admin Jadwal Kunjungan:**
     *   Merombak tabel jadwal kunjungan (`Kunjungan/Jadwal.jsx`) agar lebih informatif dan ringkas.
     *   **Perubahan Kolom:** Menghapus kolom "Alamat" yang tidak relevan, lalu menambahkan kolom "Peserta" (total pengunjung) dan "Total Biaya" untuk menyajikan data kunci secara langsung.

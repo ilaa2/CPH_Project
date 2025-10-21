@@ -8,20 +8,11 @@ import SecondaryButton from '@/Components/SecondaryButton';
 
 export default function Edit({ auth, kunjungan }) {
     const { data, setData, put, processing, errors } = useForm({
-        pelanggan_id: kunjungan.pelanggan_id || '',
-        tipe_id: kunjungan.tipe_id || '',
-        judul: kunjungan.judul || '',
-        deskripsi: kunjungan.deskripsi || '',
-        tanggal: kunjungan.tanggal || '',
-        jam: kunjungan.jam || '',
-        jumlah_pengunjung: kunjungan.jumlah_pengunjung || 1,
-        total_biaya: kunjungan.total_biaya || 0,
         status: kunjungan.status || 'Direncanakan',
     });
 
     const submit = (e) => {
         e.preventDefault();
-        // Gunakan metode PUT untuk update
         put(route('kunjungan.update', kunjungan.id));
     };
 
@@ -44,15 +35,13 @@ export default function Edit({ auth, kunjungan }) {
                                     <TextInput
                                         id="judul"
                                         name="judul"
-                                        value={data.judul}
+                                        value={kunjungan.judul}
                                         className="mt-1 block w-full bg-gray-100"
                                         autoComplete="judul"
                                         isFocused={true}
-                                        onChange={(e) => setData('judul', e.target.value)}
-                                        required
+                                        readOnly
                                         disabled
                                     />
-                                    <InputError message={errors.judul} className="mt-2" />
                                 </div>
 
                                 <div>
@@ -64,7 +53,7 @@ export default function Edit({ auth, kunjungan }) {
                                         className="mt-1 block w-full border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm"
                                         onChange={(e) => setData('status', e.target.value)}
                                     >
-                                        <option value="Direncanakan">Direncanakan</option>
+                                        <option value="Dijadwalkan">Dijadwalkan</option>
                                         <option value="Selesai">Selesai</option>
                                         <option value="Dibatalkan">Dibatalkan</option>
                                     </select>
@@ -86,9 +75,32 @@ export default function Edit({ auth, kunjungan }) {
                                         <p className="font-semibold text-gray-600">Tanggal & Jam</p>
                                         <p>{kunjungan.tanggal} pukul {kunjungan.jam}</p>
                                     </div>
-                                     <div>
+                                    <div>
                                         <p className="font-semibold text-gray-600">Total Biaya</p>
                                         <p>Rp {parseInt(kunjungan.total_biaya).toLocaleString('id-ID')}</p>
+                                    </div>
+                                    <div className="md:col-span-2 grid grid-cols-3 gap-4">
+                                        {kunjungan.tipe.nama_tipe === 'Outing Class' ? (
+                                            <div className="col-span-3">
+                                                <p className="font-semibold text-gray-600">Jumlah Anak</p>
+                                                <p>{kunjungan.jumlah_anak} Orang</p>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div>
+                                                    <p className="font-semibold text-gray-600">Dewasa</p>
+                                                    <p>{kunjungan.jumlah_dewasa} Orang</p>
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-600">Anak</p>
+                                                    <p>{kunjungan.jumlah_anak} Orang</p>
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-600">Balita</p>
+                                                    <p>{kunjungan.jumlah_balita} Orang</p>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
 
