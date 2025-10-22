@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Database\QueryException;
+use Illuminate\Validation\ValidationException;
 
 class RegisteredUserController extends Controller
 {
@@ -33,22 +35,29 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:'.Pelanggan::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $pelanggan = Pelanggan::create([
+        try {
+            $pelanggan = Pelanggan::create([
                 'nama' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
             ]);
 
-        event(new Registered($pelanggan));
+            event(new Registered($pelanggan));
 
-        // Jangan langsung login user
-        // Auth::login($user); ← hapus atau komentar
+            return redirect()->route('login')->with('success', 'Pendaftaran berhasil, silakan login.');
 
-        // Redirect ke login page
-        return redirect()->route('login')->with('success', 'Pendaftaran berhasil, silakan login.');
+        } catch (QueryException $e) {
+            if ($e->errorInfo[1] == 1062) { // 1062 is the MySQL error code for duplicate entry
+                throw ValidationException::withMessages([
+                    'email' => 'Email ini sudah terdaftar. Silakan gunakan email lain.',
+                ]);
+            }
+            // For other database errors, rethrow the exception
+            throw $e;
+        }
     }
 }

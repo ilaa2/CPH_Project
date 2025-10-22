@@ -12,14 +12,25 @@ use Illuminate\Support\Facades\DB;
 
 class PesananController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $pesanan = Pesanan::with(['pelanggan', 'items.produk'])
-            ->orderByDesc('tanggal')
-            ->get();
+        $query = Pesanan::with(['pelanggan', 'items.produk'])
+            ->orderByDesc('tanggal');
+
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->whereHas('pelanggan', function ($q) use ($search) {
+                $q->where('nama', 'LIKE', "%{$search}%");
+            });
+        }
+
+        $pesanan = $query->paginate(10)->withQueryString();
 
         return Inertia::render('Pesanan/Index', [
             'pesanan' => $pesanan,
+            'filters' => $request->only(['search']),
+            'pelangganList' => Pelanggan::all(),
+            'produkList' => Produk::where('stok', '>', 0)->get(),
         ]);
     }
 

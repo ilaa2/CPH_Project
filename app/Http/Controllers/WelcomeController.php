@@ -16,11 +16,11 @@ class WelcomeController extends Controller
     {
         $latestBuah = Produk::where('status', 'Aktif')
                             ->where('id_kategori', 2)
-                            ->latest()->take(8)->get();
+                            ->latest()->take(10)->get();
 
         $latestSayur = Produk::where('status', 'Aktif')
                              ->where('id_kategori', 1)
-                             ->latest()->take(8)->get();
+                             ->latest()->take(10)->get();
 
         // 👇 2. Ambil data tipe kunjungan dari database
         $tipeKunjungan = TipeKunjungan::all();

@@ -19,7 +19,7 @@ import CustomerLayout from '@/Layouts/CustomerLayout';
 
 
 // ===================================================================
-// === KARTU PRODUK BARU (E-COMMERCE STYLE) ✨ ===
+// === KARTU PRODUK BARU (UKURAN LEBIH KECIL) ✨ ===
 // ===================================================================
 function ProductCard({ data, onAddToCart }) {
     const formattedPrice = new Intl.NumberFormat('id-ID', {
@@ -28,62 +28,67 @@ function ProductCard({ data, onAddToCart }) {
         minimumFractionDigits: 0,
     }).format(data.harga);
 
-    // Placeholder untuk rating & diskon
-    const rating = data.rating || 4.5;
-    const discount = data.diskon || null;
+    const rating = data.rating || 4.5; // Placeholder rating
 
     return (
-        <div className="group relative flex w-full max-w-xs flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-md transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-2">
-            <div className="relative mx-3 mt-3 flex h-60 overflow-hidden rounded-xl">
-                <img className="h-full w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110" src={`/storage/${data.gambar}`} alt={data.nama} />
-                {discount && (
-                    <span className="absolute top-0 left-0 m-2 rounded-full bg-red-600 px-2 text-center text-sm font-medium text-white">
-                        {discount}% OFF
-                    </span>
-                )}
-                 {data.stok === 0 && (
+        <div className="group w-full max-w-sm bg-white rounded-2xl shadow-md hover:shadow-xl transition-shadow duration-300 ease-in-out">
+            <div className="relative overflow-hidden rounded-t-2xl">
+                {/* Image Container */}
+                <Link href={route('belanja.show', data.id)} className="block h-56"> {/* Tinggi gambar dikurangi */}
+                    <img 
+                        className="h-full w-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110" 
+                        src={`/storage/${data.gambar}`} 
+                        alt={data.nama} 
+                    />
+                </Link>
+
+                {/* Overlay with Actions on Hover */}
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                    <div className="flex items-center space-x-3">
+                        <Link 
+                            href={route('belanja.show', data.id)}
+                            className="flex items-center justify-center rounded-full bg-white text-gray-800 h-10 w-10 shadow-lg hover:bg-gray-200 transition-colors"
+                            title="Lihat Detail"
+                        >
+                            <FiEye size={20} />
+                        </Link>
+                        <button
+                            onClick={(e) => { e.preventDefault(); onAddToCart(data); }}
+                            disabled={data.stok === 0}
+                            className="flex items-center justify-center rounded-full bg-green-600 text-white h-10 w-10 shadow-lg hover:bg-green-700 transition-colors disabled:bg-gray-400"
+                            title="Tambah ke Keranjang"
+                        >
+                            <FiShoppingCart size={20} />
+                        </button>
+                    </div>
+                </div>
+                
+                {data.stok === 0 && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="rounded-full bg-gray-800 px-4 py-2 text-sm font-semibold text-white">
+                        <span className="rounded-full bg-gray-800 px-3 py-1 text-xs font-semibold text-white">
                             Stok Habis
                         </span>
                     </div>
                 )}
-                {/* Tombol aksi yang muncul saat hover */}
-                <div className="absolute top-0 right-0 m-2 flex flex-col gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
-                    <button className="rounded-full bg-white p-2 text-gray-600 shadow-md hover:bg-gray-100 hover:text-red-500" title="Sukai">
-                        <FiHeart size={20} />
-                    </button>
-                    <button className="rounded-full bg-white p-2 text-gray-600 shadow-md hover:bg-gray-100 hover:text-blue-500" title="Lihat Cepat">
-                        <FiEye size={20} />
-                    </button>
-                </div>
             </div>
-            <div className="mt-4 px-5 pb-5 flex flex-col flex-1">
+            
+            {/* Text Content */}
+            <div className="p-4 text-center"> {/* Padding dikurangi */}
                 {data.kategori && (
-                    <span className="mb-2 text-xs font-semibold text-gray-500 uppercase">{data.kategori.nama}</span>
+                    <p className="text-xs text-gray-500 mb-1">{data.kategori.nama}</p>
                 )}
-                <h5 className="text-lg tracking-tight text-slate-900 truncate font-semibold">{data.nama}</h5>
-                <div className="mt-2 mb-5 flex items-center justify-between">
-                    <p>
-                        <span className="text-2xl font-bold text-green-600">{formattedPrice}</span>
-                    </p>
-                    <div className="flex items-center">
-                        {[...Array(5)].map((_, i) => (
-                            i < Math.round(rating) ? <BsStarFill key={i} className="h-4 w-4 text-yellow-400" /> : <BsStar key={i} className="h-4 w-4 text-gray-300" />
-                        ))}
-                        <span className="ml-2 rounded bg-yellow-200 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">
-                            {rating.toFixed(1)}
-                        </span>
-                    </div>
+                <h5 className="text-base font-semibold text-gray-900 truncate" title={data.nama}> {/* Ukuran font dikurangi */}
+                    <Link href={route('belanja.show', data.id)} className="hover:text-green-600">
+                        {data.nama}
+                    </Link>
+                </h5>
+                <p className="text-lg font-bold text-green-600 my-1">{formattedPrice}</p> {/* Ukuran font & margin dikurangi */}
+                <div className="flex items-center justify-center">
+                    {[...Array(5)].map((_, i) => (
+                        i < Math.round(rating) ? <BsStarFill key={i} className="h-3 w-3 text-yellow-400" /> : <BsStar key={i} className="h-3 w-3 text-gray-300" />
+                    ))}
+                    <span className="ml-2 text-xs text-gray-500">({rating.toFixed(1)})</span>
                 </div>
-                <button
-                    onClick={() => onAddToCart(data)}
-                    disabled={data.stok === 0}
-                    className="flex items-center justify-center rounded-md bg-green-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-300 disabled:bg-gray-300 disabled:cursor-not-allowed mt-auto"
-                >
-                    <FiShoppingCart className="mr-2 h-5 w-5" />
-                    Tambah ke Keranjang
-                </button>
             </div>
         </div>
     );
@@ -149,7 +154,7 @@ function LatestProducts({ title, products }) {
                     </div>
                     <Link href={'/customer/belanja'} className="text-green-700 font-semibold hover:underline hidden sm:inline-block">Lihat semua</Link>
                 </div>
-                <div className="mt-8 grid grid-cols-1 justify-items-center gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="mt-8 grid grid-cols-2 justify-items-center gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"> {/* Grid diubah ke 5 kolom */}
                     {products.map(p => (
                         <ProductCard key={p.id} data={p} onAddToCart={handleAddToCart} />
                     ))}

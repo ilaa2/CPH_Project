@@ -31,20 +31,6 @@ export default function Edit({ auth, kunjungan }) {
                             </h3>
                             <form onSubmit={submit} className="space-y-6">
                                 <div>
-                                    <InputLabel htmlFor="judul" value="Judul Kunjungan" />
-                                    <TextInput
-                                        id="judul"
-                                        name="judul"
-                                        value={kunjungan.judul}
-                                        className="mt-1 block w-full bg-gray-100"
-                                        autoComplete="judul"
-                                        isFocused={true}
-                                        readOnly
-                                        disabled
-                                    />
-                                </div>
-
-                                <div>
                                     <InputLabel htmlFor="status" value="Status Kunjungan" />
                                     <select
                                         id="status"

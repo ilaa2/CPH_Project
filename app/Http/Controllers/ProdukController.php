@@ -10,14 +10,30 @@ use Inertia\Inertia;
 
 class ProdukController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $produk = Produk::select('products.*', 'product_categories.nama_kategori as kategori')
-            ->leftJoin('product_categories', 'products.id_kategori', '=', 'product_categories.id')
-            ->get();
+        $query = Produk::query()
+            ->select('products.*', 'product_categories.nama_kategori as kategori')
+            ->leftJoin('product_categories', 'products.id_kategori', '=', 'product_categories.id');
+
+        // Filter pencarian nama
+        if ($request->has('search')) {
+            $search = $request->input('search');
+            $query->where('products.nama', 'LIKE', "%{$search}%");
+        }
+
+        // Filter kategori
+        $query->when($request->input('kategori') && $request->input('kategori') !== 'Semua', function ($q) use ($request) {
+            return $q->where('product_categories.nama_kategori', $request->input('kategori'));
+        });
+
+        $produk = $query->latest()->paginate(10)->withQueryString();
+        $kategori = ProductCategory::all();
 
         return Inertia::render('Produk/Index', [
-            'produk' => $produk
+            'produk' => $produk,
+            'kategori' => $kategori,
+            'filters' => $request->only(['search', 'kategori']),
         ]);
     }
 

@@ -50,7 +50,7 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::get('/kunjungan', [KunjunganControllerCust::class, 'index'])->name('kunjungan.index');
     Route::post('/kunjungan/handle-form', [KunjunganControllerCust::class, 'handleForm'])->name('kunjungan.handle_form');
     Route::get('/kunjungan/konfirmasi', [KunjunganControllerCust::class, 'showKonfirmasi'])->name('kunjungan.konfirmasi');
-    Route::post('/kunjungan', [KunjunganControllerCust::class, 'store'])->name('kunjungan.store');
+    Route::post('/kunjungan/customer', [KunjunganControllerCust::class, 'store'])->name('customer.kunjungan.store');
 
     // --- KUMPULAN ROUTE PROFIL ---
     Route::get('/profile', [CustomerProfileController::class, 'edit'])->name('customer.profile.edit');
@@ -115,9 +115,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // CRUD Resources
-    Route::resource('produk', ProdukController::class)->except('show');
+    Route::resource('produk', ProdukController::class)->except(['show', 'edit']);
     Route::resource('pelanggan', PelangganController::class)->except('show');
-    Route::resource('kunjungan', KunjunganController::class)->except(['index', 'show', 'store']);
+    Route::resource('kunjungan', KunjunganController::class)->except(['index', 'show']);
     Route::resource('pesanan', PesananController::class);
 
     // Halaman Lainnya
@@ -131,7 +131,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/kunjungan/jadwal', [KunjunganController::class, 'jadwal'])->name('kunjungan.jadwal');
     Route::get('/kunjungan/kalender', [KunjunganController::class, 'kalender'])->name('kunjungan.kalender');
     Route::get('/kunjungan/riwayat', [KunjunganController::class, 'riwayat'])->name('kunjungan.riwayat');
-    Route::post('/kunjungan', [KunjunganController::class, 'riwayat'])->name('kunjunganAdmin.store');
+    
     // Laporan
     Route::prefix('laporan')->controller(LaporanController::class)->group(function () {
         Route::get('/', 'index')->name('laporan.index');

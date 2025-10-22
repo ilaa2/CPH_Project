@@ -13,16 +13,14 @@ class Kunjungan extends Model
 
     protected $fillable = [
         'pelanggan_id',
-        'tipe_id',
-        'judul',
-        'deskripsi',
         'tanggal',
         'jam',
+        'status',
+        'tipe_kunjungan_id',
         'jumlah_dewasa',
         'jumlah_anak',
         'jumlah_balita',
         'total_biaya',
-        'status',
     ];
 
 

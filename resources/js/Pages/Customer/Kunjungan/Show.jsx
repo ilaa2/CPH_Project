@@ -45,7 +45,7 @@ export default function KunjunganShow({ auth, kunjungan }) {
 
     return (
         <>
-            <Head title={`Detail Kunjungan ${kunjungan.judul}`} />
+            <Head title={`Detail Kunjungan`} />
             <SiteHeader auth={auth} />
 
             <main className="bg-gray-50 font-sans">
@@ -58,7 +58,6 @@ export default function KunjunganShow({ auth, kunjungan }) {
                     <div className="bg-white p-8 rounded-xl shadow-md border">
                         <div className="flex justify-between items-start mb-6">
                             <div>
-                                <h1 className="text-2xl font-bold text-gray-900">{kunjungan.judul}</h1>
                                 <p className={`mt-1 text-sm font-semibold flex items-center gap-2 ${currentStatus.color}`}>
                                     {currentStatus.icon}
                                     <span>Status: {currentStatus.text}</span>
@@ -74,7 +73,6 @@ export default function KunjunganShow({ auth, kunjungan }) {
                             <DetailItem icon={<FiCalendar className="text-gray-400"/>} label="Tanggal" value={formatDate(kunjungan.tanggal)} />
                             <DetailItem icon={<FiTag className="text-gray-400"/>} label="Tipe Kunjungan" value={kunjungan.tipe.nama_tipe} />
                             <DetailItem icon={<FiUsers className="text-gray-400"/>} label="Jumlah Pengunjung" value={`${kunjungan.jumlah_pengunjung} orang`} />
-                            {kunjungan.deskripsi && <DetailItem icon={<FiFileText className="text-gray-400"/>} label="Deskripsi" value={kunjungan.deskripsi} />}
                         </div>
 
                         {kunjungan.ulasan ? (

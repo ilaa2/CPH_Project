@@ -120,8 +120,6 @@ class KunjunganControllerCust extends Controller
         Kunjungan::create([
             'pelanggan_id'      => Auth::guard('pelanggan')->id(),
             'tipe_id'           => $validated['tipe_kunjungan_id'],
-            'judul'             => $tipeKunjungan->nama_tipe . ' oleh ' . $validated['nama_lengkap'],
-            'deskripsi'         => 'Kunjungan oleh ' . $validated['nama_lengkap'],
             'tanggal'           => $validated['tanggal_kunjungan'],
             'jam'               => '09:00:00', // Jam default
             'jumlah_dewasa'     => $validated['jumlah_dewasa'],

@@ -1,34 +1,202 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useEffect } from 'react';
+import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import Mainbar from '@/Components/Bar/Mainbar';
+import { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
-import Mainbar from "@/Components/Bar/Mainbar";
-import { FiPlus } from "react-icons/fi";
+import { debounce } from 'lodash';
+import InputError from '@/Components/InputError';
+import Modal from '@/Components/Modal'; // <-- Import Modal Generik
 
-export default function ProdukList({ produk }) {
-  const { flash } = usePage().props;
+// Komponen Form (untuk Tambah dan Edit)
+const ProdukForm = ({ isEditing, model, kategori, onSubmit, onCancel }) => {
+  const { data, setData, post, processing, errors, reset } = useForm({
+    nama: model?.nama || '',
+    id_kategori: model?.id_kategori || '',
+    deskripsi: model?.deskripsi || '',
+    harga: model?.harga || '',
+    stok: model?.stok || '',
+    gambar: null,
+    status: model?.status || 'Aktif',
+    _method: isEditing ? 'PUT' : 'POST',
+  });
 
-  // Notifikasi flash success (tambah/edit produk)
   useEffect(() => {
-    if (flash.success) {
-      Swal.fire({
-        icon: 'success',
-        title: 'Sukses',
-        text: flash.success,
-        timer: 2000,
-        showConfirmButton: false,
+    // Reset form state when the model to edit changes
+    setData({
+      nama: model?.nama || '',
+      id_kategori: model?.id_kategori || '',
+      deskripsi: model?.deskripsi || '',
+      harga: model?.harga || '',
+      stok: model?.stok || '',
+      gambar: null,
+      status: model?.status || 'Aktif',
+      _method: isEditing ? 'PUT' : 'POST',
+    });
+  }, [model, isEditing]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const url = isEditing ? route('produk.update', model.id) : route('produk.store');
+    // Gunakan 'post' untuk kedua kasus karena Inertia menangani method spoofing (_method)
+    post(url, {
+      onSuccess: () => {
+        reset();
+        onSubmit();
+      },
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
+      <h2 className="text-2xl font-bold text-gray-800 mb-4">
+        {isEditing ? 'Edit Produk' : 'Tambah Produk Baru'}
+      </h2>
+      <div>
+        <label className="block font-medium text-sm text-gray-700">Nama Produk</label>
+        <input type="text" value={data.nama} onChange={e => setData('nama', e.target.value)} className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm mt-1 block w-full" />
+        <InputError message={errors.nama} className="mt-2" />
+      </div>
+      <div>
+        <label className="block font-medium text-sm text-gray-700">Kategori</label>
+        <select value={data.id_kategori} onChange={e => setData('id_kategori', e.target.value)} className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm mt-1 block w-full">
+          <option value="">-- Pilih Kategori --</option>
+          {kategori.map(cat => <option key={cat.id} value={cat.id}>{cat.nama_kategori}</option>)}
+        </select>
+        <InputError message={errors.id_kategori} className="mt-2" />
+      </div>
+      <div>
+        <label className="block font-medium text-sm text-gray-700">Deskripsi</label>
+        <textarea value={data.deskripsi} onChange={e => setData('deskripsi', e.target.value)} rows="3" className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm mt-1 block w-full"></textarea>
+        <InputError message={errors.deskripsi} className="mt-2" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block font-medium text-sm text-gray-700">Harga</label>
+          <input type="number" value={data.harga} onChange={e => setData('harga', e.target.value)} className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm mt-1 block w-full" />
+          <InputError message={errors.harga} className="mt-2" />
+        </div>
+        <div>
+          <label className="block font-medium text-sm text-gray-700">Stok</label>
+          <input type="number" value={data.stok} onChange={e => setData('stok', e.target.value)} className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm mt-1 block w-full" />
+          <InputError message={errors.stok} className="mt-2" />
+        </div>
+      </div>
+      <div>
+        <label className="block font-medium text-sm text-gray-700">Gambar {isEditing && '(Baru, opsional)'}</label>
+        <input type="file" onChange={e => setData('gambar', e.target.files[0])} className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100" />
+        <InputError message={errors.gambar} className="mt-2" />
+      </div>
+      <div>
+        <label className="block font-medium text-sm text-gray-700">Status</label>
+        <select value={data.status} onChange={e => setData('status', e.target.value)} className="border-gray-300 focus:border-green-500 focus:ring-green-500 rounded-md shadow-sm mt-1 block w-full">
+          <option value="Aktif">Aktif</option>
+          <option value="Nonaktif">Nonaktif</option>
+        </select>
+        <InputError message={errors.status} className="mt-2" />
+      </div>
+      <div className="mt-6 flex justify-end space-x-3">
+        <button type="button" onClick={onCancel} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition">Batal</button>
+        <button type="submit" disabled={processing} className="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 transition-transform transform hover:scale-105 disabled:opacity-50">
+          {isEditing ? 'Simpan Perubahan' : 'Simpan Produk'}
+        </button>
+      </div>
+    </form>
+  );
+};
+
+
+// Komponen Pagination
+const Pagination = ({ links }) => (
+    <div className="flex flex-wrap justify-center mt-4">
+      {links.map((link, index) => (
+        <Link
+          key={index}
+          href={link.url || '#'}
+          dangerouslySetInnerHTML={{ __html: link.label }}
+          className={`px-4 py-2 mx-1 my-1 rounded-md text-sm ${
+            link.active ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'
+          } ${!link.url ? 'text-gray-400 cursor-not-allowed' : ''}`}
+          disabled={!link.url}
+        />
+      ))}
+    </div>
+);
+
+// Komponen Filter Pills
+const FilterPills = ({ kategori, activeFilter, onFilterChange }) => {
+    const filters = ['Semua', ...kategori.map(k => k.nama_kategori)];
+    return (
+      <div className="flex flex-wrap gap-2">
+        {filters.map((filter) => (
+          <button
+            key={filter}
+            onClick={() => onFilterChange(filter)}
+            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
+              activeFilter === filter
+                ? 'bg-green-600 text-white shadow'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          >
+            {filter}
+          </button>
+        ))}
+      </div>
+    );
+};
+
+export default function ProdukList({ produk, kategori, filters }) {
+  const [modalState, setModalState] = useState({ isOpen: false, isEditing: false, model: null });
+  const [searchValue, setSearchValue] = useState(filters.search || '');
+  const [kategoriFilter, setKategoriFilter] = useState(filters.kategori || 'Semua');
+  const { flash } = usePage().props;
+  const { data, links, from } = produk;
+
+  const openModal = (isEditing = false, model = null) => {
+    setModalState({ isOpen: true, isEditing, model });
+  };
+
+  const closeModal = () => {
+    setModalState({ isOpen: false, isEditing: false, model: null });
+  };
+
+  const debouncedFilter = useCallback(
+    debounce((nextValue, filterValue) => {
+      const query = {};
+      if (nextValue) query.search = nextValue;
+      if (filterValue && filterValue !== 'Semua') query.kategori = filterValue;
+
+      router.get(route('produk.index'), query, {
+        preserveState: true,
+        replace: true,
       });
+    }, 300),
+    []
+  );
+
+  const handleSearchChange = (e) => {
+    const newSearch = e.target.value;
+    setSearchValue(newSearch);
+    debouncedFilter(newSearch, kategoriFilter);
+  };
+
+  const handleFilterChange = (newKategori) => {
+    setKategoriFilter(newKategori);
+    debouncedFilter(searchValue, newKategori);
+  };
+
+  useEffect(() => {
+    if (flash?.success) {
+      Swal.fire({ icon: 'success', title: 'Berhasil!', text: flash.success, timer: 2000, showConfirmButton: false });
     }
   }, [flash]);
 
-  // Konfirmasi hapus
-  function handleDelete(id) {
+  const handleDelete = (id) => {
     Swal.fire({
       title: 'Yakin ingin menghapus?',
       text: 'Data produk yang dihapus tidak dapat dikembalikan!',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
+      cancelButtonColor: '#6b7280',
       confirmButtonText: 'Ya, hapus!',
       cancelButtonText: 'Batal'
     }).then((result) => {
@@ -40,160 +208,98 @@ export default function ProdukList({ produk }) {
         });
       }
     });
-  }
+  };
 
   return (
     <Mainbar header={
-      <h2 className="text-xl font-semibold leading-tight text-gray-800 dark:text-gray-200">
-        Produk
-      </h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-800">Produk</h2>
+        <button onClick={() => openModal(false)} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
+            + Tambah Produk
+        </button>
+      </div>
     }>
-      <Head title="Produk" />
-
-      <div className="p-4 sm:p-6 space-y-6">
-        {/* Header & Tambah Produk */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h3 className="text-lg font-semibold text-gray-700">Daftar Produk</h3>
-          <Link
-            href="/produk/create"
-            className="flex items-center justify-center bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition w-full sm:w-auto"
-          >
-            <FiPlus className="mr-2" /> Tambah Produk
-          </Link>
-        </div>
-
-        {/* Konten Responsif */}
-        {/* Tampilan Card untuk Mobile */}
-        <div className="sm:hidden space-y-4">
-          {produk && produk.length > 0 ? (
-            produk.map((item) => (
-              <div key={item.id} className="bg-white rounded-lg shadow p-4 space-y-3">
-                <div className="flex items-start gap-4">
-                  {item.gambar ? (
-                    <img
-                      src={`/storage/${item.gambar}`}
-                      alt={item.nama}
-                      className="w-20 h-20 object-cover rounded"
-                    />
-                  ) : (
-                    <div className="w-20 h-20 bg-gray-100 rounded flex items-center justify-center text-gray-400 italic">No Img</div>
-                  )}
-                  <div className="flex-grow">
-                    <h4 className="font-bold text-gray-800">{item.nama}</h4>
-                    <p className="text-sm text-gray-500">{item.kategori ? item.kategori.charAt(0).toUpperCase() + item.kategori.slice(1) : '-'}</p>
-                    <p className="text-lg font-semibold text-green-600 mt-1">
-                      Rp {Number(item.harga).toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-sm text-gray-600">
-                  <p className="truncate" title={item.deskripsi}><strong>Deskripsi:</strong> {item.deskripsi || '-'}</p>
-                  <p><strong>Stok:</strong> {item.stok}</p>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t">
-                  <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    (item.status || '').toLowerCase() === 'aktif'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-red-100 text-red-700'
-                  }`}>
-                    {item.status || 'Tidak Ada'}
-                  </span>
-                  <div className="flex items-center gap-4">
-                    <Link href={`/produk/${item.id}/edit`} className="text-blue-600 hover:underline font-medium">Edit</Link>
-                    <button onClick={() => handleDelete(item.id)} className="text-red-600 hover:underline font-medium">Hapus</button>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-8 text-gray-500">
-              Tidak ada produk tersedia.
+      <Head title="Daftar Produk" />
+      <div className="p-6 space-y-6">
+        <div className="bg-white p-4 rounded-xl shadow-md space-y-4">
+          <div className="flex flex-wrap justify-between items-center gap-4">
+            <FilterPills kategori={kategori} activeFilter={kategoriFilter} onFilterChange={handleFilterChange} />
+            <div className="relative">
+              <input
+                type="text"
+                value={searchValue}
+                onChange={handleSearchChange}
+                placeholder="Cari nama produk..."
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-green-500 focus:border-green-500"
+              />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Tampilan Tabel untuk Desktop */}
-        <div className="hidden sm:block overflow-x-auto bg-white rounded-lg shadow">
+        <div className="overflow-x-auto bg-white rounded-xl shadow-md">
           <table className="min-w-full text-sm text-left text-gray-700">
             <thead className="text-xs uppercase bg-green-100 text-green-800">
               <tr>
-                <th className="px-4 py-2">No</th>
-                <th className="px-4 py-2">Gambar</th>
-                <th className="px-4 py-2">Nama Produk</th>
-                <th className="px-4 py-2">Deskripsi</th>
-                <th className="px-4 py-2">Kategori</th>
-                <th className="px-4 py-2">Harga</th>
-                <th className="px-4 py-2">Stok</th>
-                <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Aksi</th>
+                <th className="px-4 py-3">No</th>
+                <th className="px-4 py-3">Gambar</th>
+                <th className="px-4 py-3">Nama Produk</th>
+                <th className="px-4 py-3">Kategori</th>
+                <th className="px-4 py-3">Harga</th>
+                <th className="px-4 py-3">Stok</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {produk && produk.length > 0 ? (
-                produk.map((item, index) => (
-                  <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">{index + 1}</td>
-                    <td className="px-4 py-2">
-                      {item.gambar ? (
-                        <img
-                          src={`/storage/${item.gambar}`}
-                          alt={item.nama}
-                          className="w-16 h-16 object-cover rounded"
-                        />
-                      ) : (
-                        <span className="text-gray-400 italic">-</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-2">{item.nama}</td>
-                    <td className="px-4 py-2 max-w-[200px] truncate" title={item.deskripsi}>
-                      {item.deskripsi || '-'}
-                    </td>
-                    <td className="px-4 py-2">
-                      {item.kategori
-                        ? item.kategori.charAt(0).toUpperCase() + item.kategori.slice(1)
-                        : '-'}
-                    </td>
-                    <td className="px-4 py-2">
-                      Rp {Number(item.harga).toLocaleString('id-ID')}
-                    </td>
-                    <td className="px-4 py-2">{item.stok}</td>
-                    <td className="px-4 py-2">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        (item.status || '').toLowerCase() === 'aktif'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {item.status || 'Tidak Ada'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2">
-                      <div className="flex flex-col sm:flex-row justify-center items-center gap-2">
-                        <Link
-                          href={`/produk/${item.id}/edit`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          Edit
-                        </Link>
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="text-red-600 hover:underline"
-                        >
-                          Hapus
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="9" className="text-center py-4 text-gray-500">
-                    Tidak ada produk tersedia.
+              {data.map((item, index) => (
+                <tr key={item.id} className="border-b hover:bg-gray-50">
+                  <td className="px-4 py-2">{from + index}</td>
+                  <td className="px-4 py-2">
+                    <img
+                      src={item.gambar ? `/storage/${item.gambar}` : 'https://via.placeholder.com/80'}
+                      alt={item.nama}
+                      className="w-16 h-16 object-cover rounded-md"
+                    />
+                  </td>
+                  <td className="px-4 py-2 font-medium text-gray-900">{item.nama}</td>
+                  <td className="px-4 py-2">{item.kategori || '-'}</td>
+                  <td className="px-4 py-2">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.harga)}</td>
+                  <td className="px-4 py-2">{item.stok}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                      item.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {item.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => openModal(true, item)} className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-full transition" title="Edit">
+                        ✏️
+                      </button>
+                      <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-100 text-red-600 hover:bg-red-200 rounded-full transition" title="Hapus">
+                        🗑️
+                      </button>
+                    </div>
                   </td>
                 </tr>
-              )}
+              ))}
             </tbody>
           </table>
         </div>
+
+        <Pagination links={links} />
+
+        <Modal show={modalState.isOpen} onClose={closeModal}>
+          <ProdukForm
+            isEditing={modalState.isEditing}
+            model={modalState.model}
+            kategori={kategori}
+            onSubmit={closeModal}
+            onCancel={closeModal}
+          />
+        </Modal>
       </div>
     </Mainbar>
   );

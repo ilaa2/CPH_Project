@@ -13,15 +13,33 @@ class KunjunganController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Kunjungan/Index');
+        return redirect()->route('kunjungan.jadwal');
     }
 
     public function jadwal()
     {
-        $data = Kunjungan::with(['pelanggan', 'tipe'])->orderBy('tanggal', 'asc')->get();
+        $query = Kunjungan::query()
+            ->with(['pelanggan', 'tipe'])
+            ->join('pelanggans', 'kunjungan.pelanggan_id', '=', 'pelanggans.id')
+            ->join('tipe_kunjungan', 'kunjungan.tipe_id', '=', 'tipe_kunjungan.id')
+            ->select('kunjungan.*');
+
+        // Filter pencarian nama
+        if (request()->has('search')) {
+            $search = request()->input('search');
+            $query->where('pelanggans.nama', 'LIKE', "%{$search}%");
+        }
+
+        // Filter tipe kunjungan
+        $query->when(request('tipe') && request('tipe') !== 'Semua', function ($q) {
+            return $q->where('tipe_kunjungan.nama_tipe', request('tipe'));
+        });
+
+        $data = $query->orderBy('tanggal', 'asc')->paginate(10)->withQueryString();
 
         return Inertia::render('Kunjungan/Jadwal', [
             'kunjungan' => $data,
+            'filters' => request()->only(['search', 'tipe']),
         ]);
     }
 
@@ -57,21 +75,70 @@ class KunjunganController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'pelanggan_id' => 'required|exists:pelanggans,id',
-            'tipe_id' => 'required|exists:tipe_kunjungan,id',
-            'judul' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
+            'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
             'tanggal' => 'required|date',
             'jam' => 'required',
-            'jumlah_pengunjung' => 'required|integer|min:1',
+            'jumlah_dewasa' => 'required|integer|min:0',
+            'jumlah_anak' => 'required|integer|min:0',
+            'jumlah_balita' => 'required|integer|min:0',
             'total_biaya' => 'required|numeric|min:0',
             'status' => 'required|in:Dijadwalkan,Selesai,Dibatalkan',
         ]);
 
-        Kunjungan::create($request->all());
+        $tipeKunjungan = TipeKunjungan::find($validated['tipe_kunjungan_id']);
+
+        // Validasi kustom: pastikan ada pengunjung
+        if ($validated['jumlah_dewasa'] + $validated['jumlah_anak'] + $validated['jumlah_balita'] == 0) {
+            return back()->withErrors(['jumlah_dewasa' => 'Jumlah pengunjung tidak boleh nol.'])->withInput();
+        }
+        
+        // Di admin, kita memercayai total_biaya yang diinputkan (untuk override),
+        // namun kita tetap bisa melakukan kalkulasi ulang untuk verifikasi jika perlu.
+        // Untuk saat ini, kita langsung gunakan dari request.
+
+        Kunjungan::create([
+            'pelanggan_id' => $validated['pelanggan_id'],
+            'tipe_id' => $validated['tipe_kunjungan_id'],
+            'tanggal' => $validated['tanggal'],
+            'jam' => $validated['jam'],
+            'jumlah_dewasa' => $validated['jumlah_dewasa'],
+            'jumlah_anak' => $validated['jumlah_anak'],
+            'jumlah_balita' => $validated['jumlah_balita'],
+            'total_biaya' => $validated['total_biaya'],
+            'status' => $validated['status'],
+        ]);
 
         return redirect()->route('kunjungan.jadwal')->with('success', 'Kunjungan berhasil ditambahkan.');
+    }
+
+    /**
+     * Helper function untuk menghitung total biaya.
+     * Logika ini harus sama persis dengan yang ada di frontend.
+     */
+    private function calculateTotalCost(TipeKunjungan $tipe, array $data): float
+    {
+        $biaya = 0;
+        $jumlah_dewasa = $data['jumlah_dewasa'] ?? 0;
+        $jumlah_anak = $data['jumlah_anak'] ?? 0;
+
+        if ($tipe->nama_tipe === 'Umum') {
+            $totalOrangBayar = $jumlah_dewasa + $jumlah_anak;
+            $biaya = $totalOrangBayar * 10000;
+        } elseif ($tipe->nama_tipe === 'Outing Class') {
+            if ($jumlah_anak > 0 && $jumlah_anak < 30) {
+                $biaya = 300000;
+            } else {
+                $biaya = $jumlah_anak * 10000;
+            }
+        } else {
+            // Fallback ke logika default jika ada tipe lain
+            $totalPengunjung = $jumlah_dewasa + $jumlah_anak + ($data['jumlah_balita'] ?? 0);
+            $biaya = $totalPengunjung * ($tipe->biaya ?? 0);
+        }
+
+        return $biaya;
     }
 
     public function destroy($id)
@@ -100,8 +167,6 @@ class KunjunganController extends Controller
         $request->validate([
             'pelanggan_id' => 'required|exists:pelanggans,id',
             'tipe_id' => 'required|exists:tipe_kunjungan,id', // ✅ Tambah validasi tipe
-            'judul' => 'required|string|max:255',
-            'deskripsi' => 'nullable|string',
             'tanggal' => 'required|date',
             'jam' => 'required',
             'jumlah_pengunjung' => 'required|integer|min:1',
@@ -167,8 +232,6 @@ class KunjunganController extends Controller
         Kunjungan::create([
             'pelanggan_id' => $pelanggan->id,
             'tipe_id' => $validated['tipe_kunjungan_id'],
-            'judul' => 'Kunjungan Online oleh ' . $pelanggan->nama,
-            'deskripsi' => 'Kunjungan dijadwalkan melalui form online oleh pelanggan.',
             'tanggal' => $validated['tanggal_kunjungan'],
             'jam' => '09:00:00', // Jam default, bisa disesuaikan
             'jumlah_pengunjung' => $jumlahPengunjung,
@@ -176,7 +239,7 @@ class KunjunganController extends Controller
             'jumlah_anak' => $anak,
             'jumlah_balita' => $balita,
             'total_biaya' => $totalBiaya,
-            'status' => 'Dijadwalkan',
+            'status' => 'Dijadwalan',
         ]);
 
         return redirect()->back()->with('success', 'Jadwal kunjungan Anda berhasil dibuat! Kami akan segera menghubungi Anda untuk konfirmasi.');

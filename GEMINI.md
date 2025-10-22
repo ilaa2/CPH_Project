@@ -154,7 +154,45 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 
 ### Riwayat Perubahan
 
+**Rabu, 22 Oktober 2025**
+*   **Penyempurnaan Tampilan Kalender (Auto-Fit Viewport):**
+    *   Mengatasi masalah munculnya *scrollbar* internal pada komponen kalender yang disebabkan oleh pembatasan tinggi (`height="80vh"`).
+    *   **Solusi:** Menambahkan aturan CSS baru pada `resources/css/app.css` yang menargetkan kelas `.fc .fc-daygrid-day-frame`. Aturan ini memaksa `min-height` dari sel hari menjadi sangat kecil (`1px`), sehingga memungkinkan tinggi baris kalender untuk menyusut secara proporsional dan otomatis agar pas sepenuhnya di dalam viewport tanpa perlu scroll internal maupun eksternal.
+
 **Selasa, 21 Oktober 2025**
+*   **Perbaikan Lanjutan Tampilan Kalender (CSS Override):**
+    *   Menambahkan aturan CSS kustom pada file `resources/css/app.css` untuk menimpa gaya bawaan FullCalendar.
+    *   **Masalah:** Blok event kalender masih terlalu tinggi meskipun kontennya sudah diringkas.
+    *   **Solusi:** Aturan CSS baru ini secara spesifik menargetkan kelas `.fc-daygrid-event` untuk mengurangi `padding` dan `font-size` secara paksa, menghasilkan tampilan event yang jauh lebih pendek dan memastikan kalender terlihat padat dan rapi.
+*   **Penyempurnaan Visual Kalender Kunjungan:**
+    *   Memperbaiki masalah tata letak pada halaman "Kalender Kunjungan" di mana blok event terlalu tinggi dan menyebabkan baris minggu terlihat renggang.
+    *   **Solusi:** Menyesuaikan CSS pada komponen event (`Kunjungan/Kalender.jsx`) dengan mengurangi *padding* vertikal dan menggabungkan beberapa baris info menjadi satu. Hasilnya adalah tampilan kalender yang lebih ringkas, padat, dan profesional secara visual.
+*   **Desain Ulang Total Halaman Kalender Kunjungan:**
+    *   Merombak total UI/UX halaman "Kalender Kunjungan" (`Kunjungan/Kalender.jsx`) untuk meningkatkan kejelasan visual dan fungsionalitas.
+    *   **Palet Warna Baru:** Mengimplementasikan skema warna yang lebih intuitif dan profesional untuk status kunjungan: Biru untuk "Dijadwalkan", Hijau untuk "Selesai", dan Abu-abu dengan aksen merah untuk "Dibatalkan".
+    *   **Tampilan Event Modern:** Mendesain ulang tampilan setiap event di kalender agar lebih informatif, menampilkan waktu, nama pelanggan, dan tipe kunjungan dengan border samping sebagai indikator status visual yang halus. Event yang dibatalkan kini juga memiliki teks yang dicoret.
+    *   **Peningkatan Konsistensi:** Memperbarui modal detail kunjungan agar menggunakan komponen `Modal` standar aplikasi dan menyempurnakan tampilannya agar selaras dengan perubahan desain lainnya.
+*   **Standarisasi UI Halaman Ulasan & Feedback:**
+    *   Merombak total halaman "Ulasan & Feedback" (`Ulasan/Index.jsx`) dengan mengubah layout dari grid berbasis kartu menjadi tampilan tabel yang terstruktur.
+    *   **Tujuan:** Menyeragamkan desain halaman ini dengan halaman admin lainnya (seperti Pesanan, Pelanggan, dll.) untuk menciptakan pengalaman pengguna yang konsisten di seluruh aplikasi.
+    *   **Implementasi:** Tabel baru ini menampilkan semua data ulasan yang relevan—termasuk nama pelanggan, rating bintang, detail ulasan, gambar, dan tipe ulasan—serta dilengkapi kolom "Aksi" dengan tombol hapus yang diposisikan di tengah untuk kemudahan akses.
+*   **Perbaikan Kritis & Peningkatan UI Modal Pesanan:**
+    *   **Perbaikan Bug:** Mengatasi error fatal `Uncaught TypeError: Cannot read properties of undefined (reading 'map')` yang terjadi saat membuka modal edit pesanan.
+        *   **Akar Masalah:** Form modal edit (`PesananForm`) tidak menerima `pelangganList` dan `produkList` yang diperlukan untuk merender dropdown.
+        *   **Solusi:** Menyesuaikan method `index` di `PesananController.php` untuk selalu mengirimkan `pelangganList` dan `produkList` ke halaman `Pesanan/Index.jsx`, memastikan modal edit memiliki data yang dibutuhkan dan mencegah crash.
+    *   **Desain Ulang UI:** Merombak total tampilan modal "Detail Pesanan" menjadi desain nota/invoice yang lebih profesional dan informatif. Desain baru ini mencakup header yang jelas, informasi pelanggan yang terstruktur, tabel item yang lebih rapi, dan rincian total biaya yang lebih baik, meningkatkan pengalaman pengguna secara signifikan.
+*   **Modernisasi UI Halaman Pesanan Admin:**
+    *   Merombak total halaman "Pesanan" admin (`Pesanan/Index.jsx`) untuk mengadopsi alur kerja berbasis modal, meningkatkan konsistensi UI dengan halaman admin lainnya.
+    *   **Fungsionalitas Modal:** Mengganti navigasi halaman tradisional dengan modal pop-up untuk aksi "Tambah Pesanan", "Lihat Detail", dan "Edit Pesanan". Hal ini menciptakan pengalaman pengguna yang lebih lancar tanpa perlu memuat ulang halaman.
+    *   **UX & Styling:** Memastikan semua modal dapat ditutup dengan mengklik area luar (overlay). Menyesuaikan styling kolom "Aksi" pada tabel pesanan agar semua tombol (Lihat, Edit, Hapus) berada di tengah secara horizontal, menghasilkan tampilan yang lebih rapi dan profesional.
+*   **Peningkatan Fungsionalitas Form Admin:**
+    *   Merombak total halaman "Tambah Kunjungan" admin (`Kunjungan/Create.jsx`) menjadi form dinamis yang cerdas.
+    *   **Frontend:** Mengimplementasikan *conditional rendering* yang menampilkan input jumlah pengunjung (Dewasa, Anak, Balita) berdasarkan tipe kunjungan yang dipilih, mereplikasi logika dari halaman pelanggan.
+    *   **Fitur Kalkulasi & Override:** Menambahkan kalkulasi biaya otomatis yang bereaksi secara *real-time* terhadap perubahan jumlah peserta. Field "Total Biaya" kini juga dapat di-edit secara manual oleh admin untuk memasukkan harga khusus atau diskon.
+    *   **Backend:** Menyesuaikan method `store` di `KunjunganController.php` untuk menerima, memvalidasi, dan menyimpan struktur data pengunjung yang baru, serta memastikan data yang di-override oleh admin dapat diproses dengan benar.
+*   **Pemulihan Fungsionalitas Admin:**
+    *   Mengembalikan tombol `+ Tambah Kunjungan` yang hilang pada halaman admin "Jadwal Kunjungan" (`Kunjungan/Jadwal.jsx`).
+    *   Tombol ini ditempatkan di header halaman, di sebelah kanan judul, untuk memungkinkan admin menambahkan data kunjungan manual (misalnya, dari pesanan offline via WhatsApp atau telepon), mengembalikan fungsionalitas penting yang sebelumnya hilang setelah desain ulang.
 *   **Penyesuaian Tampilan Form Kunjungan Berdasarkan Tipe:**
     *   **Halaman Edit:** Menerapkan *conditional rendering* pada form `Kunjungan/Edit.jsx`. Kini, form secara cerdas hanya akan menampilkan input "Jumlah Anak" untuk tipe kunjungan "Outing Class", sementara menyembunyikan input "Dewasa" dan "Balita" yang tidak relevan. Untuk tipe kunjungan lainnya, semua input jumlah pengunjung tetap ditampilkan seperti biasa.
     *   **Modal Detail:** Melakukan verifikasi pada modal detail di halaman `Kunjungan/Jadwal.jsx` dan memastikan logika serupa sudah terimplementasi dengan benar, sehingga informasi yang ditampilkan selalu konsisten dan relevan dengan tipe kunjungannya.
@@ -182,7 +220,7 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
     *   **Frontend (`Kunjungan.jsx`):** Menyesuaikan kondisi di dalam `useEffect` hook untuk menggunakan `Outing Class` dan `Umum`, memastikan state jumlah pengunjung di-reset dengan benar saat tipe kunjungan dipilih.
     *   **Backend (`KunjunganControllerCust.php`):** Menyelaraskan logika kalkulasi biaya di dalam method `calculateTotalCost` dan validasi di `handleForm` & `store` untuk juga menggunakan `Outing Class` dan `Umum`. Ini memastikan konsistensi data dan kalkulasi yang akurat dari sisi server.
 *   **Perbaikan Fungsionalitas Pengajuan Kunjungan Pelanggan:**
-    *   **Backend:** Menambahkan method `handleForm` baru di `KunjunganController` untuk menangani pengajuan jadwal kunjungan dari halaman pelanggan. Logika ini mencakup validasi input, kalkulasi biaya yang aman di sisi server, dan pembuatan record kunjungan baru dengan status "Dijadwalkan".
+    *   **Backend:** Menambahkan method `handleForm` baru di `KunjunganController` untuk menangani pengajuan jadwal kunjungan dari halaman pelanggan. Logika ini mencakup validasi input, kalkulasi biaya yang aman di sisi server, dan pembuatan record kunjungan baru dengan status "Dijadwalkeun".
     *   **Frontend:** Memperbaiki bug di halaman `Customer/Kunjungan.jsx` di mana input untuk jumlah pengunjung (dewasa, anak, balita) tidak muncul untuk tipe kunjungan umum. Sekarang, input tersebut akan tampil untuk semua tipe kunjungan kecuali "Kunjungan Sekolah", memastikan pelanggan dapat memasukkan jumlah peserta dengan benar.
     *   **Peningkatan UX:** Menambahkan logika untuk memperbarui nama dan nomor telepon pelanggan jika mereka mengubahnya di form, menyederhanakan proses pembaruan data kontak.
 
