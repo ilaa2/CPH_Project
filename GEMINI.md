@@ -252,6 +252,9 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
         - **Halaman Formulir (Tambah Produk & Tambah Pelanggan):** Menyempurnakan layout formulir agar memenuhi lebar layar di mobile dan memperbarui gaya input untuk tampilan yang lebih modern dan konsisten di seluruh aplikasi.
 
 (Entri baru akan ditambahkan di sini oleh Asisten AI)
+*   **Perbaikan Komponen Halaman Utama Pelanggan:**
+    *   Memperbaiki error fatal `Uncaught ReferenceError` pada halaman utama pelanggan (`DashboardCust.jsx`) yang disebabkan oleh banyaknya impor komponen yang hilang.
+    *   **Solusi:** Menambahkan semua impor yang diperlukan, termasuk `CustomerLayout`, `Link`, `Head`, `router`, ikon dari `react-icons`, dan `Swal`. Tindakan ini memulihkan fungsionalitas penuh halaman dan memastikan semua komponen dapat dirender dengan benar.
 *   **Perbaikan Fungsionalitas Keranjang Belanja (Cart)**
     *   Memperbaiki bug di mana panel keranjang belanja tidak dapat dibuka dari halaman Dashboard Pelanggan (`DashboardCust.jsx`).
     *   Masalah disebabkan oleh `DashboardCust.jsx` yang tidak menggunakan `CustomerLayout` sebagai layout utama, sehingga state untuk membuka dan menutup panel keranjang tidak terhubung.
