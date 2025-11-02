@@ -12,7 +12,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('pelanggans', function (Blueprint $table) {
-            $table->string('password')->after('email');
+            $table->string('password')->nullable()->after('email');
         });
     }
 

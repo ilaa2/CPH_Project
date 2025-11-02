@@ -9,6 +9,8 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Midtrans\Config;
@@ -43,23 +45,87 @@ class CheckoutController extends Controller
             'nama' => 'required|string|max:255',
             'telepon' => 'required|string|max:20',
             'alamat' => 'required|string',
-            'kecamatan' => 'required|string',
-            'kota' => 'required|string',
-            'provinsi' => 'required|string',
-            'kode_pos' => 'required|string|max:10',
+            'province_id' => 'required|integer',
+            'province_name' => 'required|string',
+            'city_id' => 'required|integer',
+            'city_name' => 'required|string',
+            'district_id' => 'required|integer',
+            'district_name' => 'required|string',
+            'subdistrict_id' => 'required|integer',
+            'subdistrict_name' => 'required|string',
+            'zip_code' => 'required|string|max:10',
         ]);
-        session(['checkout_address' => $validated]);
+
+        $full_address = "{$validated['alamat']}, {$validated['subdistrict_name']}, {$validated['district_name']}, {$validated['city_name']}, {$validated['province_name']}, {$validated['zip_code']}";
+
+        session(['checkout_address' => [
+            'nama' => $validated['nama'],
+            'telepon' => $validated['telepon'],
+            'alamat' => $validated['alamat'],
+            'full_address_string' => $full_address,
+            'subdistrict_id' => $validated['subdistrict_id'],
+            'zip_code' => $validated['zip_code'],
+        ]]);
+
         return redirect()->route('checkout.shipping');
     }
 
     public function shipping()
     {
         $alamat = session('checkout_address');
-        if (!$alamat) {
-            return redirect()->route('checkout.index')->with('error', 'Silakan isi alamat pengiriman terlebih dahulu.');
+        if (!$alamat || !isset($alamat['subdistrict_id'])) {
+            return redirect()->route('checkout.index')->with('error', 'Silakan lengkapi alamat pengiriman terlebih dahulu.');
         }
+
+        $selectedItemIds = session('selected_cart_items', []);
+        if (empty($selectedItemIds)) {
+            return Redirect::route('cart.index')->with('error', 'Keranjang Anda kosong.');
+        }
+
+        $pelangganId = Auth::guard('pelanggan')->id();
+        $cartItems = Cart::with('product')->whereIn('id', $selectedItemIds)->where('pelanggan_id', $pelangganId)->get();
+
+        if ($cartItems->isEmpty()) {
+            return Redirect::route('cart.index')->with('error', 'Item yang Anda pilih tidak ditemukan.');
+        }
+
+        // Asumsi berat produk dalam gram. Jika tidak ada, gunakan default 1000 gram (1kg) per item.
+        // Pastikan model Produk memiliki atribut 'berat'.
+        $totalWeight = $cartItems->sum(fn($item) => ($item->product->berat ?? 1000) * $item->quantity);
+        if ($totalWeight <= 0) {
+            $totalWeight = 1000; // Berat minimum jika total 0
+        }
+
+        // Panggil API Komerce dari backend
+        $shippingOptions = [];
+        try {
+            $requestPayload = [
+                'origin' => config('rajaongkir.origin'),
+                'destination' => $alamat['subdistrict_id'],
+                'weight' => $totalWeight,
+                'courier' => 'jne:pos:tiki', // Kurir yang didukung
+            ];
+
+            Log::info('Komerce API Request Payload:', $requestPayload);
+
+            $response = Http::withHeaders(['key' => config('rajaongkir.api_key')])
+                ->asForm()
+                ->post(config('rajaongkir.base_url') . '/calculate/domestic-cost', $requestPayload);
+
+            Log::info('Komerce API Response:', ['status' => $response->status(), 'body' => $response->json()]);
+
+            if ($response->successful()) {
+                $shippingOptions = $response->json()['data'] ?? [];
+            } else {
+                Log::error('Komerce API (Cost Calculation) failed in shipping method: ' . $response->body());
+            }
+        } catch (\Exception $e) {
+            Log::error('Exception during Komerce API call in shipping method: ' . $e->getMessage());
+        }
+
         return Inertia::render('Customer/Checkout/Checkout2', [
-            'alamat' => $alamat
+            'alamat' => $alamat,
+            'shippingOptions' => $shippingOptions,
         ]);
     }
 
@@ -172,7 +238,7 @@ public function process(Request $request)
             'total'             => $grandTotal,
             'nomor_pesanan'     => $orderId,
             'status'            => 'pending',
-            'alamat_pengiriman' => "{$alamat['alamat']}, {$alamat['kecamatan']}, {$alamat['kota']}, {$alamat['provinsi']}, {$alamat['kode_pos']}",
+            'alamat_pengiriman' => $alamat['full_address_string'],
             'metode_pengiriman' => $pengiriman['name'] ?? 'Standar',
             'biaya_pengiriman'  => $shippingCost,
             'tanggal'           => now(),
@@ -193,7 +259,7 @@ public function process(Request $request)
             'customer_name'     => $alamat['nama'],
             'customer_email'    => $pelanggan->email,
             'customer_phone'    => $alamat['telepon'],
-            'address'           => "{$alamat['alamat']}, {$alamat['kecamatan']}, {$alamat['kota']}, {$alamat['provinsi']}, {$alamat['kode_pos']}",
+            'address'           => $alamat['full_address_string'],
             'shipping_method'   => $pengiriman['name'] ?? 'Standar',
             'shipping_cost'     => $shippingCost,
             'total_amount'      => $subtotal,

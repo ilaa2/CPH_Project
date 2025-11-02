@@ -24,6 +24,7 @@ use App\Http\Controllers\CheckoutController;
 use App\Models\Transaction;
 use App\Http\Controllers\Customer\PesananControllerCust;
 
+use App\Http\Controllers\DashboardController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -91,18 +92,23 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::get('/kunjungan/{kunjungan}', [KunjunganControllerCust::class, 'show'])->name('customer.kunjungan.show');
 
     Route::post('/profile/update-photo', [CustomerProfileController::class, 'updatePhoto'])->name('customer.profile.update-photo');
+
+    // --- KUMPULAN ROUTE API LOKASI (KOMERCE) ---
+    Route::prefix('api/locations')->name('api.locations.')->group(function () {
+        Route::get('/provinces', [App\Http\Controllers\Api\RajaOngkirController::class, 'getProvinces'])->name('provinces');
+        Route::get('/cities/{provinceId}', [App\Http\Controllers\Api\RajaOngkirController::class, 'getCities'])->name('cities');
+        Route::get('/districts/{cityId}', [App\Http\Controllers\Api\RajaOngkirController::class, 'getDistricts'])->name('districts');
+        Route::get('/subdistricts/{districtId}', [App\Http\Controllers\Api\RajaOngkirController::class, 'getSubdistricts'])->name('subdistricts');
+    });
+
+        // Grup Route untuk Checkout
+    Route::prefix('checkout')->name('checkout.')->group(function () {
+        Route::get('/', [CheckoutController::class, 'index'])->name('index');
+        Route::post('/buy-now', [CheckoutController::class, 'buyNow'])->name('buyNow');
+        Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('saveAddress');
+        Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping');
+    });
 });
-
-
-// === ROUTE UNTUK ADMIN PANEL ===
-
-// Route Autentikasi default (untuk admin)
-require __DIR__.'/auth.php';
-
-// Grup untuk semua route admin yang memerlukan login
-use App\Http\Controllers\DashboardController;
-
-// ... (kode lain di atas)
 
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard Admin
@@ -131,7 +137,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/kunjungan/jadwal', [KunjunganController::class, 'jadwal'])->name('kunjungan.jadwal');
     Route::get('/kunjungan/kalender', [KunjunganController::class, 'kalender'])->name('kunjungan.kalender');
     Route::get('/kunjungan/riwayat', [KunjunganController::class, 'riwayat'])->name('kunjungan.riwayat');
-    
+
     // Laporan
     Route::prefix('laporan')->controller(LaporanController::class)->group(function () {
         Route::get('/', 'index')->name('laporan.index');
@@ -141,3 +147,4 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 });
+
