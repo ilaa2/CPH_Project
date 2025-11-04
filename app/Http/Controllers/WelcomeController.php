@@ -53,7 +53,7 @@ class WelcomeController extends Controller
             }
         }
 
-        return Inertia::render('TentangKami', [
+        return Inertia::render('Customer/TentangKami/TentangKami', [
             'galleryImages' => $galleryImages,
         ]);
     }

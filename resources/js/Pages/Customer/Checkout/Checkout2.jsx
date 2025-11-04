@@ -36,8 +36,14 @@ export default function Checkout2({ alamat, auth, shippingOptions = [] }) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     };
 
+    const formatAddress = (addressString) => {
+        if (!addressString) return '';
+        const parts = addressString.split(', ');
+        const filteredParts = parts.filter(part => part && part.trim() !== 'undefined' && part.trim() !== 'null');
+        return filteredParts.join(', ');
+    };
+
     return (
-        <>
             <Head title="Checkout - Metode Pengiriman" />
             <SiteHeader auth={auth} />
 
@@ -68,7 +74,7 @@ export default function Checkout2({ alamat, auth, shippingOptions = [] }) {
                             <p className="font-semibold">{alamat.nama}</p>
                             <p className="text-gray-600">{alamat.telepon}</p>
                             <p className="text-gray-600 mt-1">
-                                {alamat.full_address_string}
+                                {formatAddress(alamat.full_address_string)}
                             </p>
                             <Link href={route('checkout.index')} className="text-green-600 hover:underline text-sm mt-2 inline-block">
                                 Ubah Alamat

@@ -1,8 +1,9 @@
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Autoplay, Navigation, Pagination } from 'swiper/modules';
+import { Autoplay, Navigation, Pagination, EffectFade } from 'swiper/modules';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
+import 'swiper/css/effect-fade';
 import { Link, Head, router } from '@inertiajs/react';
 import { FiEye, FiShoppingCart, FiUsers, FiSun, FiArrowRight } from 'react-icons/fi';
 import { BsStarFill, BsStar } from 'react-icons/bs';
@@ -22,24 +23,31 @@ import CustomerLayout from '@/Layouts/CustomerLayout';
 function HeroSlider() {
     const slides = [
         {
-            background: '/storage/slide/SlideC.jpeg',
-            title: 'Sayuran Hidroponik untuk Masa Depan Sehat',
-            subtitle: 'Tanpa pestisida, lebih bersih, dan lebih baik untuk keluarga Anda. Rasakan kesegaran langsung dari kebun kami.',
-            buttonText: 'Belanja Sekarang!',
+            background: '/storage/slide/SlideC.jpg',
+            title: 'Kualitas Terbaik, Langsung dari Kebun',
+            subtitle: 'Temukan kesegaran sayuran dan buah hidroponik yang ditanam dengan cinta dan tanpa pestisida.',
+            buttonText: 'Pelajari Lebih Lanjut',
             buttonLink: route('belanja.index'),
         },
         {
-            background: '/storage/slide/SlideB.jpeg',
-            title: 'Outing Class & Kunjungan Edukatif',
-            subtitle: 'Buka wawasan baru dengan program kunjungan interaktif kami. Sempurna untuk sekolah, komunitas, dan keluarga.',
-            buttonText: 'Jadwalkan Kunjungan',
+            background: '/storage/slide/SlideB.jpg',
+            title: 'Belanja Hasil Panen Segar Hari Ini',
+            subtitle: 'Nikmati kemudahan memesan produk segar kami secara online dan diantar langsung ke rumah Anda.',
+            buttonText: 'Belanja Sekarang!',
             buttonLink: route('kunjungan.index'),
         },
         {
-            background: '/storage/slide/SlideA.jpeg',
-            title: 'Selamat Datang di Central Palantea',
-            subtitle: 'Bersama kita wujudkan pertanian sehat, hijau, dan berkelanjutan untuk masa depan yang lebih baik.',
-            buttonText: 'Pelajari Lebih Lanjut',
+            background: '/storage/slide/SlideA.jpg',
+            title: 'Edukasi Menyenangkan untuk Sekolah',
+            subtitle: 'Ajak siswa belajar tentang hidroponik melalui program outing class yang interaktif dan edukatif.',
+            buttonText: 'Jadwalkan Outing Class',
+            buttonLink: route('tentang.kami'),
+        },
+        {
+            background: '/storage/slide/SlideD.jpg',
+            title: 'Rasakan Pengalaman Berwisata di Kebun',
+            subtitle: 'Jadwalkan kunjungan Anda dan keluarga untuk melihat langsung proses tanam modern kami.',
+            buttonText: 'Jadwalkan Kunjungan',
             buttonLink: route('tentang.kami'),
         },
     ];
@@ -47,7 +55,9 @@ function HeroSlider() {
     return (
         <section className="relative w-full h-[60vh] md:h-[70vh] text-white">
             <Swiper
-                modules={[Autoplay, Navigation, Pagination]}
+                modules={[Autoplay, Navigation, Pagination, EffectFade]}
+                effect="fade"
+                fadeEffect={{ crossFade: true }}
                 autoplay={{ delay: 5000, disableOnInteraction: false }}
                 loop={true}
                 navigation
@@ -55,7 +65,12 @@ function HeroSlider() {
                 className="h-full"
             >
                 {slides.map((slide, index) => (
-                    <SwiperSlide key={index} className="h-full bg-cover bg-center" style={{ backgroundImage: `url('${slide.background}')` }}>
+                    <SwiperSlide key={index} className="relative h-full">
+                        <img
+                            src={slide.background}
+                            alt="" // Decorative background image
+                            className="absolute inset-0 w-full h-full object-cover"
+                        />
                         <div className="absolute inset-0 bg-black/50"></div>
                         <div className="relative z-10 h-full flex flex-col items-center justify-center text-center max-w-4xl mx-auto px-4">
                             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold leading-tight drop-shadow-lg">

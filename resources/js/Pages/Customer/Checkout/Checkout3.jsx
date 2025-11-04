@@ -52,6 +52,13 @@ export default function Checkout3({ cartItems, subtotal, alamat, pengiriman, aut
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     };
 
+    const formatAddress = (addressString) => {
+        if (!addressString) return '';
+        const parts = addressString.split(', ');
+        const filteredParts = parts.filter(part => part && part.trim() !== 'undefined' && part.trim() !== 'null');
+        return filteredParts.join(', ');
+    };
+
     const ongkosKirim = pengiriman?.price || 0;
     const totalPembayaran = subtotal + ongkosKirim;
 
@@ -105,7 +112,7 @@ export default function Checkout3({ cartItems, subtotal, alamat, pengiriman, aut
                                         <h3 className="font-bold mb-2">Alamat Pengiriman</h3>
                                         <p className="font-semibold">{alamat.nama}</p>
                                         <p className="text-gray-600">{alamat.telepon}</p>
-                                        <p className="text-gray-600 mt-1 text-sm">{`${alamat.alamat}, ${alamat.kecamatan}, ${alamat.kota}, ${alamat.provinsi}, ${alamat.kode_pos}`}</p>
+                                        <p className="text-gray-600 mt-1 text-sm">{formatAddress(alamat.full_address_string)}</p>
                                         <Link href={route('checkout.index')} className="text-green-600 hover:underline text-sm mt-2 inline-block">Ubah</Link>
                                     </div>
                                     <div>

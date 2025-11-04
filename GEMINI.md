@@ -154,6 +154,37 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 
 ### Riwayat Perubahan
 
+**Selasa, 4 November 2025**
+*   **Perbaikan Format Alamat Pengiriman (Lanjutan):**
+    *   Mengatasi masalah persisten di mana alamat pengiriman pada halaman checkout masih menampilkan string "undefined" atau nilai kosong.
+    *   **Akar Masalah:** Meskipun filter awal sudah diterapkan, beberapa skenario data input atau respons API masih memungkinkan nilai kosong atau literal "undefined"/"null" untuk lolos ke *frontend*.
+    *   **Solusi Komprehensif:**
+        1.  **Backend (`CheckoutController.php`):** Logika `array_filter` di method `saveAddress` diperkuat. Setiap bagian alamat kini secara eksplisit di-*cast* ke string dan kemudian difilter secara ketat untuk menghapus string kosong (`''`), serta literal string `'undefined'` dan `'null'`. Ini memastikan `full_address_string` yang disimpan ke sesi selalu bersih.
+        2.  **Frontend (`Checkout2.jsx` & `Checkout3.jsx`):** Fungsi utilitas `formatAddress` yang memecah string alamat, memfilter bagian yang kosong atau tidak valid, dan menggabungkannya kembali, telah diterapkan pada kedua komponen `Checkout2.jsx` dan `Checkout3.jsx`. Ini menjamin bahwa alamat yang ditampilkan kepada pengguna selalu rapi dan benar, terlepas dari potensi inkonsistensi data awal.
+
+*   **Restrukturisasi Halaman "Tentang Kami":**
+    *   Melakukan restrukturisasi file untuk meningkatkan organisasi dan modularitas komponen halaman.
+    *   **Tindakan:** File `TentangKami.jsx` dipindahkan dari direktori `resources/js/Pages` ke dalam folder baru yang lebih spesifik, yaitu `resources/js/Pages/Customer/TentangKami/`.
+    *   **Penyesuaian Kode:** Path rendering di dalam `WelcomeController.php` diperbarui untuk menunjuk ke lokasi file yang baru (`Customer/TentangKami/TentangKami`), memastikan rute `/tentang-kami` tetap berfungsi tanpa error.
+    *   **Hasil:** Perubahan ini merapikan struktur direktori halaman frontend, membuatnya lebih terorganisir dan mudah dikelola.
+
+*   **Refaktorisasi Direktori Controller:**
+    *   Melakukan refaktorisasi untuk mengatasi inkonsistensi dalam struktur direktori `app/Http/Controllers`.
+    *   **Tindakan:** Mengonsolidasikan direktori `Cust` dan `Customer` yang duplikatif. Semua file *controller* dari `app/Http/Controllers/Cust` dipindahkan ke `app/Http/Controllers/Customer`.
+    *   **Penyesuaian Kode:** *Namespace* pada setiap *controller* yang dipindahkan telah diperbarui dari `App\Http-Controllers\Cust` menjadi `App\Http\Controllers\Customer`. Selain itu, semua pernyataan `use` yang relevan di `routes/web.php` juga telah disesuaikan untuk merujuk ke *namespace* yang baru.
+    *   **Hasil:** Perubahan ini berhasil menyederhanakan struktur proyek, menghilangkan redundansi, dan meningkatkan konsistensi serta keterbacaan kode.
+
+*   **Perbaikan `RouteNotFoundException` (Route `login`):**
+    *   Mengatasi error `Symfony\Component\Routing\Exception\RouteNotFoundException` dengan pesan `Route [login] not defined` yang menyebabkan aplikasi mengalami *crash*.
+    *   **Akar Masalah:** Error ini terjadi karena middleware autentikasi mencoba mengarahkan pengguna yang belum terautentikasi ke route bernama `login`, namun route tersebut belum didefinisikan dalam aplikasi.
+    *   **Solusi:** Memperbaiki masalah dengan menyertakan file `routes/auth.php` ke dalam `routes/web.php` menggunakan `require __DIR__.'/auth.php';`. Tindakan ini memastikan bahwa semua route terkait autentikasi, termasuk route `login`, terdaftar dengan benar dan dapat diakses oleh aplikasi, sehingga mencegah *crash* dan memastikan alur autentikasi berjalan lancar.
+
+*   **Perbaikan Komprehensif Hero Slider (Layout, Konten & Transisi):**
+    *   Mengatasi serangkaian masalah desain pada komponen *hero slider* di halaman utama pelanggan (`DashboardCust.jsx`) untuk meningkatkan pengalaman pengguna secara keseluruhan.
+    *   **Solusi Tata Letak & Konten:** Memperbaiki penempatan tombol CTA yang canggung dengan menambahkan data `title` dan `subtitle` yang sebelumnya hilang. Ini memberikan konteks pada tombol dan menyelaraskannya secara logis di bawah blok teks.
+    *   **Solusi Rasio Aspek Gambar:** Mengubah metode rendering dari `background-image` CSS menjadi tag `<img>` HTML dengan `object-cover` untuk memastikan semua gambar latar ditampilkan secara proporsional tanpa distorsi.
+    *   **Solusi Transisi Tumpang Tindih:** Mengatasi masalah di mana teks dan tombol dari slide yang berbeda saling tumpang tindih selama transisi. Ini diselesaikan dengan mengubah efek animasi carousel dari `slide` menjadi `fade`, sehingga menghasilkan pergantian slide yang mulus dan bebas dari elemen yang berbenturan secara visual.
+
 **Rabu, 22 Oktober 2025**
 *   **Penyempurnaan Tampilan Kalender (Auto-Fit Viewport):**
     *   Mengatasi masalah munculnya *scrollbar* internal pada komponen kalender yang disebabkan oleh pembatasan tinggi (`height="80vh"`).

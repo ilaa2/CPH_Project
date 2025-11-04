@@ -17,7 +17,7 @@ use App\Models\Produk;
 use App\Models\TipeKunjungan;
 
 use App\Http\Controllers\BelanjaController;
-use App\Http\Controllers\Cust\KunjunganControllerCust;
+use App\Http\Controllers\Customer\KunjunganControllerCust;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
 use App\Http\Controllers\CheckoutController;
@@ -147,4 +147,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 });
+
+require __DIR__.'/auth.php';
 
