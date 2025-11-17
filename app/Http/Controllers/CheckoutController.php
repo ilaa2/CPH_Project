@@ -136,9 +136,12 @@ class CheckoutController extends Controller
             Log::error('Exception during Komerce API call in shipping method: ' . $e->getMessage());
         }
 
+        $isMandau = isset($alamat['district_name']) && strtolower($alamat['district_name']) === 'mandau';
+
         return Inertia::render('Customer/Checkout/Checkout2', [
             'alamat' => $alamat,
             'shippingOptions' => $shippingOptions,
+            'isMandau' => $isMandau,
         ]);
     }
 
@@ -212,16 +215,6 @@ class CheckoutController extends Controller
         ]);
     }
 
-    // === METHOD process() SEKARANG ADA DI SINI (TEMPAT YANG BENAR) ===
-    // Ganti seluruh method process() di CheckoutController.php dengan ini
-
-// Ganti seluruh method process() di CheckoutController.php dengan ini
-
-// Ganti seluruh method process() di CheckoutController.php dengan ini
-
-// Ganti seluruh method process() di CheckoutController.php dengan ini
-
-// Ganti seluruh method process() di CheckoutController.php dengan ini
 
 public function process(Request $request)
 {

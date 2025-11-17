@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
+import { Head, Link } from '@inertiajs/react';
+import CustomerLayout from '@/Layouts/CustomerLayout';
 import { FiArchive, FiCalendar, FiShoppingBag, FiMapPin, FiUsers } from 'react-icons/fi';
 
-// Komponen untuk menampilkan kartu pesanan produk
+// ... (Komponen PesananProdukCard dan PesananKunjunganCard tetap sama) ...
 const PesananProdukCard = ({ pesanan }) => {
     const formatCurrency = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -68,7 +68,6 @@ const PesananProdukCard = ({ pesanan }) => {
     );
 };
 
-// Komponen untuk menampilkan kartu pesanan kunjungan (Desain Baru)
 const PesananKunjunganCard = ({ kunjungan }) => {
     const formatCurrency = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' });
@@ -129,6 +128,7 @@ const PesananKunjunganCard = ({ kunjungan }) => {
     );
 };
 
+
 export default function Riwayat({ riwayatProduk, riwayatKunjungan, auth }) {
     const [activeTab, setActiveTab] = useState('produk');
 
@@ -144,9 +144,8 @@ export default function Riwayat({ riwayatProduk, riwayatKunjungan, auth }) {
     );
 
     return (
-        <>
+        <CustomerLayout auth={auth}>
             <Head title="Riwayat Pesanan" />
-            <SiteHeader auth={auth} />
 
             <main className="bg-gray-50 font-sans min-h-screen">
                 <div className="max-w-5xl mx-auto px-4 py-12">
@@ -194,8 +193,6 @@ export default function Riwayat({ riwayatProduk, riwayatKunjungan, auth }) {
                     </div>
                 </div>
             </main>
-
-            <FooterNote />
-        </>
+        </CustomerLayout>
     );
 }

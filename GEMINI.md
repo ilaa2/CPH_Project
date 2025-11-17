@@ -126,7 +126,7 @@ Proyek ini menggunakan alur kerja semi-otomatis untuk mencatat perkembangan. Tuj
     -   *Contoh Pesan Commit yang Baik:* Feat: Menambahkan fitur login atau Fix: Memperbaiki validasi form produk.
 
 ### Langkah 2: Asisten AI (Gemini)
-1.  Setelah Anda siap mencatat kemajuan, berikan perintah sederhana seperti: *"Tolong perbarui changelog"*.
+1.  Setelah Anda siap mencatat kemajuan, berikan perintah sederhana seperti: "Tolong perbarui changelog".
 2.  Asisten akan menganalisis commit terakhir Anda, membuat draf entri changelog, dan meminta persetujuan Anda.
 3.  Setelah Anda setuju, asisten akan secara otomatis menambahkan entri tersebut di bawah ini.
 
@@ -153,6 +153,106 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 ---
 
 ### Riwayat Perubahan
+
+**Senin, 17 November 2025**
+*   **Perbaikan `ReferenceError: useState is not defined` di `Checkout2.jsx`:**
+    *   Mengatasi error `Uncaught ReferenceError: useState is not defined` yang terjadi di `resources/js/Pages/Customer/Checkout/Checkout2.jsx`.
+    *   **Akar Masalah:** Komponen `Checkout2.jsx` menggunakan hook `useState` dan `useEffect` tanpa mengimpornya dari React, menyebabkan aplikasi *crash*.
+    *   **Solusi:** Menambahkan `useState` dan `useEffect` ke dalam pernyataan import `React` di bagian atas file.
+    *   **Sebelum:**
+        ```jsx
+        import React from 'react';
+        ```
+    *   **Sesudah:**
+        ```jsx
+        import React, { useState, useEffect } from 'react';
+        ```
+
+*   **Implementasi Logika Pengiriman Dinamis Berdasarkan Lokasi (dengan Detail Kode):**
+    *   Mengubah alur pemilihan metode pengiriman untuk memberikan pengalaman yang berbeda bagi pelanggan lokal (di kota Duri) dan non-lokal, meningkatkan UX dengan menyederhanakan pilihan bagi pelanggan non-lokal dan memberikan opsi penjemputan yang relevan bagi pelanggan lokal.
+
+    *   **1. Backend (`CheckoutController.php`):**
+        *   **Perubahan:** Menambahkan logika pada method `shipping` untuk memeriksa `city_name` dari sesi dan mengirimkan *flag* boolean `isKotaDuri` ke frontend.
+        *   **Sebelum:**
+            ```php
+            return Inertia::render('Customer/Checkout/Checkout2', [
+                'alamat' => $alamat,
+                'shippingOptions' => $shippingOptions,
+            ]);
+            ```
+        *   **Sesudah:**
+            ```php
+            $isKotaDuri = isset($alamat['city_name']) && strtolower($alamat['city_name']) === 'duri';
+
+            return Inertia::render('Customer/Checkout/Checkout2', [
+                'alamat' => $alamat,
+                'shippingOptions' => $shippingOptions,
+                'isKotaDuri' => $isKotaDuri,
+            ]);
+            ```
+
+    *   **2. Frontend (`Checkout2.jsx`):**
+        *   **Perubahan:** Merombak total komponen untuk menangani *flag* `isKotaDuri`. Ini termasuk penambahan *state management* baru dan *rendering* kondisional untuk menampilkan UI yang berbeda (opsi "Ambil Sendiri" untuk Duri, dan *dropdown* kurir untuk luar Duri).
+        *   **Sebelum (Logika Inisialisasi & Form):**
+            ```jsx
+            export default function Checkout2({ alamat, auth, shippingOptions = [] }) {
+                const { data, setData, post, processing, errors } = useForm({
+                    pengiriman: null,
+                });
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    if (!data.pengiriman) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oops...',
+                            text: 'Anda harus memilih satu metode pengiriman!',
+                        });
+                        return;
+                    }
+                    post(route('checkout.saveShipping'), { /* ... */ });
+                };
+
+                // ... Sisa render form statis ...
+            }
+            ```
+        *   **Sesudah (Logika Inisialisasi & Form Dinamis):**
+            ```jsx
+            export default function Checkout2({ alamat, auth, shippingOptions = [], isKotaDuri }) {
+                const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState(isKotaDuri ? 'ambil_sendiri' : 'ekspedisi');
+                const [pickupTime, setPickupTime] = useState('');
+                const [showCourierDropdown, setShowCourierDropdown] = useState(false);
+
+                // ... (useEffect dan helper functions ditambahkan) ...
+
+                const { data, setData, post, processing, errors } = useForm({
+                    pengiriman: null,
+                    pickup_time: '',
+                });
+
+                const handleSubmit = (e) => {
+                    e.preventDefault();
+                    // ... (Logika submit baru yang menangani semua kasus) ...
+                };
+
+                // ... Sisa render form dengan JSX kondisional ...
+            }
+            ```
+
+*   **Perbaikan `Adjacent JSX elements` di `Checkout2.jsx`:**
+    *   Mengatasi error `[plugin:vite:react-babel] Adjacent JSX elements must be wrapped in an enclosing tag` yang terjadi di `resources/js/Pages/Customer/Checkout/Checkout2.jsx`.
+    *   **Akar Masalah:** Komponen `Checkout2.jsx` mengembalikan beberapa elemen JSX (`<Head>`, `<SiteHeader>`, dan `<main>`) secara langsung dalam satu pernyataan `return()` tanpa dibungkus dalam satu elemen induk.
+    *   **Solusi:** Memperbaiki struktur `return()` dengan membungkus semua elemen JSX yang berdekatan di dalam `JSX Fragment` (`<>...</>`), memastikan bahwa hanya satu elemen induk yang dikembalikan oleh komponen React.
+
+*   **Perbaikan `ParseError` di `CheckoutController.php`:**
+    *   Mengatasi `ParseError` yang terjadi di `app/Http/Controllers/CheckoutController.php` pada baris 59.
+    *   **Akar Masalah:** Kesalahan sintaksis dalam definisi array `$address_parts`, yang disebabkan oleh penggunaan karakter `\n` yang di-escape dan `\'` yang di-escape, serta sebuah backslash tambahan, bukan pemisah koma yang benar antar elemen array.
+    *   **Solusi:** Memperbaiki sintaks array `$address_parts` dengan memformat ulang elemen-elemennya secara benar, memastikan setiap bagian alamat dipisahkan oleh koma dan ditempatkan pada baris baru untuk keterbacaan yang lebih baik. Ini mengembalikan fungsionalitas yang diharapkan untuk mengumpulkan bagian-bagian alamat sebelum difilter dan digabungkan menjadi string alamat lengkap.
+
+*   **Penerapan Latar Belakang Hero Section Halaman Kunjungan:**
+    *   Mengganti latar belakang abu-abu polos pada *hero section* halaman "Jadwalkan Kunjungan Anda" (`Kunjungan.jsx`) dengan gambar dinamis dari galeri.
+    *   **Tindakan:** Memperbarui `style` pada komponen `<section>` untuk menggunakan gambar `foto-palantea-14.jpeg` yang terletak di `storage/app/public/galeri/`.
+    *   **Peningkatan Visual:** Menambahkan *overlay* gradien (`bg-gradient-to-t from-black/70 to-black/20`) di atas gambar untuk meningkatkan kontras dan memastikan keterbacaan teks judul.
 
 **Selasa, 4 November 2025**
 *   **Perbaikan Format Alamat Pengiriman (Lanjutan):**
@@ -283,10 +383,6 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
         - **Halaman Formulir (Tambah Produk & Tambah Pelanggan):** Menyempurnakan layout formulir agar memenuhi lebar layar di mobile dan memperbarui gaya input untuk tampilan yang lebih modern dan konsisten di seluruh aplikasi.
 
 (Entri baru akan ditambahkan di sini oleh Asisten AI)
-*   **Perbaikan `Adjacent JSX elements` di `Checkout2.jsx`:**
-    *   Mengatasi error `[plugin:vite:react-babel] Adjacent JSX elements must be wrapped in an enclosing tag` yang terjadi di `resources/js/Pages/Customer/Checkout/Checkout2.jsx`.
-    *   **Akar Masalah:** Komponen `Checkout2.jsx` mengembalikan beberapa elemen JSX (`<Head>`, `<SiteHeader>`, dan `<main>`) secara langsung dalam satu pernyataan `return()` tanpa dibungkus dalam satu elemen induk.
-    *   **Solusi:** Memperbaiki struktur `return()` dengan membungkus semua elemen JSX yang berdekatan di dalam `JSX Fragment` (`<>...</>`), memastikan bahwa hanya satu elemen induk yang dikembalikan oleh komponen React.
 *   **Perbaikan Komponen Halaman Utama Pelanggan:**
     *   Memperbaiki error fatal `Uncaught ReferenceError` pada halaman utama pelanggan (`DashboardCust.jsx`) yang disebabkan oleh banyaknya impor komponen yang hilang.
     *   **Solusi:** Menambahkan semua impor yang diperlukan, termasuk `CustomerLayout`, `Link`, `Head`, `router`, ikon dari `react-icons`, dan `Swal`. Tindakan ini memulihkan fungsionalitas penuh halaman dan memastikan semua komponen dapat dirender dengan benar.

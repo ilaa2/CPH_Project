@@ -14,14 +14,6 @@ class CartController extends Controller
     use AuthorizesRequests;
 
     /**
-     * Menampilkan halaman keranjang.
-     */
-    public function index()
-    {
-        return inertia('Customer/Cart');
-    }
-
-    /**
      * Menambahkan produk ke keranjang atau mengupdate kuantitasnya.
      */
     public function store(Request $request)
