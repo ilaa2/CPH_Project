@@ -44,6 +44,7 @@ export default function Checkout2({ alamat, auth, shippingOptions = [] }) {
     };
 
     return (
+        <>
             <Head title="Checkout - Metode Pengiriman" />
             <SiteHeader auth={auth} />
 

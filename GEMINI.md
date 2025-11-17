@@ -283,6 +283,10 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
         - **Halaman Formulir (Tambah Produk & Tambah Pelanggan):** Menyempurnakan layout formulir agar memenuhi lebar layar di mobile dan memperbarui gaya input untuk tampilan yang lebih modern dan konsisten di seluruh aplikasi.
 
 (Entri baru akan ditambahkan di sini oleh Asisten AI)
+*   **Perbaikan `Adjacent JSX elements` di `Checkout2.jsx`:**
+    *   Mengatasi error `[plugin:vite:react-babel] Adjacent JSX elements must be wrapped in an enclosing tag` yang terjadi di `resources/js/Pages/Customer/Checkout/Checkout2.jsx`.
+    *   **Akar Masalah:** Komponen `Checkout2.jsx` mengembalikan beberapa elemen JSX (`<Head>`, `<SiteHeader>`, dan `<main>`) secara langsung dalam satu pernyataan `return()` tanpa dibungkus dalam satu elemen induk.
+    *   **Solusi:** Memperbaiki struktur `return()` dengan membungkus semua elemen JSX yang berdekatan di dalam `JSX Fragment` (`<>...</>`), memastikan bahwa hanya satu elemen induk yang dikembalikan oleh komponen React.
 *   **Perbaikan Komponen Halaman Utama Pelanggan:**
     *   Memperbaiki error fatal `Uncaught ReferenceError` pada halaman utama pelanggan (`DashboardCust.jsx`) yang disebabkan oleh banyaknya impor komponen yang hilang.
     *   **Solusi:** Menambahkan semua impor yang diperlukan, termasuk `CustomerLayout`, `Link`, `Head`, `router`, ikon dari `react-icons`, dan `Swal`. Tindakan ini memulihkan fungsionalitas penuh halaman dan memastikan semua komponen dapat dirender dengan benar.

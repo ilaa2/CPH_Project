@@ -56,7 +56,29 @@ class CheckoutController extends Controller
             'zip_code' => 'required|string|max:10',
         ]);
 
-        $address_parts = [\n            (string)($validated[\'alamat\'] ?? \'\'),\n            (string)($validated[\'subdistrict_name\'] ?? \'\'),\n            (string)($validated[\'district_name\'] ?? \'\'),\n            (string)($validated[\'city_name\'] ?? \'\'),\n            (string)($validated[\'province_name\'] ?? \'\'),\            (string)($validated[\'zip_code\'] ?? \'\')\n        ];\n\n        $full_address = implode(\', \', array_filter($address_parts, fn($value) => \n            $value !== \'\' && \n            $value !== \'undefined\' && \n            $value !== \'null\'\n        ));\n\n        session([\'checkout_address\' => [\n            \'nama\' => $validated[\'nama\'],\n            \'telepon\' => $validated[\'telepon\'],\n            \'alamat\' => $validated[\'alamat\'],\n            \'full_address_string\' => $full_address,\n            \'subdistrict_id\' => $validated[\'subdistrict_id\'],\n            \'zip_code\' => $validated[\'zip_code\'],\n        ]]);
+        $address_parts = [
+            (string)($validated['alamat'] ?? ''),
+            (string)($validated['subdistrict_name'] ?? ''),
+            (string)($validated['district_name'] ?? ''),
+            (string)($validated['city_name'] ?? ''),
+            (string)($validated['province_name'] ?? ''),
+            (string)($validated['zip_code'] ?? '')
+        ];
+
+        $full_address = implode(', ', array_filter($address_parts, fn($value) =>
+            $value !== '' &&
+            $value !== 'undefined' &&
+            $value !== 'null'
+        ));
+
+        session(['checkout_address' => [
+            'nama' => $validated['nama'],
+            'telepon' => $validated['telepon'],
+            'alamat' => $validated['alamat'],
+            'full_address_string' => $full_address,
+            'subdistrict_id' => $validated['subdistrict_id'],
+            'zip_code' => $validated['zip_code'],
+        ]]);
 
         return redirect()->route('checkout.shipping');
     }

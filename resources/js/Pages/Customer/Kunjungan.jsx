@@ -172,8 +172,8 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
         <>
             <Head title="Jadwalkan Kunjungan" />
 
-            <section className="relative h-[300px] sm:h-[400px] bg-cover bg-center" style={{ backgroundImage: 'url(/images/kunjungan-hero.jpg)' }}>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+            <section className="relative h-[300px] sm:h-[400px] bg-cover bg-center" style={{ backgroundImage: "url('/storage/galeri/foto-palantea-14.jpeg')" }}>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20"></div>
                 <div className="relative z-10 max-w-6xl mx-auto text-center px-6 flex flex-col justify-end h-full pb-20 text-white">
                     <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-4xl sm:text-5xl font-extrabold mb-2 drop-shadow-lg">
                         Jadwalkan Kunjungan Anda
