@@ -16,14 +16,15 @@ const DetailRow = ({ icon, label, value }) => (
 );
 
 
-export default function KunjunganKonfirmasi({ dataKunjungan }) {
+export default function KunjunganKonfirmasi({ auth, dataKunjungan }) {
     // State untuk processing button
     const [processing, setProcessing] = useState(false);
+
 
     // Fungsi untuk submit data ke method 'store'
     const handleSubmit = () => {
         setProcessing(true);
-        router.post(route('customer.kunjungan.store'), dataKunjungan, {
+        router.post(route('kunjungan.store'), dataKunjungan, {
             onFinish: () => setProcessing(false),
         });
     };
@@ -40,7 +41,7 @@ export default function KunjunganKonfirmasi({ dataKunjungan }) {
     return (
         <div className="min-h-screen w-full bg-gradient-to-b from-green-50 to-green-100 text-gray-800">
             <Head title="Konfirmasi Kunjungan" />
-            <SiteHeader />
+            <SiteHeader auth={auth} />
 
             <section className="relative h-[300px] bg-cover bg-center" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1524592094714-0f0654e20314?auto=format&fit=crop&w=1600&q=80)' }}>
                 <div className="absolute inset-0 bg-gradient-to-r from-green-900/70 to-green-600/60"></div>
@@ -71,7 +72,16 @@ export default function KunjunganKonfirmasi({ dataKunjungan }) {
                             <DetailRow icon={<FiPhone size={20} />} label="No HP" value={dataKunjungan.no_hp} />
                             <DetailRow icon={<FiCalendar size={20} />} label="Tanggal" value={dataKunjungan.tanggal_kunjungan} />
                             <DetailRow icon={<FiClipboard size={20} />} label="Tipe Kunjungan" value={dataKunjungan.nama_tipe} />
-                            <DetailRow icon={<FiUsers size={20} />} label="Jumlah Pengunjung" value={`${dataKunjungan.jumlah_pengunjung} Orang`} />
+                            {dataKunjungan.nama_tipe !== 'Outing Class' && (
+                                <>
+                                    <DetailRow icon={<FiUsers size={20} />} label="Jumlah Dewasa" value={`${dataKunjungan.jumlah_dewasa} Orang`} />
+                                    <DetailRow icon={<FiUsers size={20} />} label="Jumlah Anak (>2 thn)" value={`${dataKunjungan.jumlah_anak} Orang`} />
+                                    <DetailRow icon={<FiUsers size={20} />} label="Jumlah Balita (0-2 thn)" value={`${dataKunjungan.jumlah_balita} Orang`} />
+                                </>
+                            )}
+                            {dataKunjungan.nama_tipe === 'Outing Class' && (
+                                <DetailRow icon={<FiUsers size={20} />} label="Jumlah Anak" value={`${dataKunjungan.jumlah_anak} Orang`} />
+                            )}
                             <DetailRow icon={<FiDollarSign size={20} />} label="Total Biaya" value={formatCurrency(dataKunjungan.total_biaya)} />
                         </div>
 

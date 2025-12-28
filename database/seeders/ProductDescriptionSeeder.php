@@ -13,8 +13,8 @@ class ProductDescriptionSeeder extends Seeder
     public function run(): void
     {
         $descriptions = [
-            // Sayuran
-            'Arugulaa' => 'Arugula dikenal dengan cita rasanya yang sedikit pedas dan getir, memberikan sentuhan gourmet pada setiap salad. Sayuran ini kaya akan nitrat yang dapat membantu meningkatkan aliran darah dan kesehatan jantung.',
+            // === SAYURAN (Disesuaikan dengan ProductsSeeder) ===
+            'Arugula' => 'Arugula dikenal dengan cita rasanya yang sedikit pedas dan getir, memberikan sentuhan gourmet pada setiap salad. Sayuran ini kaya akan nitrat yang dapat membantu meningkatkan aliran darah dan kesehatan jantung.',
             'Bayam' => 'Bayam merupakan sayuran hijau padat nutrisi yang menjadi sumber zat besi, vitamin A, dan vitamin C. Sangat serbaguna untuk diolah menjadi berbagai masakan mulai dari sup hingga smoothie sehat.',
             'Butterhead' => 'Selada Butterhead memiliki tekstur yang sangat lembut dan rasa manis seperti mentega, membuatnya menjadi pilihan favorit untuk sandwich dan salad premium.',
             'Cabai Keriting' => 'Cabai Keriting menawarkan rasa pedas yang khas dan sangat digemari dalam masakan Indonesia. Selain memberikan sensasi pedas yang menggugah selera, cabai ini mengandung capsaicin yang bermanfaat untuk meningkatkan metabolisme.',
@@ -37,7 +37,7 @@ class ProductDescriptionSeeder extends Seeder
             'Tatsoi' => 'Tatsoi memiliki daun hijau gelap berbentuk sendok dengan rasa yang lembut dan sedikit manis. Sayuran ini kaya akan vitamin C dan kalsium, serta dapat diolah dengan sangat cepat.',
             'Wortel' => 'Wortel dikenal luas karena rasanya yang manis dan teksturnya yang renyah. Keunggulan utamanya adalah kandungan beta-karoten yang sangat tinggi untuk mendukung kesehatan mata.',
 
-            // Buah
+            // === BUAH (Disesuaikan dengan ProductsSeeder) ===
             'Anggur' => 'Anggur menawarkan rasa manis dan juicy yang menyegarkan. Buah ini kaya akan antioksidan, terutama resveratrol, yang terkenal baik untuk kesehatan jantung dan melawan penuaan dini.',
             'Apel' => 'Apel adalah buah yang renyah dan manis, serta menjadi sumber serat pangan yang sangat baik. Mengonsumsi apel secara teratur dapat membantu menjaga kesehatan pencernaan dan mengontrol berat badan.',
             'Apel Hijau' => 'Apel Hijau memiliki rasa asam yang segar dan tekstur yang lebih renyah. Keunggulannya adalah kandungan gulanya yang cenderung lebih rendah dan seratnya yang tinggi, cocok bagi yang menjaga asupan gula.',
@@ -50,7 +50,6 @@ class ProductDescriptionSeeder extends Seeder
             'Buah Naga' => 'Buah Naga memiliki penampilan yang eksotis dengan rasa manis yang ringan. Buah ini kaya akan serat prebiotik yang baik untuk bakteri usus, serta mengandung vitamin C untuk daya tahan tubuh.',
             'Ceri' => 'Ceri memiliki rasa manis yang khas dan warna merah pekat. Buah ini mengandung melatonin alami yang dapat membantu meningkatkan kualitas tidur, serta memiliki sifat anti-inflamasi.',
             'Delima' => 'Delima terkenal dengan biji-bijinya yang juicy dengan rasa manis-asam. Buah ini mengandung antioksidan punicalagin yang sangat kuat untuk melindungi tubuh dari kerusakan sel.',
-            'Fig' => 'Buah Fig atau Tin memiliki rasa yang sangat manis dan tekstur yang lembut. Buah ini adalah sumber serat larut yang sangat baik untuk kesehatan pencernaan serta kaya akan mineral seperti kalium.',
             'Gooseberry' => 'Gooseberry menawarkan rasa asam yang tajam dan menyegarkan. Keunggulan utamanya adalah kandungan vitamin C yang sangat tinggi, yang berperan penting dalam meningkatkan sistem kekebalan tubuh.',
             'Guava' => 'Jambu Biji (Guava) memiliki rasa manis dan aroma yang kuat. Keunggulan buah ini adalah kandungan vitamin C-nya yang luar biasa tinggi, bahkan melebihi jeruk, serta seratnya yang melimpah.',
             'Jeruk' => 'Jeruk adalah buah yang identik dengan rasa manis, asam, dan segar. Keunggulan utamanya adalah sebagai sumber vitamin C yang populer untuk meningkatkan imunitas dan menjaga kesehatan kulit.',
@@ -63,10 +62,12 @@ class ProductDescriptionSeeder extends Seeder
             'Melon' => 'Melon memiliki daging buah yang tebal, manis, dan berair, menjadikannya buah yang sangat menyegarkan. Keunggulannya adalah kandungan kalium dan airnya yang tinggi untuk menjaga keseimbangan cairan tubuh.',
             'Nanas' => 'Nanas menawarkan perpaduan rasa manis dan asam yang tajam. Keunggulan uniknya adalah kandungan enzim bromelain, yang dapat membantu melancarkan pencernaan dan mengurangi peradangan.',
             'Pir' => 'Pir memiliki tekstur renyah atau lembut dengan rasa manis dan kandungan air yang tinggi. Buah ini merupakan sumber serat yang sangat baik untuk kesehatan usus dan memberikan rasa kenyang lebih lama.',
-            'Pokat' => 'Alpukat atau Pokat memiliki tekstur creamy seperti mentega. Keunggulan utamanya adalah kandungan lemak tak jenuh tunggal yang sehat untuk jantung, serta kaya akan kalium dan serat.',
             'Raspberry' => 'Raspberry adalah buah beri dengan rasa manis-asam yang lembut. Buah ini memiliki kandungan serat tertinggi di antara buah beri lainnya, sangat baik untuk kesehatan pencernaan.',
             'Strawberry' => 'Strawberry sangat digemari karena rasanya yang manis dan aromanya yang khas. Buah ini merupakan sumber vitamin C dan mangan yang luar biasa untuk kesehatan jantung dan kulit.',
             'Zaitun' => 'Zaitun adalah buah unik yang menjadi sumber utama minyak zaitun. Buah ini kaya akan lemak tak jenuh tunggal dan vitamin E, yang bermanfaat sebagai antioksidan kuat untuk melindungi sel-sel tubuh.',
+
+            // Nama 'Pokat' diubah menjadi 'Alpukat' agar cocok
+            'Alpukat' => 'Alpukat atau Pokat memiliki tekstur creamy seperti mentega. Keunggulan utamanya adalah kandungan lemak tak jenuh tunggal yang sehat untuk jantung, serta kaya akan kalium dan serat.',
         ];
 
         foreach ($descriptions as $nama => $deskripsi) {

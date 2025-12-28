@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\WelcomeController;
@@ -16,9 +17,14 @@ use App\Models\Produk;
 use App\Models\TipeKunjungan;
 
 use App\Http\Controllers\BelanjaController;
-use App\Http\Controllers\Cust\KunjunganControllerCust;
-use App\Http\Controllers\CartController; // <-- 1. TAMBAHKAN USE STATEMENT INI
+use App\Http\Controllers\Customer\KunjunganControllerCust;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\Customer\ProfileController as CustomerProfileController;
+use App\Http\Controllers\CheckoutController;
+use App\Models\Transaction;
+use App\Http\Controllers\Customer\PesananControllerCust;
 
+use App\Http\Controllers\DashboardController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -27,54 +33,86 @@ use App\Http\Controllers\CartController; // <-- 1. TAMBAHKAN USE STATEMENT INI
 
 // === ROUTE UNTUK PUBLIK & PELANGGAN ===
 Route::get('/', [WelcomeController::class, 'index'])->name('home');
+Route::get('/tentang-kami', [WelcomeController::class, 'tentangKami'])->name('tentang.kami');
 
 
 Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(function () {
-
-    Route::get('/dashboard', function () {
-        $latestBuah = Produk::where('status', 'Aktif')->where('id_kategori', 2)->latest()->take(8)->get();
-        $latestSayur = Produk::where('status', 'Aktif')->where('id_kategori', 1)->latest()->take(8)->get();
-        $tipeKunjungan = TipeKunjungan::all();
-
-        return Inertia::render('Customer/DashboardCust', [
-            'latestBuah' => $latestBuah,
-            'latestSayur' => $latestSayur,
-            'tipeKunjungan' => $tipeKunjungan,
-        ]);
-    })->name('dashboard');
-
     // Route Belanja
     Route::get('/belanja', [BelanjaController::class, 'index'])->name('belanja.index');
     Route::get('/belanja/{product}', [BelanjaController::class, 'show'])->name('belanja.show');
 
     // Route Keranjang
-    Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
     Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
     Route::put('/cart/{cart}', [CartController::class, 'update'])->name('cart.update');
     Route::delete('/cart/{cart}', [CartController::class, 'destroy'])->name('cart.destroy');
 
 
     Route::get('/kunjungan', [KunjunganControllerCust::class, 'index'])->name('kunjungan.index');
-    // PASTIKAN BARIS INI MEMANGGIL 'handleForm'
     Route::post('/kunjungan/handle-form', [KunjunganControllerCust::class, 'handleForm'])->name('kunjungan.handle_form');
     Route::get('/kunjungan/konfirmasi', [KunjunganControllerCust::class, 'showKonfirmasi'])->name('kunjungan.konfirmasi');
-    Route::post('/kunjungan', [KunjunganControllerCust::class, 'store'])->name('kunjungan.store');
+    Route::post('/kunjungan/customer', [KunjunganControllerCust::class, 'store'])->name('customer.kunjungan.store');
 
+    // --- KUMPULAN ROUTE PROFIL ---
+    Route::get('/profile', [CustomerProfileController::class, 'edit'])->name('customer.profile.edit');
+    Route::patch('/profile', [CustomerProfileController::class, 'update'])->name('customer.profile.update');
+    Route::put('/profile/password', [CustomerProfileController::class, 'updatePassword'])->name('customer.profile.password.update');
+    Route::delete('/profile', [CustomerProfileController::class, 'destroy'])->name('customer.profile.destroy');
+
+        // Grup Route untuk Checkout
+    Route::prefix('checkout')->name('checkout.')->group(function () {
+    Route::get('/', [CheckoutController::class, 'index'])->name('index');
+    Route::post('/buy-now', [CheckoutController::class, 'buyNow'])->name('buyNow');
+    Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('saveAddress');
+    Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping');
+
+    // <-- TAMBAHKAN BARIS INI
+    Route::post('/shipping', [CheckoutController::class, 'saveShipping'])->name('saveShipping');
+
+    Route::get('/summary', [CheckoutController::class, 'summary'])->name('summary');
+    Route::post('/process', [CheckoutController::class, 'process'])->name('process');
+    });
+
+    Route::post('/cart/process-selection', [CartController::class, 'processSelection'])->name('cart.processSelection');
+
+    Route::get('/pesanan/{pesanan}', [PesananControllerCust::class, 'show'])->name('customer.pesanan.show');
+
+    Route::get('/pesanan', [PesananControllerCust::class, 'index'])->name('customer.pesanan.index');
+
+    // Route Ulasan
+    Route::get('/ulasan', [UlasanController::class, 'indexCust'])->name('customer.ulasan.index');
+    Route::get('/pesanan/{id}/ulasan/create', [UlasanController::class, 'createCust'])->name('customer.ulasan.create');
+    Route::post('/ulasan', [UlasanController::class, 'storeCust'])->name('customer.ulasan.store');
+
+    // Route Ulasan Kunjungan
+    Route::get('/kunjungan/{kunjungan}/ulasan/create', [UlasanController::class, 'createForKunjungan'])->name('customer.kunjungan.ulasan.create');
+    Route::post('/kunjungan/ulasan', [UlasanController::class, 'storeForKunjungan'])->name('customer.kunjungan.ulasan.store');
+
+    // Route Detail Kunjungan
+    Route::get('/kunjungan/{kunjungan}', [KunjunganControllerCust::class, 'show'])->name('customer.kunjungan.show');
+
+    Route::post('/profile/update-photo', [CustomerProfileController::class, 'updatePhoto'])->name('customer.profile.update-photo');
+
+    // --- KUMPULAN ROUTE API LOKASI (KOMERCE) ---
+    Route::prefix('api/locations')->name('api.locations.')->group(function () {
+        Route::get('/provinces', [App\Http\Controllers\Api\RajaOngkirController::class, 'getProvinces'])->name('provinces');
+        Route::get('/cities/{provinceId}', [App\Http\Controllers\Api\RajaOngkirController::class, 'getCities'])->name('cities');
+        Route::get('/districts/{cityId}', [App\Http\Controllers\Api\RajaOngkirController::class, 'getDistricts'])->name('districts');
+        Route::get('/subdistricts/{districtId}', [App\Http\Controllers\Api\RajaOngkirController::class, 'getSubdistricts'])->name('subdistricts');
+    });
+
+        // Grup Route untuk Checkout
+    Route::prefix('checkout')->name('checkout.')->group(function () {
+        Route::get('/', [CheckoutController::class, 'index'])->name('index');
+        Route::post('/buy-now', [CheckoutController::class, 'buyNow'])->name('buyNow');
+        Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('saveAddress');
+        Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping');
+    });
 });
 
-
-// === ROUTE UNTUK ADMIN PANEL ===
-
-// Route Autentikasi default (untuk admin)
-require __DIR__.'/auth.php';
-
-// Grup untuk semua route admin yang memerlukan login
 Route::middleware(['auth', 'verified'])->group(function () {
-
     // Dashboard Admin
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -82,7 +120,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // CRUD Resources
-    Route::resource('produk', ProdukController::class)->except('show');
+    Route::resource('produk', ProdukController::class)->except(['show', 'edit']);
     Route::resource('pelanggan', PelangganController::class)->except('show');
     Route::resource('kunjungan', KunjunganController::class)->except(['index', 'show']);
     Route::resource('pesanan', PesananController::class);
@@ -94,7 +132,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/ulasan/{id}', [UlasanController::class, 'destroy'])->name('ulasan.destroy');
 
     // Kunjungan (halaman daftar)
-    Route::get('/kunjungan', [KunjunganController::class, 'index'])->name('kunjungan.index');
+    Route::get('/kunjungan', [KunjunganController::class, 'index'])->name('kunjunganAdmin.index');
     Route::get('/kunjungan/jadwal', [KunjunganController::class, 'jadwal'])->name('kunjungan.jadwal');
     Route::get('/kunjungan/kalender', [KunjunganController::class, 'kalender'])->name('kunjungan.kalender');
     Route::get('/kunjungan/riwayat', [KunjunganController::class, 'riwayat'])->name('kunjungan.riwayat');
@@ -108,3 +146,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 });
+
+require __DIR__.'/auth.php';
+

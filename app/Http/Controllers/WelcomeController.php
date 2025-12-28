@@ -7,6 +7,7 @@ use App\Models\Pelanggan;
 use App\Models\Kunjungan;
 use App\Models\Pesanan;
 use App\Models\TipeKunjungan; // 👈 1. Pastikan baris ini ada
+use Illuminate\Support\Facades\File;
 use Inertia\Inertia;
 
 class WelcomeController extends Controller
@@ -15,11 +16,11 @@ class WelcomeController extends Controller
     {
         $latestBuah = Produk::where('status', 'Aktif')
                             ->where('id_kategori', 2)
-                            ->latest()->take(8)->get();
+                            ->latest()->take(10)->get();
 
         $latestSayur = Produk::where('status', 'Aktif')
                              ->where('id_kategori', 1)
-                             ->latest()->take(8)->get();
+                             ->latest()->take(10)->get();
 
         // 👇 2. Ambil data tipe kunjungan dari database
         $tipeKunjungan = TipeKunjungan::all();
@@ -34,6 +35,26 @@ class WelcomeController extends Controller
             'orderCount' => Pesanan::count(),
             'laravelVersion' => app()->version(),
             'phpVersion' => PHP_VERSION,
+        ]);
+    }
+
+    public function tentangKami()
+    {
+        $galleryPath = public_path('storage/galeri');
+        $galleryImages = [];
+
+        if (File::isDirectory($galleryPath)) {
+            $files = File::files($galleryPath);
+            foreach ($files as $file) {
+                $extension = strtolower($file->getExtension());
+                if (in_array($extension, ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $galleryImages[] = 'storage/galeri/' . $file->getFilename();
+                }
+            }
+        }
+
+        return Inertia::render('Customer/TentangKami/TentangKami', [
+            'galleryImages' => $galleryImages,
         ]);
     }
 }

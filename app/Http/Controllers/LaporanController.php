@@ -69,8 +69,6 @@ class LaporanController extends Controller
                 'Nama Pelanggan'     => $k->pelanggan->nama ?? 'Tidak Ada',
                 'Alamat'             => $k->pelanggan->alamat ?? '-',
                 'Telepon'            => $k->pelanggan->telepon ?? '-',
-                'Judul'              => $k->judul ?? '-',
-                'Deskripsi'          => $k->deskripsi ?? '-',
                 'Status'             => $k->status ?? '-',
                 'Jumlah Pengunjung'  => $k->jumlah_pengunjung ?? '-',
                 'Total Biaya'        => $k->total_biaya ?? '-',

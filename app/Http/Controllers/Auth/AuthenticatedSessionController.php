@@ -34,16 +34,16 @@ class AuthenticatedSessionController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // 🔹 Coba login sebagai Admin (tabel users, guard web)
-        if (Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
-            return redirect()->intended('dashboard');
-        }
-
-        // 🔹 Coba login sebagai Pelanggan (tabel pelanggans, guard pelanggan)
+        // Kode baru yang sudah benar
         if (Auth::guard('pelanggan')->attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended('/customer/dashboard');
+            return redirect()->intended('/'); // Arahkan ke dashboard customer
+        }
+
+        // Anda bisa menambahkan pengecekan untuk admin jika perlu
+        if (Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+            return redirect()->intended('/dashboard'); // Arahkan ke dashboard admin
         }
 
         // 🔹 Kalau keduanya gagal
@@ -57,17 +57,24 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Logout dari guard 'web' (admin) jika sedang login
         if (Auth::guard('web')->check()) {
             Auth::guard('web')->logout();
         }
 
+        // Logout dari guard 'pelanggan' jika sedang login
         if (Auth::guard('pelanggan')->check()) {
             Auth::guard('pelanggan')->logout();
         }
 
+        // Hancurkan semua data session untuk memastikan bersih total
         $request->session()->invalidate();
+
+        // Buat ulang token CSRF untuk keamanan
         $request->session()->regenerateToken();
 
+        // Arahkan ke halaman utama
         return redirect('/');
     }
+
 }

@@ -6,27 +6,27 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('pesanan', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_pelanggan');
-            $table->date('tanggal');
-            $table->integer('total');
-            $table->string('status');
-            $table->timestamps();
+            $table->foreignId('id_pelanggan')->constrained('pelanggans');
 
-            $table->foreign('id_pelanggan')->references('id')->on('pelanggans')->onDelete('cascade');
+            // Kolom untuk kedua alur
+            $table->string('status')->default('pending');
+            $table->decimal('total', 12, 2); // Ubah dari 'total' ke 'total_harga' agar konsisten
+
+            // Kolom spesifik untuk checkout pelanggan (bisa null jika dibuat admin)
+            $table->string('nomor_pesanan')->unique()->nullable();
+            $table->text('alamat_pengiriman')->nullable();
+            $table->string('metode_pengiriman')->nullable();
+            $table->decimal('biaya_pengiriman', 12, 2)->default(0);
+
+            $table->date('tanggal')->nullable(); // Jadikan nullable, kita utamakan timestamps
+            $table->timestamps(); // created_at dan updated_at
         });
-
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('pesanan');

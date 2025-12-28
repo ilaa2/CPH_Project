@@ -1,101 +1,128 @@
-// resources/js/Pages/Customer/Belanja.jsx
-
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react'; // DIUBAH: Hapus useForm
 import { GiFruitTree, GiHerbsBundle } from "react-icons/gi";
 import { VscChecklist } from "react-icons/vsc";
 import { FaCartPlus } from 'react-icons/fa';
-import React from 'react';
-import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
-
-// 1. Impor SweetAlert2
+import React, { useState } from 'react'; // DIUBAH: Tambah useState
+import CustomerLayout from '@/Layouts/CustomerLayout';
 import Swal from 'sweetalert2';
-// Opsional: Impor CSS-nya jika belum di-load secara global
-import 'sweetalert2/dist/sweetalert2.min.css';
 
-
+// Komponen Utama Halaman Belanja
 export default function Belanja({ auth, products, filters }) {
 
-    // 2. Ubah fungsi handleAddToCart
+    const FilterButton = ({ categoryId, label, icon }) => (
+        <button
+            onClick={() => router.get(route('belanja.index', { category: categoryId }), {}, { preserveState: true })}
+            className={`flex items-center gap-3 px-4 py-2 rounded-full border transition-colors ${filters.kategori == categoryId ? 'bg-green-600 text-white border-green-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-green-50'}`}
+        >
+            {icon}
+            <span className="text-sm font-semibold">{label}</span>
+        </button>
+    );
+
+    // DITAMBAHKAN: Logika handleAddToCart dipindah ke sini, meniru DashboardCust.jsx
     const handleAddToCart = (product) => {
-        router.post('/customer/cart', {
-            product_id: product.id,
-            quantity: 1,
-        }, {
+        if (!auth.pelanggan) {
+            Swal.fire({
+                title: 'Anda Belum Login',
+                text: "Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Login Sekarang',
+                cancelButtonText: 'Nanti Saja'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.visit(route('login'));
+                }
+            });
+            return;
+        }
+
+        router.post(route('cart.store'), { product_id: product.id }, {
+            preserveScroll: true,
             onSuccess: () => {
-                // Ganti alert() standar dengan Swal.fire()
                 Swal.fire({
+                    toast: true,
+                    position: 'top-end',
                     icon: 'success',
-                    title: 'Berhasil!',
-                    text: `"${product.nama}" telah ditambahkan ke keranjang.`,
-                    // Opsi tambahan agar alert hilang otomatis setelah 1.5 detik
+                    title: `${product.nama} ditambahkan!`,
                     showConfirmButton: false,
-                    timer: 1500
+                    timer: 2000,
                 });
             },
-            preserveScroll: true,
+            onError: (errors) => {
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'error',
+                    title: 'Gagal menambahkan produk.',
+                    text: Object.values(errors)[0] || '',
+                    showConfirmButton: false,
+                    timer: 3000,
+                });
+            }
         });
     };
 
-    const FilterButton = ({ categoryId, label, icon }) => (
-        <Link
-            href={`/customer/belanja?kategori=${categoryId}`}
-            preserveState
-            preserveScroll
-            className={`flex items-center justify-center gap-2 px-6 py-3 text-sm font-bold rounded-full transition-all duration-300 border-2 ${
-                filters.kategori == categoryId
-                    ? 'bg-green-700 text-white border-green-700'
-                    : 'bg-white text-slate-700 border-gray-200 hover:bg-green-50 hover:border-green-300'
-            }`}
-        >
-            {icon}
-            {label}
-        </Link>
-    );
-
     return (
-        <div className="min-h-screen w-full bg-gray-50 text-gray-800">
+        <>
             <Head title="Belanja" />
-
-            <SiteHeader auth={auth} />
-
-            <main className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 px-4">
-                    <section className="text-center mb-10">
-                        <h1 className="text-4xl sm:text-5xl font-extrabold text-green-800 mb-2">Produk Segar Kami</h1>
-                        <p className="text-lg text-green-700 max-w-2xl mx-auto">Jelajahi pilihan buah dan sayuran terbaik kami yang bebas pestisida.</p>
-                    </section>
-
-                    <div className="flex justify-center items-center gap-4 mb-12">
-                        <FilterButton categoryId="" label="Semua" icon={<VscChecklist size={20} />} />
-                        <FilterButton categoryId="1" label="Sayuran" icon={<GiHerbsBundle size={20} />} />
-                        <FilterButton categoryId="2" label="Buah" icon={<GiFruitTree size={20} />} />
+            <div className="bg-white">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+                    <div className="text-center mb-12">
+                        <h1 className="text-4xl font-extrabold text-green-800 tracking-tight">Jelajahi Produk Segar Kami</h1>
+                        <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
+                            Pilih sayuran hidroponik favorit Anda yang ditanam secara lokal dan bebas pestisida.
+                        </p>
                     </div>
 
-                    <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                    <div className="flex justify-center items-center gap-4 mb-10 flex-wrap">
+                        <FilterButton categoryId="" label="Semua Produk" icon={<VscChecklist size={20} />} />
+                        <FilterButton categoryId="1" label="Sayuran Daun" icon={<GiHerbsBundle size={20} />} />
+                        <FilterButton categoryId="2" label="Sayuran Buah" icon={<GiFruitTree size={20} />} />
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                         {products.length > 0 ? (
                             products.map((product) => (
-                                <ProductCard key={product.id} product={product} handleAddToCart={handleAddToCart} />
+                                <ProductCard
+                                    key={product.id}
+                                    product={product}
+                                    onAddToCart={handleAddToCart} // DIUBAH: Kirim fungsi sebagai prop
+                                />
                             ))
                         ) : (
-                            <div className="col-span-full text-center text-gray-500 py-16">
-                                Tidak ada produk yang ditemukan untuk kategori ini.
+                            <div className="col-span-full text-center py-12">
+                                <p className="text-gray-500 text-lg">Belum ada produk yang tersedia.</p>
                             </div>
                         )}
-                    </section>
+                    </div>
                 </div>
-            </main>
-
-            <FooterNote user={auth.user} />
-        </div>
+            </div>
+        </>
     );
 }
 
-// -- KOMPONEN KARTU PRODUK --
-function ProductCard({ product, handleAddToCart }) {
+Belanja.layout = page => <CustomerLayout auth={page.props.auth}>{page}</CustomerLayout>;
+
+// -- KOMPONEN KARTU PRODUK (DISEDERHANAKAN) --
+function ProductCard({ product, onAddToCart }) { // DIUBAH: Hapus auth, tambah onAddToCart
+    const [isProcessing, setIsProcessing] = useState(false); // DIUBAH: State lokal untuk status loading
     const imageUrl = `/storage/${product.gambar}`;
+
+    const handleButtonClick = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setIsProcessing(true);
+        onAddToCart(product);
+        // Set timeout untuk mengembalikan state tombol setelah beberapa saat
+        setTimeout(() => setIsProcessing(false), 2500);
+    };
+
     return (
-        <div
-            key={product.id}
+        <Link
+            href={`/customer/belanja/${product.id}`}
             className="group bg-white rounded-2xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 flex flex-col"
         >
             <div className="relative w-full aspect-square overflow-hidden">
@@ -120,23 +147,17 @@ function ProductCard({ product, handleAddToCart }) {
                 {product.stok > 0 && (
                     <p className="text-xs text-gray-500 mb-3">Stok: {product.stok} tersedia</p>
                 )}
-                <div className="flex gap-2 mt-auto">
-                    <Link
-                        href={`/customer/belanja/${product.id}`}
-                        className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors text-center"
-                    >
-                        Detail
-                    </Link>
+                <div className="mt-auto">
                     <button
-                        onClick={() => handleAddToCart(product)}
-                        disabled={product.stok === 0}
-                        className="flex-1 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed flex items-center justify-center"
+                        onClick={handleButtonClick}
+                        disabled={product.stok === 0 || isProcessing}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-full hover:bg-green-700 disabled:bg-slate-400 disabled:cursor-not-allowed transition-colors"
                     >
-                        <FaCartPlus className="mr-2" />
-                        Keranjang
+                        <FaCartPlus />
+                        {isProcessing ? 'Menambahkan...' : 'Keranjang'}
                     </button>
                 </div>
             </div>
-        </div>
+        </Link>
     );
 }

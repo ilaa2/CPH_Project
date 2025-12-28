@@ -13,14 +13,14 @@ class Kunjungan extends Model
 
     protected $fillable = [
         'pelanggan_id',
-        'tipe_id',
-        'judul',
-        'deskripsi',
         'tanggal',
         'jam',
-        'jumlah_pengunjung',
-        'total_biaya',
         'status',
+        'tipe_kunjungan_id',
+        'jumlah_dewasa',
+        'jumlah_anak',
+        'jumlah_balita',
+        'total_biaya',
     ];
 
 
@@ -39,5 +39,14 @@ class Kunjungan extends Model
     public function tipe()
     {
         return $this->belongsTo(TipeKunjungan::class, 'tipe_id');
+    }
+
+
+    /**
+     * Relasi ke Ulasan. Satu kunjungan hanya punya satu ulasan.
+     */
+    public function ulasan()
+    {
+        return $this->hasOne(Ulasan::class);
     }
 }

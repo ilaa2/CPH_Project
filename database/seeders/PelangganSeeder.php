@@ -4,8 +4,9 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Hash; // <-- Pastikan ini ada
 use Illuminate\Support\Facades\Schema;
+use Carbon\Carbon; // <-- Pastikan ini ada
 
 class PelangganSeeder extends Seeder
 {
@@ -30,8 +31,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'budi.santoso@example.com',
                 'telepon' => '081234567890',
                 'alamat' => 'Jl. Merdeka No. 123, Jakarta',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'),
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 2
             [
@@ -39,8 +41,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'sari.wulandari@example.com',
                 'telepon' => '082345678901',
                 'alamat' => 'Jl. Sudirman No. 45, Bandung',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 3
             [
@@ -48,8 +51,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'andi.wijaya@example.com',
                 'telepon' => '083456789012',
                 'alamat' => 'Jl. Diponegoro No. 67, Surabaya',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 4
             [
@@ -57,8 +61,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'rina.kartika@example.com',
                 'telepon' => '081345678901',
                 'alamat' => 'Jl. Gatot Subroto No. 22, Yogyakarta',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 5
             [
@@ -66,8 +71,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'agus.pratama@example.com',
                 'telepon' => '081356789012',
                 'alamat' => 'Jl. Ahmad Yani No. 15, Semarang',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 6
             [
@@ -75,8 +81,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'dewi.lestari@example.com',
                 'telepon' => '081367890123',
                 'alamat' => 'Jl. Veteran No. 30, Malang',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 7
             [
@@ -84,8 +91,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'fajar.nugroho@example.com',
                 'telepon' => '081378901234',
                 'alamat' => 'Jl. Imam Bonjol No. 11, Denpasar',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 8
             [
@@ -93,8 +101,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'lia.anggraini@example.com',
                 'telepon' => '081389012345',
                 'alamat' => 'Jl. Dipatiukur No. 7, Bandung',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 9
             [
@@ -102,8 +111,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'yusuf.ramadhan@example.com',
                 'telepon' => '081390123456',
                 'alamat' => 'Jl. Asia Afrika No. 5, Jakarta',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 10
             [
@@ -111,8 +121,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'putri.amalia@example.com',
                 'telepon' => '081301234567',
                 'alamat' => 'Jl. Pahlawan No. 9, Surakarta',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 11
             [
@@ -120,8 +131,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'rudi.hartono@example.com',
                 'telepon' => '081312345678',
                 'alamat' => 'Jl. Braga No. 14, Bandung',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 12
             [
@@ -129,8 +141,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'siti.nurhaliza@example.com',
                 'telepon' => '081323456789',
                 'alamat' => 'Jl. Kenanga No. 8, Medan',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 13
             [
@@ -138,8 +151,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'ahmad.fauzi@example.com',
                 'telepon' => '081334567890',
                 'alamat' => 'Jl. Melati No. 20, Makassar',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 14
             [
@@ -147,8 +161,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'bambang.sudarmanto@example.com',
                 'telepon' => '081345678901',
                 'alamat' => 'Jl. Pahlawan No. 10, Semarang',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 15
             [
@@ -156,8 +171,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'dian.puspitasari@example.com',
                 'telepon' => '081356789012',
                 'alamat' => 'Jl. Cempaka No. 5, Surabaya',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 16
             [
@@ -165,8 +181,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'eko.prasetyo@example.com',
                 'telepon' => '081367890123',
                 'alamat' => 'Jl. Kutilang No. 15, Yogyakarta',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
             // ID 17
             [
@@ -174,8 +191,9 @@ class PelangganSeeder extends Seeder
                 'email' => 'fathia.azzahra@example.com',
                 'telepon' => '081378901234',
                 'alamat' => 'Jl. Merak No. 22, Bandung',
-                'created_at' => '2025-08-11 08:18:28',
-                'updated_at' => '2025-08-11 08:18:28',
+                'password' => Hash::make('password'), // Ditambahkan
+                'created_at' => Carbon::now(),
+                'updated_at' => Carbon::now(),
             ],
         ]);
     }
