@@ -72,8 +72,8 @@ export default function Cart({ auth }) {
             return;
         }
 
-        // Kirim ID item yang dipilih ke backend menggunakan metode POST
-        router.post(route('cart.processSelection'), { items: selectedIds });
+        // Redirect directly to checkout index with selected items as query params
+        router.get(route('checkout.index'), { items: selectedIds });
     };
 
     return (

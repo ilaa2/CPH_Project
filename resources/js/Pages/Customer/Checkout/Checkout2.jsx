@@ -3,8 +3,8 @@ import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
 import React, { useState, useEffect } from 'react';
 import Swal from 'sweetalert2';
 
-export default function Checkout2({ alamat, auth, shippingOptions = [], isMandau }) {
-    const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState(isMandau ? 'ambil_sendiri' : 'ekspedisi');
+export default function Checkout2({ alamat, auth, shippingOptions = [], isLocal }) {
+    const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState(isLocal ? 'ambil_sendiri' : 'ekspedisi');
     const [pickupTime, setPickupTime] = useState('');
     const [showCourierDropdown, setShowCourierDropdown] = useState(false); // State for non-Duri dropdown
 
@@ -20,13 +20,13 @@ export default function Checkout2({ alamat, auth, shippingOptions = [], isMandau
     };
 
     useEffect(() => {
-        if (isMandau) {
+        if (isLocal) {
             setSelectedDeliveryMethod('ambil_sendiri');
             setPickupTime(getMinPickupTime().substring(11, 16)); // Set default pickup time to 1 hour from now
         } else {
             setSelectedDeliveryMethod('ekspedisi');
         }
-    }, [isMandau]);
+    }, [isLocal]);
 
     const { data, setData, post, processing, errors } = useForm({
         pengiriman: null,
@@ -38,7 +38,7 @@ export default function Checkout2({ alamat, auth, shippingOptions = [], isMandau
 
         let shippingDataToSend = null;
 
-        if (isMandau) {
+        if (isLocal) {
             if (selectedDeliveryMethod === 'ambil_sendiri') {
                 if (!pickupTime) {
                     Swal.fire({
@@ -124,18 +124,23 @@ export default function Checkout2({ alamat, auth, shippingOptions = [], isMandau
                     {/* Progress Bar */}
                     <div className="flex items-center justify-center mb-8">
                         <div className="flex items-center text-green-600">
-                            <div className="rounded-full bg-green-600 text-white w-8 h-8 flex items-center justify-center">✓</div>
-                            <span className="font-semibold ml-2">Alamat</span>
+                            <div className="rounded-full border-2 border-green-600 bg-white text-green-600 w-8 h-8 flex items-center justify-center font-bold">✓</div>
+                            <span className="hidden sm:inline font-semibold ml-2">Metode</span>
                         </div>
-                        <div className="flex-auto border-t-2 border-green-600 mx-4"></div>
+                        <div className="flex-auto border-t-2 border-green-600 mx-2 sm:mx-4"></div>
                         <div className="flex items-center text-green-600">
-                            <div className="rounded-full border-2 border-green-600 bg-white text-green-600 w-8 h-8 flex items-center justify-center font-bold">2</div>
+                            <div className="rounded-full border-2 border-green-600 bg-white text-green-600 w-8 h-8 flex items-center justify-center font-bold">✓</div>
+                            <span className="hidden sm:inline font-semibold ml-2">Alamat</span>
+                        </div>
+                        <div className="flex-auto border-t-2 border-green-600 mx-2 sm:mx-4"></div>
+                        <div className="flex items-center text-green-600">
+                            <div className="rounded-full border-2 border-green-600 bg-white text-green-600 w-8 h-8 flex items-center justify-center font-bold">3</div>
                             <span className="font-semibold ml-2">Pengiriman</span>
                         </div>
-                        <div className="flex-auto border-t-2 border-gray-300 mx-4"></div>
+                        <div className="flex-auto border-t-2 border-gray-300 mx-2 sm:mx-4"></div>
                         <div className="flex items-center text-gray-500">
-                            <div className="rounded-full border-2 border-gray-300 w-8 h-8 flex items-center justify-center">3</div>
-                            <span className="font-medium ml-2">Pembayaran</span>
+                            <div className="rounded-full border-2 border-gray-300 w-8 h-8 flex items-center justify-center">4</div>
+                            <span className="hidden sm:inline font-medium ml-2">Bayar</span>
                         </div>
                     </div>
 
@@ -155,8 +160,8 @@ export default function Checkout2({ alamat, auth, shippingOptions = [], isMandau
 
                         <h2 className="font-bold text-lg mb-4">Pilih Metode Pengiriman</h2>
                         <form onSubmit={handleSubmit}>
-                            {isMandau ? (
-                                // Tampilan untuk Pengguna di Duri
+                            {isLocal ? (
+                                // Tampilan untuk Pengguna Lokal (Duri & Sekitarnya)
                                 <div className="space-y-4">
                                     <div className="flex space-x-4">
                                         <label className={`flex-1 flex items-center p-4 border rounded-lg cursor-pointer transition-all ${selectedDeliveryMethod === 'ambil_sendiri' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-300'}`}>
@@ -239,8 +244,16 @@ export default function Checkout2({ alamat, auth, shippingOptions = [], isMandau
                                                     );
                                                 })
                                             ) : (
-                                                <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-lg">
-                                                    <p className="text-yellow-800">Tidak ada opsi pengiriman yang tersedia untuk alamat tujuan Anda.</p>
+                                                <div className="p-4 border border-red-300 bg-red-50 rounded-lg">
+                                                    <p className="text-red-800 font-bold mb-2">⚠️ Peringatan Kualitas Produk</p>
+                                                    <p className="text-red-700 text-sm">
+                                                        Pengiriman ke alamat Anda membutuhkan waktu lebih dari 5 hari.
+                                                        Karena produk berupa sayuran dan buah segar, kualitas tidak dapat dijamin.
+                                                        Demi keamanan produk, kami tidak dapat melanjutkan pengiriman via ekspedisi ini.
+                                                    </p>
+                                                    <p className="text-red-700 text-sm mt-2 font-semibold">
+                                                        Silakan pilih opsi "Ambil Sendiri" jika memungkinkan, atau hubungi admin.
+                                                    </p>
                                                 </div>
                                             )}
                                         </div>

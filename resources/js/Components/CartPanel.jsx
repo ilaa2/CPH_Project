@@ -57,7 +57,8 @@ export default function CartPanel({ open, setOpen, cartItems = [] }) {
             alert('Pilih produk terlebih dahulu untuk melanjutkan.');
             return;
         }
-        router.post(route('cart.processSelection'), { items: selectedItems });
+        // Redirect directly to checkout index with selected items as query params
+        router.get(route('checkout.index'), { items: selectedItems });
     };
 
     const isAllSelected = cartItems.length > 0 && selectedItems.length === cartItems.length;
@@ -142,7 +143,7 @@ export default function CartPanel({ open, setOpen, cartItems = [] }) {
                                                     Lanjut ke Checkout
                                                 </button>
                                             </div>
-                                            
+
                                         </div>
                                     </div>
                                 </Dialog.Panel>

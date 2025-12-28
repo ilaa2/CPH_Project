@@ -58,54 +58,24 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::put('/profile/password', [CustomerProfileController::class, 'updatePassword'])->name('customer.profile.password.update');
     Route::delete('/profile', [CustomerProfileController::class, 'destroy'])->name('customer.profile.destroy');
 
-        // Grup Route untuk Checkout
-    Route::prefix('checkout')->name('checkout.')->group(function () {
-    Route::get('/', [CheckoutController::class, 'index'])->name('index');
-    Route::post('/buy-now', [CheckoutController::class, 'buyNow'])->name('buyNow');
-    Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('saveAddress');
-    Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping');
-
-    // <-- TAMBAHKAN BARIS INI
-    Route::post('/shipping', [CheckoutController::class, 'saveShipping'])->name('saveShipping');
-
-    Route::get('/summary', [CheckoutController::class, 'summary'])->name('summary');
-    Route::post('/process', [CheckoutController::class, 'process'])->name('process');
-    });
-
-    Route::post('/cart/process-selection', [CartController::class, 'processSelection'])->name('cart.processSelection');
-
-    Route::get('/pesanan/{pesanan}', [PesananControllerCust::class, 'show'])->name('customer.pesanan.show');
-
-    Route::get('/pesanan', [PesananControllerCust::class, 'index'])->name('customer.pesanan.index');
-
-    // Route Ulasan
-    Route::get('/ulasan', [UlasanController::class, 'indexCust'])->name('customer.ulasan.index');
-    Route::get('/pesanan/{id}/ulasan/create', [UlasanController::class, 'createCust'])->name('customer.ulasan.create');
-    Route::post('/ulasan', [UlasanController::class, 'storeCust'])->name('customer.ulasan.store');
-
-    // Route Ulasan Kunjungan
-    Route::get('/kunjungan/{kunjungan}/ulasan/create', [UlasanController::class, 'createForKunjungan'])->name('customer.kunjungan.ulasan.create');
-    Route::post('/kunjungan/ulasan', [UlasanController::class, 'storeForKunjungan'])->name('customer.kunjungan.ulasan.store');
-
-    // Route Detail Kunjungan
-    Route::get('/kunjungan/{kunjungan}', [KunjunganControllerCust::class, 'show'])->name('customer.kunjungan.show');
-
-    Route::post('/profile/update-photo', [CustomerProfileController::class, 'updatePhoto'])->name('customer.profile.update-photo');
-
-    // --- KUMPULAN ROUTE API LOKASI (KOMERCE) ---
-    Route::prefix('api/locations')->name('api.locations.')->group(function () {
-        Route::get('/provinces', [App\Http\Controllers\Api\RajaOngkirController::class, 'getProvinces'])->name('provinces');
-        Route::get('/cities/{provinceId}', [App\Http\Controllers\Api\RajaOngkirController::class, 'getCities'])->name('cities');
-        Route::get('/districts/{cityId}', [App\Http\Controllers\Api\RajaOngkirController::class, 'getDistricts'])->name('districts');
-        Route::get('/subdistricts/{districtId}', [App\Http\Controllers\Api\RajaOngkirController::class, 'getSubdistricts'])->name('subdistricts');
-    });
+    // Route Pesanan Customer
+    Route::resource('pesanan', PesananControllerCust::class)->only(['index', 'show']);
 
         // Grup Route untuk Checkout
     Route::prefix('checkout')->name('checkout.')->group(function () {
-        Route::get('/', [CheckoutController::class, 'index'])->name('index');
+        Route::get('/', [CheckoutController::class, 'index'])->name('index'); // Select Method (Step 1)
+        Route::post('/method', [CheckoutController::class, 'saveMethod'])->name('saveMethod'); // Save Method
+        
+        Route::get('/address', [CheckoutController::class, 'address'])->name('address'); // Input Address (Step 2 - Delivery Only)
+        Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('saveAddress'); // Save Address
+
+        Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping'); // Select Shipping (Step 3 - Delivery Only)
+        Route::post('/shipping', [CheckoutController::class, 'saveShipping'])->name('saveShipping'); // Save Shipping
+
+        Route::get('/summary', [CheckoutController::class, 'summary'])->name('summary'); // Summary (Step 4/2)
+        Route::post('/process', [CheckoutController::class, 'process'])->name('process'); // Process Payment
+        
         Route::post('/buy-now', [CheckoutController::class, 'buyNow'])->name('buyNow');
-        Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('saveAddress');
-        Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping');
     });
 });
 
@@ -146,6 +116,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 
 });
+
+
+// Route Lokasi (API Proxy to RajaOngkir) - Exposed to Ziggy
+Route::prefix('api/locations')->name('api.locations.')->controller(\App\Http\Controllers\LocationController::class)->group(function () {
+    Route::get('/provinces', 'provinces')->name('provinces');
+    Route::get('/cities', 'cities')->name('cities');
+    Route::get('/districts', 'districts')->name('districts');
+    Route::get('/subdistricts', 'subdistricts')->name('subdistricts');
+});
+
 
 require __DIR__.'/auth.php';
 
