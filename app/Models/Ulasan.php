@@ -16,6 +16,8 @@ class Ulasan extends Model
         'komentar',
         'rating',
         'tanggal',
+        'balasan',
+        'tanggal_balasan',
     ];
 
     public function pelanggan()

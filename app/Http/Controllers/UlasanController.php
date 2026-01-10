@@ -26,6 +26,12 @@ class UlasanController extends Controller
             ->when($filter === 'kunjungan', function ($query) {
                 $query->whereNotNull('kunjungan_id');
             })
+            ->when($request->input('kunjungan_id'), function ($query, $id) {
+                $query->where('kunjungan_id', $id);
+            })
+            ->when($request->input('pelanggan_id'), function ($query, $id) {
+                $query->where('pelanggan_id', $id);
+            })
             ->orderBy('tanggal', 'desc');
 
         $ulasan = $ulasanQuery->get()->map(function ($item) {
@@ -234,5 +240,19 @@ class UlasanController extends Controller
         }
 
         return redirect()->route('customer.pesanan.index')->with('success', 'Ulasan untuk kunjungan berhasil dikirim.');
+    }
+    public function reply(Request $request, $id)
+    {
+        $request->validate([
+            'balasan' => 'required|string',
+        ]);
+
+        $ulasan = Ulasan::findOrFail($id);
+        $ulasan->update([
+            'balasan' => $request->balasan,
+            'tanggal_balasan' => now(),
+        ]);
+
+        return back()->with('success', 'Balasan ulasan berhasil dikirim.');
     }
 }

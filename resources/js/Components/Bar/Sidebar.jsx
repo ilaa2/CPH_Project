@@ -16,9 +16,8 @@ export default function Sidebar({ children }) {
     <div className="flex">
       {/* === SIDEBAR === */}
       <aside
-        className={`fixed top-0 left-0 h-screen bg-white border-r shadow-sm z-50 transition-all duration-300 ease-in-out ${
-          expanded ? "w-64" : "w-20"
-        }`}
+        className={`fixed top-0 left-0 h-screen bg-white border-r shadow-sm z-50 transition-all duration-300 ease-in-out ${expanded ? "w-64" : "w-20"
+          }`}
       >
         <nav className="h-full flex flex-col justify-between">
           <div>
@@ -38,32 +37,32 @@ export default function Sidebar({ children }) {
             </div>
 
             {/* MENU */}
-<SidebarContext.Provider value={{ expanded }}>
-  <ul className="px-3 space-y-1">
-    <SidebarItem icon={<FiHome size={20} />} text="Dashboard" href="/dashboard" active={route().current('dashboard')} />
-    <SidebarItem icon={<BsBoxSeam size={20} />} text="Produk" href="/produk" active={route().current('produk.index')} />
-    <SidebarItem icon={<FiShoppingBag size={20} />} text="Pesanan" href="/pesanan" active={route().current('pesanan.index')} />
-    <SidebarItem icon={<FiFileText size={20} />} text="Laporan" href="/laporan" active={route().current('laporan.index')} />
-    <SidebarItem icon={<BsPeople size={20} />} text="Pelanggan" href="/pelanggan" active={route().current('pelanggan.index')} />
-    <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/kunjungan" active={route().current('kunjunganAdmin.index')} />
+            <SidebarContext.Provider value={{ expanded }}>
+              <ul className="px-3 space-y-1">
+                <SidebarItem icon={<FiHome size={20} />} text="Dashboard" href="/dashboard" active={route().current('dashboard')} />
+                <SidebarItem icon={<BsBoxSeam size={20} />} text="Produk" href="/produk" active={route().current('produk.index')} />
+                <SidebarItem icon={<FiShoppingBag size={20} />} text="Pesanan" href="/pesanan" active={route().current('pesanan.index')} />
+                <SidebarItem icon={<FiFileText size={20} />} text="Laporan" href="/laporan" active={route().current('laporan.index')} />
+                <SidebarItem icon={<BsPeople size={20} />} text="Pelanggan" href="/pelanggan" active={route().current('pelanggan.index')} />
+                <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/kunjungan" active={route().current('kunjunganAdmin.index')} />
 
-    {/* Gabungan Setelan & Bantuan */}
-    <SidebarItem icon={<FiSettings size={20} />} text="Setelan & Bantuan" href="/setelan" active={route().current('setelan.index') || route().current('bantuan.index')} />
+                {/* Gabungan Setelan & Bantuan - Hidden for demo */}
+                {/* <SidebarItem icon={<FiSettings size={20} />} text="Setelan & Bantuan" href="/setelan" active={route().current('setelan.index') || route().current('bantuan.index')} /> */}
 
-    {/* Tambahan Ulasan & Feedback */}
-    <SidebarItem icon={<FiHelpCircle size={20} />} text="Ulasan & Feedback" href="/ulasan" active={route().current('ulasan.index')} />
+                {/* Tambahan Ulasan & Feedback */}
+                {/* SidebarItem Ulasan dihapus */}
 
-    {/* LOGOUT */}
-    <SidebarItem
-      icon={<FiLogOut size={20} />}
-      text="Logout"
-      href={route('logout')}
-      method="post"
-      as="button"
-      active={false}
-    />
-  </ul>
-</SidebarContext.Provider>
+                {/* LOGOUT */}
+                <SidebarItem
+                  icon={<FiLogOut size={20} />}
+                  text="Logout"
+                  href={route('logout')}
+                  method="post"
+                  as="button"
+                  active={false}
+                />
+              </ul>
+            </SidebarContext.Provider>
 
           </div>
 
@@ -82,9 +81,8 @@ export default function Sidebar({ children }) {
 
       {/* === MAIN CONTENT === */}
       <main
-        className={`min-h-screen flex-1 transition-all duration-300 ease-in-out ${
-          expanded ? "ml-64" : "ml-20"
-        }`}
+        className={`min-h-screen flex-1 transition-all duration-300 ease-in-out ${expanded ? "ml-64" : "ml-20"
+          }`}
       >
         {children}
       </main>
@@ -102,11 +100,10 @@ function SidebarItem({ icon, text, active, alert, href, method = 'get', as = 'a'
         method={method}
         as={as}
         type={as === 'button' ? 'button' : undefined}
-        className={`relative flex items-center w-full py-2 px-3 font-medium rounded-md transition-colors group text-left ${
-          active
-            ? "bg-gradient-to-tr from-green-600 to-green-500 text-white"
-            : "hover:bg-green-200 text-gray-600"
-        }`}
+        className={`relative flex items-center w-full py-2 px-3 font-medium rounded-md transition-colors group text-left ${active
+          ? "bg-gradient-to-tr from-green-600 to-green-500 text-white"
+          : "hover:bg-green-200 text-gray-600"
+          }`}
       >
         {icon}
         <span className={`overflow-hidden transition-all ${expanded ? "w-52 ml-3" : "w-0"}`}>

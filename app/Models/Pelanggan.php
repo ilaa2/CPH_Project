@@ -30,6 +30,11 @@ class Pelanggan extends Authenticatable
         return $this->hasMany(\App\Models\Transaksi::class);
     }
 
+    public function pesanan()
+    {
+        return $this->hasMany(\App\Models\Pesanan::class, 'id_pelanggan');
+    }
+
     public function kunjungan()
     {
         return $this->hasMany(\App\Models\Kunjungan::class);

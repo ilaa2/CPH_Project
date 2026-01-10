@@ -22,6 +22,7 @@ class KunjunganController extends Controller
             ->with(['pelanggan', 'tipe'])
             ->join('pelanggans', 'kunjungan.pelanggan_id', '=', 'pelanggans.id')
             ->join('tipe_kunjungan', 'kunjungan.tipe_id', '=', 'tipe_kunjungan.id')
+            ->where('kunjungan.status', '!=', 'Dibatalkan')
             ->select('kunjungan.*');
 
         // Filter pencarian nama
@@ -45,7 +46,9 @@ class KunjunganController extends Controller
 
     public function kalender()
     {
-    $kunjungan = Kunjungan::with('pelanggan')->get();
+    $kunjungan = Kunjungan::with(['pelanggan', 'tipe', 'ulasan'])
+        ->where('status', '!=', 'Dibatalkan')
+        ->get();
 
     return Inertia::render('Kunjungan/Kalender', [
         'kunjungan' => $kunjungan
@@ -55,10 +58,20 @@ class KunjunganController extends Controller
 
     public function riwayat()
     {
-        $data = Kunjungan::with(['pelanggan', 'tipe', 'ulasan'])->where('status', 'Selesai')->get();
+        $query = Kunjungan::with(['pelanggan', 'tipe', 'ulasan.fotos'])->where('status', 'Selesai');
+
+        // Filter tipe kunjungan
+        $query->when(request('tipe') && request('tipe') !== 'Semua', function ($q) {
+            $q->whereHas('tipe', function ($sq) {
+                $sq->where('nama_tipe', request('tipe'));
+            });
+        });
+
+        $data = $query->get();
 
         return Inertia::render('Kunjungan/Riwayat', [
             'riwayat' => $data,
+            'filters' => request()->only(['tipe']),
         ]);
     }
 
@@ -84,7 +97,7 @@ class KunjunganController extends Controller
             'jumlah_anak' => 'required|integer|min:0',
             'jumlah_balita' => 'required|integer|min:0',
             'total_biaya' => 'required|numeric|min:0',
-            'status' => 'required|in:Dijadwalkan,Selesai,Dibatalkan',
+            'status' => 'required|in:Dijadwalkan,Selesai',
         ]);
 
         $tipeKunjungan = TipeKunjungan::find($validated['tipe_kunjungan_id']);
@@ -165,13 +178,15 @@ class KunjunganController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'pelanggan_id' => 'required|exists:pelanggans,id',
-            'tipe_id' => 'required|exists:tipe_kunjungan,id', // ✅ Tambah validasi tipe
-            'tanggal' => 'required|date',
-            'jam' => 'required',
-            'jumlah_pengunjung' => 'required|integer|min:1',
+            'pelanggan_id' => 'sometimes|required|exists:pelanggans,id',
+            'tipe_id' => 'sometimes|required|exists:tipe_kunjungan,id',
+            'tanggal' => 'sometimes|required|date',
+            'jam' => 'sometimes|required',
+            'jumlah_dewasa' => 'required|integer|min:0',
+            'jumlah_anak' => 'required|integer|min:0',
+            'jumlah_balita' => 'required|integer|min:0',
             'total_biaya' => 'required|numeric',
-            'status' => 'required|string|in:Dijadwalkan,Selesai,Dibatalkan',
+            'status' => 'required|string|in:Dijadwalkan,Selesai',
         ]);
 
         $kunjungan = Kunjungan::findOrFail($id);
@@ -239,7 +254,7 @@ class KunjunganController extends Controller
             'jumlah_anak' => $anak,
             'jumlah_balita' => $balita,
             'total_biaya' => $totalBiaya,
-            'status' => 'Dijadwalan',
+            'status' => 'Dijadwalkan',
         ]);
 
         return redirect()->back()->with('success', 'Jadwal kunjungan Anda berhasil dibuat! Kami akan segera menghubungi Anda untuk konfirmasi.');

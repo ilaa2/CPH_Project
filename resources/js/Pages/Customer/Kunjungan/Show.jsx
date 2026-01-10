@@ -19,7 +19,7 @@ const DetailItem = ({ icon, label, value }) => (
 // Komponen untuk menampilkan ulasan yang sudah ada
 const UlasanCard = ({ ulasan }) => (
     <div className="mt-8 p-6 bg-green-50 rounded-lg border border-green-200">
-        <h3 className="text-lg font-semibold text-green-800 mb-4 flex items-center"><FiStar className="mr-2"/>Ulasan Anda</h3>
+        <h3 className="text-lg font-semibold text-green-800 mb-4 flex items-center"><FiStar className="mr-2" />Ulasan Anda</h3>
         <div className="flex mb-2">
             {[...Array(ulasan.rating)].map((_, i) => (
                 <FiStar key={i} className="w-5 h-5 text-yellow-400 fill-current" />
@@ -38,8 +38,7 @@ export default function KunjunganShow({ auth, kunjungan }) {
 
     const statusInfo = {
         'Selesai': { text: 'Selesai', icon: <FiCheckCircle className="text-green-500" />, color: 'text-green-600' },
-        'Direncanakan': { text: 'Direncanakan', icon: <FiClock className="text-blue-500" />, color: 'text-blue-600' },
-        'Dibatalkan': { text: 'Dibatalkan', icon: <FiXCircle className="text-red-500" />, color: 'text-red-600' },
+        'Dijadwalkan': { text: 'Dijadwalkan', icon: <FiClock className="text-blue-500" />, color: 'text-blue-600' },
     };
     const currentStatus = statusInfo[kunjungan.status] || { text: kunjungan.status, icon: <FiClock />, color: 'text-gray-600' };
 
@@ -70,9 +69,9 @@ export default function KunjunganShow({ auth, kunjungan }) {
                         </div>
 
                         <div className="space-y-6">
-                            <DetailItem icon={<FiCalendar className="text-gray-400"/>} label="Tanggal" value={formatDate(kunjungan.tanggal)} />
-                            <DetailItem icon={<FiTag className="text-gray-400"/>} label="Tipe Kunjungan" value={kunjungan.tipe.nama_tipe} />
-                            <DetailItem icon={<FiUsers className="text-gray-400"/>} label="Jumlah Pengunjung" value={`${kunjungan.jumlah_pengunjung} orang`} />
+                            <DetailItem icon={<FiCalendar className="text-gray-400" />} label="Tanggal" value={formatDate(kunjungan.tanggal)} />
+                            <DetailItem icon={<FiTag className="text-gray-400" />} label="Tipe Kunjungan" value={kunjungan.tipe.nama_tipe} />
+                            <DetailItem icon={<FiUsers className="text-gray-400" />} label="Jumlah Pengunjung" value={`${kunjungan.jumlah_pengunjung} orang`} />
                         </div>
 
                         {kunjungan.ulasan ? (

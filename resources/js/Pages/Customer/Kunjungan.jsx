@@ -1,5 +1,5 @@
 import CustomerLayout from '@/Layouts/CustomerLayout';
-import { useForm, usePage, Head } from '@inertiajs/react';
+import { useForm, usePage, Head, router } from '@inertiajs/react';
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FiUser, FiPhone, FiCalendar, FiUsers, FiSend, FiCheckCircle, FiClipboard, FiDollarSign, FiArrowRight, FiSmile, FiBriefcase } from 'react-icons/fi';
@@ -61,8 +61,8 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
     };
 
     const { data, setData, post, processing, errors, reset } = useForm({
-        nama_lengkap: auth.pelanggan.nama || '',
-        no_hp: auth.pelanggan.telepon || '',
+        nama_lengkap: auth?.pelanggan?.nama || '',
+        no_hp: auth?.pelanggan?.telepon || '',
         tanggal_kunjungan: '',
         tipe_kunjungan_id: tipeKunjungan.length > 0 ? tipeKunjungan[0].id : '',
         jumlah_dewasa: 1,
@@ -162,6 +162,27 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+
+        // 🛡️ GUARD: Cek Auth sebelum submit
+        if (!auth?.pelanggan) {
+            Swal.fire({
+                title: 'Anda Belum Login',
+                text: "Silakan login terlebih dahulu untuk melanjutkan booking kunjungan.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Login Sekarang',
+                cancelButtonText: 'Nanti Saja'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirect ke login
+                    router.visit('/login');
+                }
+            });
+            return; // Hentikan proses submit
+        }
+
         // Data yang dikirim ke backend sekarang menyertakan rincian jumlah pengunjung
         post(route('kunjungan.handle_form'), {
             preserveScroll: true,
@@ -229,7 +250,7 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
                                 {selectedTipe?.nama_tipe === 'Outing Class' && (
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
                                         <div className="md:col-span-1"> {/* Dibuat agar lebarnya sama */}
-                                            <InputField id="jumlah_anak" label="Jumlah Anak" description="Total peserta anak" type="number" value={data.jumlah_anak} onChange={e => setData('jumlah_anak', Math.max(0, Number(e.target.value)))} error={errors.jumlah_anak} icon={<FiUsers />} min="0" required />
+                                            <InputField id="jumlah_anak" label="Jumlah Anak (>2 thn)" description="Total peserta anak di atas 2 tahun" type="number" value={data.jumlah_anak} onChange={e => setData('jumlah_anak', Math.max(0, Number(e.target.value)))} error={errors.jumlah_anak} icon={<FiUsers />} min="0" required />
                                         </div>
                                     </div>
                                 )}
@@ -259,7 +280,7 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
                                                             <span className="font-medium text-gray-800">x {data.jumlah_dewasa}</span>
                                                         </div>
                                                         <div className="flex justify-between items-center text-sm">
-                                                            <span className="text-gray-600">Anak (2th)</span>
+                                                            <span className="text-gray-600">Anak (&gt;2 thn)</span>
                                                             <span className="font-medium text-gray-800">x {data.jumlah_anak}</span>
                                                         </div>
                                                         <div className="flex justify-between items-center text-sm">

@@ -415,7 +415,8 @@ class CheckoutController extends Controller
 
     public function process(Request $request)
     {
-        return DB::transaction(function () {
+        try {
+            return DB::transaction(function () {
             $pelanggan = Auth::guard('pelanggan')->user();
             $selectedItemIds = session('selected_cart_items', []);
             $method = session('checkout_method');
@@ -469,12 +470,22 @@ class CheckoutController extends Controller
         ]);
 
         foreach ($cartItems as $item) {
+            $produk = $item->product;
+
+            // Cek stok lagi untuk keamanan
+            if ($produk->stok < $item->quantity) {
+                throw new \Exception("Stok produk '{$produk->nama}' tidak mencukupi (Tersedia: {$produk->stok}).");
+            }
+
             PesananItem::create([
                 'pesanan_id' => $pesanan->id,
                 'produk_id'  => $item->product_id,
                 'jumlah'     => $item->quantity,
                 'subtotal'   => $item->product->harga * $item->quantity,
             ]);
+
+            // Kurangi Stok
+            $produk->decrement('stok', $item->quantity);
         }
 
         $transaction = Transaction::create([
@@ -494,27 +505,25 @@ class CheckoutController extends Controller
         Cart::whereIn('id', $selectedItemIds)->where('pelanggan_id', $pelanggan->id)->delete();
         session()->forget(['selected_cart_items', 'checkout_address', 'checkout_shipping']);
 
-        if (env('MIDTRANS_ENABLED', false)) {
-            $payload = [
-                'transaction_details' => ['order_id' => $transaction->uuid, 'gross_amount' => $transaction->grand_total],
-                'customer_details' => ['first_name' => $transaction->customer_name, 'email' => $transaction->customer_email, 'phone' => $transaction->customer_phone],
-            ];
+            if (env('MIDTRANS_ENABLED', false)) {
+                $payload = [
+                    'transaction_details' => ['order_id' => $transaction->uuid, 'gross_amount' => $transaction->grand_total],
+                    'customer_details' => ['first_name' => $transaction->customer_name, 'email' => $transaction->customer_email, 'phone' => $transaction->customer_phone],
+                ];
 
-            $snapToken = Snap::getSnapToken($payload);
-            $transaction->update(['midtrans_snap_token' => $snapToken]);
+                $snapToken = Snap::getSnapToken($payload);
+                $transaction->update(['midtrans_snap_token' => $snapToken]);
 
-            return back()->with('flash', [
-                'snap_token' => $snapToken,
-                'redirect_url' => route('customer.pesanan.show', $pesanan->id)
-            ]);
-        } else {
-            $pesanan->update(['status' => 'Diproses']);
-            $transaction->update(['payment_status' => 'success']);
+                return back()->with('flash', [
+                    'snap_token' => $snapToken,
+                    'redirect_url' => route('customer.pesanan.show', $pesanan->id)
+                ]);
+            }
 
-            return redirect()->route('customer.pesanan.show', $pesanan->id)
-                             ->with('success', 'Pesanan Anda berhasil dibuat!');
-        }
-    });
+            return redirect()->route('customer.pesanan.show', $pesanan->id)->with('success', 'Pesanan berhasil dibuat.');
+        });
+    } catch (\Exception $e) {
+        return back()->withErrors(['message' => 'Gagal memproses pesanan: ' . $e->getMessage()]);
+    }
 }
-
 }

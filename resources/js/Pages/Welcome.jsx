@@ -47,6 +47,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion, produkCount,
                 src="/storage/slide/SlideA.png"
                 alt="Slide A"
                 className="w-full h-auto"
+                fetchPriority="high"
+                loading="eager"
               />
             </SwiperSlide>
             <SwiperSlide>
@@ -54,6 +56,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion, produkCount,
                 src="/storage/slide/SlideB.png"
                 alt="Slide B"
                 className="w-full h-auto"
+                loading="lazy"
               />
             </SwiperSlide>
             <SwiperSlide>
@@ -61,6 +64,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion, produkCount,
                 src="/storage/slide/SlideC.png"
                 alt="Slide C"
                 className="w-full h-auto"
+                loading="lazy"
               />
             </SwiperSlide>
           </Swiper>

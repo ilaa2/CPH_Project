@@ -35,11 +35,19 @@ use App\Http\Controllers\DashboardController;
 Route::get('/', [WelcomeController::class, 'index'])->name('home');
 Route::get('/tentang-kami', [WelcomeController::class, 'tentangKami'])->name('tentang.kami');
 
+// Route Belanja (Public)
+Route::get('/customer/belanja', [BelanjaController::class, 'index'])->name('belanja.index');
+Route::get('/customer/belanja/{product}', [BelanjaController::class, 'show'])->name('belanja.show');
+
+// Route Ulasan (Public - Read Only)
+Route::get('/customer/ulasan', [UlasanController::class, 'indexCust'])->name('customer.ulasan.index');
+
+// Route Kunjungan (Public - Form Info)
+Route::get('/customer/kunjungan', [KunjunganControllerCust::class, 'index'])->name('kunjungan.index');
+
 
 Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(function () {
-    // Route Belanja
-    Route::get('/belanja', [BelanjaController::class, 'index'])->name('belanja.index');
-    Route::get('/belanja/{product}', [BelanjaController::class, 'show'])->name('belanja.show');
+
 
     // Route Keranjang
     Route::post('/cart', [CartController::class, 'store'])->name('cart.store');
@@ -47,7 +55,7 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::delete('/cart/{cart}', [CartController::class, 'destroy'])->name('cart.destroy');
 
 
-    Route::get('/kunjungan', [KunjunganControllerCust::class, 'index'])->name('kunjungan.index');
+
     Route::post('/kunjungan/handle-form', [KunjunganControllerCust::class, 'handleForm'])->name('kunjungan.handle_form');
     Route::get('/kunjungan/konfirmasi', [KunjunganControllerCust::class, 'showKonfirmasi'])->name('kunjungan.konfirmasi');
     Route::post('/kunjungan/customer', [KunjunganControllerCust::class, 'store'])->name('customer.kunjungan.store');
@@ -59,7 +67,21 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::delete('/profile', [CustomerProfileController::class, 'destroy'])->name('customer.profile.destroy');
 
     // Route Pesanan Customer
-    Route::resource('pesanan', PesananControllerCust::class)->only(['index', 'show']);
+    Route::resource('pesanan', PesananControllerCust::class)
+        ->only(['index', 'show'])
+        ->names([
+            'index' => 'customer.pesanan.index',
+            'show' => 'customer.pesanan.show',
+        ]);
+
+    // Route Kunjungan Customer (Detail)
+    Route::get('/kunjungan/{kunjungan}', [KunjunganControllerCust::class, 'show'])->name('customer.kunjungan.show');
+
+
+    Route::get('/ulasan/create/{pesanan}', [UlasanController::class, 'createCust'])->name('customer.ulasan.create');
+    Route::post('/ulasan', [UlasanController::class, 'storeCust'])->name('customer.ulasan.store');
+    Route::get('/kunjungan/{kunjungan}/ulasan', [UlasanController::class, 'createForKunjungan'])->name('customer.kunjungan.ulasan.create');
+    Route::post('/kunjungan/ulasan', [UlasanController::class, 'storeForKunjungan'])->name('customer.kunjungan.ulasan.store');
 
         // Grup Route untuk Checkout
     Route::prefix('checkout')->name('checkout.')->group(function () {
@@ -90,6 +112,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // CRUD Resources
+    Route::post('/produk/{id}/duplicate', [ProdukController::class, 'duplicate'])->name('produk.duplicate');
     Route::resource('produk', ProdukController::class)->except(['show', 'edit']);
     Route::resource('pelanggan', PelangganController::class)->except('show');
     Route::resource('kunjungan', KunjunganController::class)->except(['index', 'show']);
@@ -99,6 +122,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/setelan', [SetelanController::class, 'index'])->name('setelan.index');
     Route::get('/bantuan', [BantuanController::class, 'index'])->name('bantuan.index');
     Route::get('/ulasan', [UlasanController::class, 'index'])->name('ulasan.index');
+    Route::post('/ulasan/{id}/reply', [UlasanController::class, 'reply'])->name('ulasan.reply');
     Route::delete('/ulasan/{id}', [UlasanController::class, 'destroy'])->name('ulasan.destroy');
 
     // Kunjungan (halaman daftar)

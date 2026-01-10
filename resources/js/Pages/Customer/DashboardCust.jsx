@@ -4,7 +4,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/effect-fade';
-import { Link, Head, router } from '@inertiajs/react';
+import { Link, Head, router, usePage } from '@inertiajs/react';
 import { FiEye, FiShoppingCart, FiUsers, FiSun, FiArrowRight } from 'react-icons/fi';
 import { BsStarFill, BsStar } from 'react-icons/bs';
 import Swal from 'sweetalert2';
@@ -187,8 +187,28 @@ function ProductCard({ data, onAddToCart }) {
  */
 function LatestProducts({ title, products }) {
     if (!products || products.length === 0) return null;
+    const { auth } = usePage().props; // Ambil auth
 
     const handleAddToCart = (product) => {
+        // Guard Auth
+        if (!auth.pelanggan) {
+            Swal.fire({
+                title: 'Anda Belum Login',
+                text: "Silakan login terlebih dahulu untuk menambahkan produk ke keranjang.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Login Sekarang',
+                cancelButtonText: 'Nanti Saja'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.visit(route('login'));
+                }
+            });
+            return;
+        }
+
         router.post('/customer/cart', { product_id: product.id }, {
             preserveScroll: true,
             onSuccess: () => Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: `${product.nama} ditambahkan!`, showConfirmButton: false, timer: 2000 }),
@@ -224,7 +244,7 @@ function LatestProducts({ title, products }) {
 function KunjunganSection({ tipeKunjungan }) {
     if (!tipeKunjungan || tipeKunjungan.length === 0) return null;
     const tipeDetails = {
-        'Outing Class': { description: 'Program edukasi interaktif untuk sekolah dan grup belajar, langsung di kebun kami.', icon: <FiUsers className="h-8 w-8 text-white" />, bgColor: 'bg-gradient-to-br from-teal-500 to-green-700' }, // Warna diubah
+        'Outing Class': { description: 'Program edukasi interaktif untuk sekolah dan grup belajar, langsung di kebun kami.', icon: <FiUsers className="h-8 w-8 text-white" />, bgColor: 'bg-gradient-to-br from-teal-500 to-green-700' },
         'Umum': { description: 'Kunjungan rekreasi untuk keluarga dan umum yang ingin menikmati suasana kebun.', icon: <FiSun className="h-8 w-8 text-white" />, bgColor: 'bg-gradient-to-br from-orange-500 to-amber-600' },
     };
     return (
@@ -246,6 +266,26 @@ function KunjunganSection({ tipeKunjungan }) {
 }
 
 function KunjunganCard({ title, description, icon, bgColor }) {
+    const { auth } = usePage().props;
+
+    const handleKunjunganClick = (e) => {
+        if (!auth.pelanggan) {
+            e.preventDefault();
+            Swal.fire({
+                title: 'Akses Terbatas',
+                text: "Silakan login untuk jadwal kunjungan.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Login',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) router.visit(route('login'));
+            });
+        }
+    };
+
     return (
         <div className={`relative rounded-2xl overflow-hidden p-8 text-white shadow-lg transform transition-transform hover:scale-105 ${bgColor}`}>
             <div className="relative z-10">
@@ -254,7 +294,11 @@ function KunjunganCard({ title, description, icon, bgColor }) {
                     <h3 className="text-2xl font-bold">{title}</h3>
                 </div>
                 <p className="mt-4 text-white/90">{description}</p>
-                <Link href={route('kunjungan.index')} className="mt-8 inline-flex items-center gap-2 bg-white text-gray-800 font-semibold px-6 py-3 rounded-lg transition-colors hover:bg-gray-200">
+                <Link
+                    href={route('kunjungan.index')}
+                    onClick={handleKunjunganClick}
+                    className="mt-8 inline-flex items-center gap-2 bg-white text-gray-800 font-semibold px-6 py-3 rounded-lg transition-colors hover:bg-gray-200"
+                >
                     Daftar Sekarang <FiArrowRight />
                 </Link>
             </div>

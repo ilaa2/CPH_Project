@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import CartPanel from '@/Components/CartPanel'; // <-- Impor CartPanel
 
 // Komponen Header
-export function SiteHeader({ auth, onCartClick }) { // <-- Tambahkan onCartClick
+export function SiteHeader({ auth, onCartClick }) {
     const user = auth?.pelanggan;
     const { cart } = usePage().props;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,6 +17,27 @@ export function SiteHeader({ auth, onCartClick }) { // <-- Tambahkan onCartClick
     const handleSearch = (e) => {
         e.preventDefault();
         router.get('/customer/belanja', { search: searchQuery }, { preserveState: true, replace: true });
+    };
+
+    const handleProtectedAction = (action) => {
+        if (!user) {
+            Swal.fire({
+                title: 'Akses Terbatas',
+                text: "Silakan login terlebih dahulu untuk mengakses fitur ini.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Login Sekarang',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.visit('/login');
+                }
+            });
+        } else {
+            action();
+        }
     };
 
     useEffect(() => {
@@ -33,7 +54,6 @@ export function SiteHeader({ auth, onCartClick }) { // <-- Tambahkan onCartClick
 
     return (
         <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-green-100">
-            {/* ... (kode header lainnya tetap sama) ... */}
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
                 <div className="h-16 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -52,8 +72,11 @@ export function SiteHeader({ auth, onCartClick }) { // <-- Tambahkan onCartClick
                             <input type="search" placeholder="Cari produk..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="hidden sm:block h-9 w-40 md:w-56 rounded-md border border-green-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
                         </form>
 
-                        {/* Tombol Keranjang Diubah */}
-                        <button onClick={onCartClick} className="relative h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100" title="Keranjang">
+                        <button
+                            onClick={() => handleProtectedAction(onCartClick)}
+                            className="relative h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100 transition-colors"
+                            title="Keranjang"
+                        >
                             <FiShoppingCart />
                             {user && cart.count > 0 && (
                                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
@@ -63,23 +86,27 @@ export function SiteHeader({ auth, onCartClick }) { // <-- Tambahkan onCartClick
                         </button>
 
                         <div className="relative" ref={profileDropdownRef}>
-                            <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100" title="Akun Saya"><FiUser /></button>
-                            <div className={`absolute top-full right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg transition-opacity duration-200 ${isProfileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                                {user ? (<>
+                            <button
+                                onClick={() => handleProtectedAction(() => setIsProfileOpen(!isProfileOpen))}
+                                className={`h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100 transition-colors ${!user ? 'animate-pulse border border-green-200' : ''}`}
+                                title={user ? "Akun Saya" : "Login untuk akses"}
+                            >
+                                <FiUser />
+                            </button>
+
+                            {user && (
+                                <div className={`absolute top-full right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg transition-opacity duration-200 ${isProfileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
                                     <div className="px-4 py-3 border-b">
                                         <p className="text-sm font-semibold truncate">{user.nama}</p>
                                         <p className="text-xs text-gray-500 truncate">{user.email}</p>
                                     </div>
-                                <div className="p-1">
-                                <Link href="/customer/profile" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Profil Saya</Link>
-                                <Link href="/customer/pesanan" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Riwayat Pesanan</Link>
-                                <Link href="/logout" method="post" as="button" className="block w-full text-left px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50">Logout</Link>
-                            </div>
-                                </>) : (<div className="p-1">
-                                    <Link href="/login" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Login</Link>
-                                    <Link href="/register" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Daftar</Link>
-                                </div>)}
-                            </div>
+                                    <div className="p-1">
+                                        <Link href="/customer/profile" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Profil Saya</Link>
+                                        <Link href="/customer/pesanan" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Riwayat Pesanan</Link>
+                                        <Link href="/logout" method="post" as="button" className="block w-full text-left px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50">Logout</Link>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <button className="md:hidden h-9 w-9 flex items-center justify-center" onClick={() => setIsMenuOpen(!isMenuOpen)}>{isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}</button>
                     </div>
@@ -184,15 +211,15 @@ export default function CustomerLayout({ children }) {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            <CartPanel 
-                open={isCartOpen} 
+            <CartPanel
+                open={isCartOpen}
                 setOpen={setIsCartOpen}
                 cartItems={cartItems}
                 subtotal={subtotal}
             />
-            <SiteHeader 
-                auth={auth} 
-                onCartClick={() => setIsCartOpen(true)} 
+            <SiteHeader
+                auth={auth}
+                onCartClick={() => setIsCartOpen(true)}
             />
             <main>{children}</main>
             <FooterNote user={auth.pelanggan} />

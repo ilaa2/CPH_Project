@@ -1,12 +1,13 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react'; // DIUBAH: Tambah usePage
 import { FiShoppingCart } from 'react-icons/fi';
 import React, { useState } from 'react';
-import CustomerLayout from '@/Layouts/CustomerLayout'; // DIUBAH: Impor layout utama
+import CustomerLayout from '@/Layouts/CustomerLayout';
 
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
-export default function BelanjaDetail({ product }) { // DIUBAH: auth tidak perlu lagi karena dari layout
+export default function BelanjaDetail({ product }) {
+    const { auth } = usePage().props; // DIUBAH: Ambil auth dari usePage
     const [quantity, setQuantity] = useState(1);
 
     const increment = () => setQuantity(prev => (prev < product.stok ? prev + 1 : prev));
@@ -43,7 +44,30 @@ export default function BelanjaDetail({ product }) { // DIUBAH: auth tidak perlu
         }
     };
 
+    const checkAuth = () => {
+        if (!auth.pelanggan) {
+            Swal.fire({
+                title: 'Anda Belum Login',
+                text: "Silakan login terlebih dahulu untuk melakukan transaksi.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#16a34a',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Login Sekarang',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.visit('/login');
+                }
+            });
+            return false;
+        }
+        return true;
+    };
+
     const handleAddToCart = () => {
+        if (!checkAuth()) return; // Cek login
+
         router.post(route('cart.store'), {
             product_id: product.id,
             quantity: quantity,
@@ -62,8 +86,9 @@ export default function BelanjaDetail({ product }) { // DIUBAH: auth tidak perlu
         });
     };
 
-    // DIUBAH: Menggunakan router.post untuk mengirim data ke backend
     const handleBuyNow = () => {
+        if (!checkAuth()) return; // Cek login
+
         router.post(route('checkout.buyNow'), {
             product_id: product.id,
             quantity: quantity,

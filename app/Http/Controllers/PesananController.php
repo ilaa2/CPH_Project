@@ -14,7 +14,8 @@ class PesananController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Pesanan::with(['pelanggan', 'items.produk'])
+        $query = Pesanan::with(['pelanggan', 'items.produk', 'ulasan.fotos', 'ulasan.pelanggan'])
+            ->where('status', '!=', 'Dibatalkan')
             ->orderByDesc('tanggal');
 
         if ($request->has('search')) {
@@ -24,11 +25,15 @@ class PesananController extends Controller
             });
         }
 
+        if ($request->has('status') && $request->status !== 'Semua') {
+            $query->where('status', $request->status);
+        }
+
         $pesanan = $query->paginate(10)->withQueryString();
 
         return Inertia::render('Pesanan/Index', [
             'pesanan' => $pesanan,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'status']),
             'pelangganList' => Pelanggan::all(),
             'produkList' => Produk::where('stok', '>', 0)->get(),
         ]);
@@ -50,11 +55,13 @@ class PesananController extends Controller
             'items' => 'required|array|min:1',
             'items.*.produk_id' => 'required|exists:products,id',
             'items.*.jumlah' => 'required|integer|min:1',
+            'biaya_pengiriman' => 'nullable|integer|min:0',
         ]);
 
         DB::beginTransaction();
         try {
-            $total = 0;
+            $subtotal = 0;
+            $shippingCost = $request->biaya_pengiriman ?? 0;
 
             // 🔁 Cek stok sebelum buat pesanan
             foreach ($request->items as $item) {
@@ -62,14 +69,17 @@ class PesananController extends Controller
                 if ($produk->stok < $item['jumlah']) {
                     throw new \Exception("Stok produk '{$produk->nama}' tidak mencukupi. Tersedia: {$produk->stok}");
                 }
-                $total += $produk->harga * $item['jumlah'];
+                $subtotal += $produk->harga * $item['jumlah'];
             }
+
+            $grandTotal = $subtotal + $shippingCost;
 
             // Simpan pesanan
             $pesanan = Pesanan::create([
                 'id_pelanggan' => $request->pelanggan_id,
                 'tanggal' => $request->tanggal,
-                'total' => $total,
+                'biaya_pengiriman' => $shippingCost,
+                'total' => $grandTotal,
                 'status' => 'Diproses',
             ]);
 
@@ -84,8 +94,7 @@ class PesananController extends Controller
                     'subtotal' => $produk->harga * $item['jumlah'],
                 ]);
 
-                $produk->stok -= $item['jumlah'];
-                $produk->save();
+                $produk->decrement('stok', $item['jumlah']);
             }
 
             DB::commit();
@@ -99,6 +108,14 @@ class PesananController extends Controller
     public function destroy($id)
     {
         $pesanan = Pesanan::findOrFail($id);
+        // Kembalikan stok jika pesanan dihapus
+        foreach ($pesanan->items as $item) {
+            $produk = Produk::find($item->produk_id);
+            if ($produk) {
+                $produk->increment('stok', $item->jumlah);
+            }
+        }
+        
         $pesanan->items()->delete();
         $pesanan->delete();
 
@@ -119,45 +136,51 @@ class PesananController extends Controller
         $request->validate([
             'pelanggan_id' => 'required|exists:pelanggans,id',
             'tanggal' => 'required|date',
-            'status' => 'required|in:Diproses,Selesai,Dibatalkan',
+            'status' => 'required|in:pending,Diproses,Selesai',
             'items' => 'required|array|min:1',
             'items.*.produk_id' => 'required|exists:products,id',
             'items.*.jumlah' => 'required|integer|min:1',
+            'biaya_pengiriman' => 'nullable|integer|min:0',
         ]);
 
         DB::beginTransaction();
         try {
             $pesanan = Pesanan::with('items')->findOrFail($id);
 
-            // 🔁 Kembalikan stok lama
+            // 1. Kembalikan stok lama
             foreach ($pesanan->items as $item) {
-                $produk = Produk::findOrFail($item->produk_id);
-                $produk->stok += $item->jumlah;
-                $produk->save();
+                $produk = Produk::find($item->produk_id);
+                if ($produk) {
+                    $produk->increment('stok', $item->jumlah);
+                }
             }
 
+            // Hapus item lama
             $pesanan->items()->delete();
 
-            $total = 0;
+            $subtotal = 0;
+            $shippingCost = $request->biaya_pengiriman ?? $pesanan->biaya_pengiriman ?? 0;
 
-            // 🔁 Validasi stok baru
+            // 2. Validasi Stok Baru
             foreach ($request->items as $item) {
                 $produk = Produk::findOrFail($item['produk_id']);
+                
                 if ($produk->stok < $item['jumlah']) {
-                    throw new \Exception("Stok produk '{$produk->nama}' tidak mencukupi. Tersedia: {$produk->stok}");
+                    throw new \Exception("Stok produk '{$produk->nama}' tidak mencukupi untuk status Aktif. Tersedia: {$produk->stok}");
                 }
-                $total += $produk->harga * $item['jumlah'];
+                
+                $subtotal += $produk->harga * $item['jumlah'];
             }
+
+            $grandTotal = $subtotal + $shippingCost;
 
             $pesanan->update([
                 'id_pelanggan' => $request->pelanggan_id,
                 'tanggal' => $request->tanggal,
-                'total' => $total,
+                'biaya_pengiriman' => $shippingCost,
+                'total' => $grandTotal,
                 'status' => $request->status,
             ]);
-
-            foreach ($request->items as $item) {
-                $produk = Produk::findOrFail($item['produk_id']);
 
                 PesananItem::create([
                     'pesanan_id' => $pesanan->id,
@@ -166,9 +189,7 @@ class PesananController extends Controller
                     'subtotal' => $produk->harga * $item['jumlah'],
                 ]);
 
-                $produk->stok -= $item['jumlah'];
-                $produk->save();
-            }
+                $produk->decrement('stok', $item['jumlah']);
 
             DB::commit();
             return redirect()->route('pesanan.index')->with('success', 'Pesanan berhasil diperbarui!');

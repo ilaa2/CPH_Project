@@ -14,28 +14,20 @@ class WelcomeController extends Controller
 {
     public function index()
     {
-        $latestBuah = Produk::where('status', 'Aktif')
-                            ->where('id_kategori', 2)
-                            ->latest()->take(10)->get();
+        // Cache data statistik selama 60 menit untuk mengurangi beban database
+        $stats = \Illuminate\Support\Facades\Cache::remember('welcome_stats', 60 * 60, function () {
+            return [
+                'produkCount' => Produk::count(),
+                'kunjunganCount' => Kunjungan::count(),
+                'pelangganCount' => Pelanggan::count(),
+                'orderCount' => Pesanan::count(),
+            ];
+        });
 
-        $latestSayur = Produk::where('status', 'Aktif')
-                             ->where('id_kategori', 1)
-                             ->latest()->take(10)->get();
-
-        // 👇 2. Ambil data tipe kunjungan dari database
-        $tipeKunjungan = TipeKunjungan::all();
-
-        return Inertia::render('Customer/DashboardCust', [
-            'latestBuah' => $latestBuah,
-            'latestSayur' => $latestSayur,
-            'tipeKunjungan' => $tipeKunjungan, // 👈 3. Kirim datanya sebagai prop
-            'produkCount' => Produk::count(),
-            'kunjunganCount' => Kunjungan::count(),
-            'pelangganCount' => Pelanggan::count(),
-            'orderCount' => Pesanan::count(),
+        return Inertia::render('Customer/DashboardCust', array_merge($stats, [
             'laravelVersion' => app()->version(),
             'phpVersion' => PHP_VERSION,
-        ]);
+        ]));
     }
 
     public function tentangKami()

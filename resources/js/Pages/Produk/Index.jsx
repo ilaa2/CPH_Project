@@ -106,41 +106,39 @@ const ProdukForm = ({ isEditing, model, kategori, onSubmit, onCancel }) => {
 
 // Komponen Pagination
 const Pagination = ({ links }) => (
-    <div className="flex flex-wrap justify-center mt-4">
-      {links.map((link, index) => (
-        <Link
-          key={index}
-          href={link.url || '#'}
-          dangerouslySetInnerHTML={{ __html: link.label }}
-          className={`px-4 py-2 mx-1 my-1 rounded-md text-sm ${
-            link.active ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'
+  <div className="flex flex-wrap justify-center mt-4">
+    {links.map((link, index) => (
+      <Link
+        key={index}
+        href={link.url || '#'}
+        dangerouslySetInnerHTML={{ __html: link.label }}
+        className={`px-4 py-2 mx-1 my-1 rounded-md text-sm ${link.active ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'
           } ${!link.url ? 'text-gray-400 cursor-not-allowed' : ''}`}
-          disabled={!link.url}
-        />
-      ))}
-    </div>
+        disabled={!link.url}
+      />
+    ))}
+  </div>
 );
 
 // Komponen Filter Pills
 const FilterPills = ({ kategori, activeFilter, onFilterChange }) => {
-    const filters = ['Semua', ...kategori.map(k => k.nama_kategori)];
-    return (
-      <div className="flex flex-wrap gap-2">
-        {filters.map((filter) => (
-          <button
-            key={filter}
-            onClick={() => onFilterChange(filter)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold transition ${
-              activeFilter === filter
-                ? 'bg-green-600 text-white shadow'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+  const filters = ['Semua', ...kategori.map(k => k.nama_kategori)];
+  return (
+    <div className="flex flex-wrap gap-2">
+      {filters.map((filter) => (
+        <button
+          key={filter}
+          onClick={() => onFilterChange(filter)}
+          className={`px-4 py-2 rounded-full text-sm font-semibold transition ${activeFilter === filter
+            ? 'bg-green-600 text-white shadow'
+            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
             }`}
-          >
-            {filter}
-          </button>
-        ))}
-      </div>
-    );
+        >
+          {filter}
+        </button>
+      ))}
+    </div>
+  );
 };
 
 export default function ProdukList({ produk, kategori, filters }) {
@@ -215,7 +213,7 @@ export default function ProdukList({ produk, kategori, filters }) {
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">Produk</h2>
         <button onClick={() => openModal(false)} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
-            + Tambah Produk
+          + Tambah Produk
         </button>
       </div>
     }>
@@ -265,16 +263,29 @@ export default function ProdukList({ produk, kategori, filters }) {
                   <td className="px-4 py-2 font-medium text-gray-900">{item.nama}</td>
                   <td className="px-4 py-2">{item.kategori || '-'}</td>
                   <td className="px-4 py-2">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.harga)}</td>
-                  <td className="px-4 py-2">{item.stok}</td>
                   <td className="px-4 py-2">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      item.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
+                    <div className="flex flex-col">
+                      <span className={item.stok < 5 ? 'text-red-600 font-bold' : ''}>
+                        {item.stok}
+                      </span>
+                      {item.stok < 5 && (
+                        <span className="text-[10px] text-red-500 font-semibold bg-red-100 px-2 py-0.5 rounded-full w-max mt-1">
+                          Stok Menipis!
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${item.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
                       {item.status}
                     </span>
                   </td>
                   <td className="px-4 py-2">
                     <div className="flex items-center justify-center gap-2">
+                      <button onClick={() => router.post(route('produk.duplicate', item.id))} className="p-2 bg-yellow-100 text-yellow-600 hover:bg-yellow-200 rounded-full transition" title="Duplicate">
+                        📋
+                      </button>
                       <button onClick={() => openModal(true, item)} className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-full transition" title="Edit">
                         ✏️
                       </button>

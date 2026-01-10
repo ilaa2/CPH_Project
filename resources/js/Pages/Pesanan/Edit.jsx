@@ -82,9 +82,9 @@ export default function Edit({ pesanan, pelangganList, produkList }) {
               onChange={(e) => setData('status', e.target.value)}
               className="w-full border-gray-300 rounded"
             >
+              <option value="pending">Menunggu Pembayaran (pending)</option>
               <option value="Diproses">Diproses</option>
               <option value="Selesai">Selesai</option>
-              <option value="Dibatalkan">Dibatalkan</option>
             </select>
             {errors.status && <p className="text-red-600 text-sm">{errors.status}</p>}
           </div>

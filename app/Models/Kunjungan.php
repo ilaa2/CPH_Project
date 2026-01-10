@@ -16,7 +16,7 @@ class Kunjungan extends Model
         'tanggal',
         'jam',
         'status',
-        'tipe_kunjungan_id',
+        'tipe_id',
         'jumlah_dewasa',
         'jumlah_anak',
         'jumlah_balita',

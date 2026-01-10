@@ -1,5 +1,5 @@
 import Mainbar from '@/Components/Bar/Mainbar';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { FiBox, FiUsers, FiShoppingCart, FiCalendar } from 'react-icons/fi';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
@@ -54,7 +54,7 @@ const ActivityTable = ({ title, headers, items, renderRow }) => {
     );
 };
 
-export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbaru }) {
+export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbaru, stokMenipis, pesananPerluDiproses }) {
     const statCards = [
         {
             icon: <FiBox className="w-8 h-8 text-green-500" />,
@@ -70,13 +70,13 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
         },
         {
             icon: <FiShoppingCart className="w-8 h-8 text-yellow-500" />,
-            title: 'Total Pesanan',
-            value: stats.totalPesanan,
+            title: 'Transaksi Selesai',
+            value: stats.totalPesananSelesai,
             color: 'border-yellow-500',
         },
         {
             icon: <FiCalendar className="w-8 h-8 text-purple-500" />,
-            title: 'Total Kunjungan',
+            title: 'Kunjungan Aktif',
             value: stats.totalKunjungan,
             color: 'border-purple-500',
         },
@@ -101,6 +101,42 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                         ))}
                     </div>
 
+                    {/* Grid Widget Penting */}
+                    <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 mb-8">
+                        {/* Stok Menipis */}
+                        <ActivityTable
+                            title={<span className="text-red-600 flex items-center gap-2">⚠️ Stok Menipis</span>}
+                            headers={['Produk', 'Sisa Stok']}
+                            items={stokMenipis}
+                            renderRow={(produk) => (
+                                <tr key={produk.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{produk.nama}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-red-600 bg-red-50 rounded-lg">
+                                        {produk.stok}
+                                    </td>
+                                </tr>
+                            )}
+                        />
+
+                        {/* Pesanan Perlu Diproses */}
+                        <ActivityTable
+                            title={<span className="text-yellow-600 flex items-center gap-2">⚡ Perlu Diproses</span>}
+                            headers={['Pelanggan', 'Total', 'Aksi']}
+                            items={pesananPerluDiproses}
+                            renderRow={(pesanan) => (
+                                <tr key={pesanan.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{pesanan.pelanggan.nama}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{formatCurrency(pesanan.total)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <Link href={route('pesanan.index', { search: pesanan.pelanggan.nama })} className="text-blue-600 hover:text-blue-800 font-medium hover:underline">
+                                            Proses &rarr;
+                                        </Link>
+                                    </td>
+                                </tr>
+                            )}
+                        />
+                    </div>
+
                     {/* Grid Aktivitas Terbaru */}
                     <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
                         <ActivityTable
@@ -111,7 +147,7 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                 <tr key={pesanan.id}>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">#{pesanan.id}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{pesanan.pelanggan.nama}</td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{formatCurrency(pesanan.total_harga)}</td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{formatCurrency(pesanan.total)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                         {format(new Date(pesanan.created_at), 'd MMM yyyy', { locale: id })}
                                     </td>

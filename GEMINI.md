@@ -154,6 +154,185 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 
 ### Riwayat Perubahan
 
+**Minggu, 11 Januari 2026**
+*   **Perbaikan Flow Update Kunjungan (Admin):**
+    *   **Fix Bug "Simpan Perubahan":** Memperbaiki masalah tombol simpan pada modal edit kunjungan yang tidak merespon dengan melengkapi field form (`pelanggan_id`, `tipe_id`, `tanggal`, `jam`) sesuai kebutuhan validasi backend.
+    *   **Backend Validation:** Mengoptimasi `KunjunganController@update` agar lebih fleksibel menggunakan aturan `sometimes` pada validasi.
+    *   **Hotfix Database:** Menambahkan kolom `remember_token` pada tabel `pelanggans` untuk mencegah crash saat sistem mencoba mengautentikasi akun di tabel tersebut.
+    *   **UI/UX:** Memastikan modal menutup otomatis dan memicu refresh data tabel secara instan setelah update berhasil.
+
+*   **Pembaruan UI/UX Riwayat Kunjungan (Admin):**
+    *   **Standardisasi Kolom Aksi:** Mengganti teks "Lihat Ulasan" dan emoji statis dengan ikon bulat (`rounded-full`) yang interaktif (👁️ untuk detail, ⭐ untuk ulasan).
+    *   **Interactive Design:** Menambahkan hover effect, shadow, dan tooltip penjelas pada setiap tombol aksi untuk meningkatkan kejelasan visual.
+    *   **Consistency:** Menyelaraskan desain kolom AKSI agar seragam dengan modul Pesanan dan Jadwal Kunjungan.
+
+*   **Finalisasi Fitur Laporan (PDF & Excel - STABLE):**
+    *   **Fix ERR_INVALID_RESPONSE:** Mengatasi error navigasi dengan memastikan seluruh endpoint ekspor mengembalikan response binary langsung, tanpa redirect atau output HTML/Inertia.
+    *   **Fix Blade Syntax:** Memperbaiki kesalahan fatal `@end@foreach` pada template PDF yang menyebabkan kegagalan render dokumen.
+    *   **Standarisasi Excel:** Memperbaiki penggunaan `SimpleExcelWriter::streamDownload()` agar menggunakan string nama file sebagai parameter pertama, sesuai dokumentasi terbaru.
+    *   **Zero-Corruption Logic:** Mengimplementasikan pembersihan buffer (`ob_end_clean`) dan pemaksaan filter koleksi untuk menjamin keaslian data binary yang dikirim ke browser.
+
+*   **Standarisasi UI/UX Filter & Search (Admin Panel):**
+    *   **Komponen Baru:** Membuat `FilterHeader.jsx` sebagai komponen standar untuk filter tab/pill dan bar pencarian di seluruh Admin Panel.
+    *   **Penyelarasan Visual:** Mengupdate halaman **Pesanan**, **Manajemen Kunjungan** (Jadwal, Kalender, Riwayat), dan **Pelanggan** agar menggunakan pola desain yang sama dengan halaman Produk.
+    *   **UX Improvement:** Menambahkan fitur pencarian pada halaman Jadwal dan Riwayat Kunjungan yang sebelumnya hanya memiliki filter tipe.
+    *   **Konsistensi Design System:** Memastikan warna (Green-600), shadow, rounded corners, dan hover states seragam di seluruh modul admin.
+
+*   **Audit & Bug Fix Massal (Persiapan Final SEMHAS):**
+    *   **Integritas Data:** Memperbaiki model `Kunjungan` agar menggunakan `tipe_id` (konsisten dengan DB) dan mengupdate `KunjunganController` untuk mendukung rincian pengunjung (Dewasa, Anak, Balita) saat edit.
+    *   **Dashboard:** Menambahkan status `pending` pada widget "Perlu Diproses" agar admin bisa memantau pesanan baru dari customer.
+    *   **UI/UX Pelanggan:** Standardisasi label status "Dijadwalkan" dan label pengunjung "Anak (>2 thn)" di seluruh halaman riwayat dan form.
+    *   **Admin Pesanan:** Menambahkan dukungan status `pending` pada form edit admin untuk memproses pesanan customer.
+    *   **Vite Bug Fix:** Memperbaiki import-analysis error dengan menciptakan komponen `DetailModal`, `EditModal`, dan shared `Pagination` yang sebelumnya hilang, serta melengkapi import `date-fns`.
+    *   **Missing Routes:** Menambahkan route `customer.kunjungan.show` dan memastikan seluruh alur riwayat ulasan tidak 404.
+
+*   **HOTFIX: Missing Columns in Ulasan Table:**
+    *   Mengatasi Internal Server Error (500) saat admin membalas ulasan.
+    *   Menambahkan kolom `balasan` dan `tanggal_balasan` pada tabel `ulasan` melalui migrasi baru.
+
+*   **HOTFIX: Syntax Error in CheckoutController:**
+    *   Memperbaiki kesalahan sintaksis (missing brace) pada method `process` di `CheckoutController.php` yang menyebabkan Internal Server Error (500) secara global.
+    *   Memastikan alur redirect tetap berjalan meskipun Midtrans dalam kondisi disabled.
+
+*   **Penyederhanaan Status & Retirasi 'Dibatalkan' (Global Cleanup):**
+    *   **Backend Optimization:** Menghapus status 'Dibatalkan' dari seluruh query database di `KunjunganController`, `PesananController`, `DashboardController`, dan `LaporanController`. Data dengan status tersebut kini otomatis dikecualikan.
+    *   **Integritas Database:** Memperbarui migrasi `kunjungan` untuk menghapus 'Dibatalkan' dari list enum status. Menghapus record 'Dibatalkan' dari `PesananSeeder` dan `KunjunganSeeder`.
+    *   **UI/UX Admin:** Menghapus opsi 'Dibatalkan' pada seluruh form edit (Pesanan & Kunjungan) dan badge status pada tabel serta modal detail.
+    *   **UI/UX Customer:** Menghapus label dan styling status 'Dibatalkan' pada riwayat pesanan dan detail kunjungan pelanggan untuk menghindari kebingungan.
+    *   **Bug Fix:** Memperbaiki missing `handleDelete` function pada halaman Jadwal Kunjungan.
+
+**Sabtu, 11 Januari 2026**
+*   **Penyempurnaan Menyeluruh Panel Admin (Final Audit):**
+    *   **Dashboard Admin:**
+        *   Menambahkan widget "Stok Menipis" (< 5) dan "Pesanan Perlu Diproses" (Diproses) untuk akses cepat.
+        *   Memastikan metrik "Pesanan Selesai" hanya menghitung transaksi dengan status 'Selesai'.
+    *   **Manajemen Produk:**
+        *   Memperketat validasi stok (min: 0) dan harga (min: 1).
+        *   Mengimplementasikan fitur **Duplikasi Produk** untuk mempercepat input data.
+    *   **Manajemen Pesanan:**
+        *   Implementasi alur status linier dengan pewarnaan konsisten: Kuning (Pending/Menunggu), Biru (Diproses), Hijau (Selesai), Merah (Dibatalkan).
+        *   Sinkronisasi stok otomatis: Stok berkurang saat pesanan dibuat dan bertambah kembali jika pesanan dibatalkan.
+        *   Menambahkan input biaya pengiriman manual pada form pesanan admin.
+    *   **Manajemen Kunjungan:**
+        *   Highlighter otomatis untuk kunjungan yang melewati jadwal (Overdue) dengan status "Menunggu Konfirmasi".
+        *   Penyeragaman status "Dijadwalkan" dan alur kerja satu arah.
+    *   **Reputasi & Ulasan:**
+        *   Menambahkan fitur **Balas Ulasan** oleh admin langsung dari riwayat kunjungan atau detail pesanan.
+        *   Sentralisasi tampilan ulasan menggunakan komponen `UlasanPreview` yang mendukung balasan admin.
+    *   **Pelanggan:**
+        *   Menambahkan kolom metrik "Jumlah Pesanan" dan "Total Belanja" (LTV) pada daftar pelanggan untuk analisis loyalitas.
+    *   **Laporan:**
+        *   Menambahkan **Filter Rentang Tanggal** (Mulai - Selesai) pada semua jenis laporan (Penjualan, Kunjungan, Produk Terlaris).
+        *   Memastikan ekspor PDF dan Excel mematuhi filter tanggal yang dipilih.
+    *   **UI/UX Global:**
+        *   Menyederhanakan Sidebar dengan menyembunyikan menu non-fungsional (Setelan & Bantuan).
+        *   Standarisasi dialog konfirmasi hapus menggunakan `SweetAlert` dalam Bahasa Indonesia.
+        *   Konsistensi label dan loading states di seluruh modul admin.
+
+**Jumat, 10 Januari 2026**
+*   **Penyempurnaan Fitur Admin Panel (Persiapan SEMHAS):**
+    *   **Dashboard Admin:**
+        *   Meningkatkan akurasi data statistik: "Total Kunjungan" kini mengecualikan status Dibatalkan, dan "Total Pesanan" dipecah menjadi "Transaksi Selesai".
+        *   Memperbarui label UI di `Dashboard.jsx` agar lebih deskriptif ("Transaksi Selesai", "Kunjungan Aktif").
+    *   **Manajemen Produk:**
+        *   Menambahkan **Low Stock Alert**: Produk dengan stok < 5 kini menampilkan badge merah visual "Stok Menipis!" pada tabel produk.
+    *   **Manajemen Pesanan:**
+        *   Mengimplementasikan **Tab Filter Status** (Semua, Diproses, Selesai) pada tabel pesanan untuk memudahkan manajemen tanpa reload halaman.
+        *   Mengupdate `PesananController` untuk menangani filter status baru.
+    *   **Manajemen Kunjungan:**
+        *   **Filter Riwayat:** Menambahkan Tab Filter Tipe (Semua, Umum, Outing Class) pada Riwayat Kunjungan.
+        *   **Loading State:** Menambahkan indikator `LoadingSpinner` pada tabel Riwayat Kunjungan untuk meningkatkan UX saat navigasi/filter.
+        *   **Logika Kalender:** Memastikan status "Dijadwalkan" berubah warna (kuning) jika tanggalnya sudah lewat ("Menunggu Konfirmasi").
+    *   **Tujuan:** Memastikan Admin Panel lebih informatif, responsif, dan siap untuk didemonstrasikan.
+
+*   **Review Kesiapan SEMHAS:**
+    *   Melakukan analisis menyeluruh terhadap kesiapan proyek untuk demo SEMHAS.
+    *   **Temuan Kritis:** Typo status `'Dijadwalan'` di `KunjunganController.php:242` yang seharusnya `'Dijadwalkan'`.
+    *   **Temuan Sedang:** Inkonsistensi logika biaya Outing Class antara `KunjunganController.php` dan `KunjunganControllerCust.php`; konfigurasi Midtrans tidak lengkap (tidak ada `config/midtrans.php`).
+    *   **Status Integrasi:** RajaOngkir berfungsi, Midtrans dalam mode disabled (aman untuk demo), laporan PDF/Excel berfungsi.
+    *   **Skor Kesiapan:** 8/10 - Siap demo dengan catatan.
+
+*   **Finalisasi dan Perbaikan QA/Usability Check (Persiapan SEMHAS):**
+    *   Melakukan perbaikan menyeluruh terhadap temuan QA dan usability check untuk memastikan kesiapan demo.
+    *   **Perbaikan Bug:**
+        *   Mengatasi error `total_harga` undefined di `Dashboard.jsx`, menggantinya dengan `total`.
+        *   Menambahkan route yang hilang: `customer.kunjungan.show` dan grup route `customer.ulasan.*`.
+        *   Menambahkan method `show()` yang hilang pada `KunjunganControllerCust.php` untuk menampilkan detail kunjungan.
+    *   **Peningkatan Usability & Konsistensi:**
+        *   Mengganti status `'Direncanakan'` menjadi `'Dijadwalkan'` di `Show.jsx`, `Edit.jsx`, dan `Riwayat.jsx` agar konsisten dengan backend.
+        *   Memperbaiki penamaan usaha menjadi "Central Palantea Hidroponik" pada invoice (`Pesanan/Index.jsx`).
+        *   Memperjelas label input "Anak" menjadi "Anak (>2 thn)" pada form kunjungan (`Kunjungan.jsx`).
+    *   **Status Akhir:** Modul Kunjungan dan E-Commerce sepenuhnya fungsional dan siap didemonstrasikan.
+
+*   **Finalisasi UX (Loading State) & Verifikasi Data:**
+    *   **Loading State:** Mengimplementasikan indikator loading visual (`LoadingSpinner`) pada tabel Admin Pesanan, Admin Kunjungan, dan simulasi pada Halaman Laporan untuk meningkatkan UX saat demo.
+    *   **Verifikasi Data:** Memastikan sinkronisasi data dua arah antara Admin dan Customer (Status Pesanan & Kunjungan) berjalan konsisten.
+    *   **Status Kesiapan:** **100% SIAP DEMO** (Dengan catatan Midtrans disabled).
+
+*   **HOTFIX: Critical Error & Login Flow (Urgent):**
+    *   **Fix Ziggy Error:** Memperbaiki referensi route `customer.pesanan.show` yang menyebabkan halaman Riwayat Pesanan error/blank. Menambahkan penamaan eksplisit pada `routes/web.php`.
+    *   **Dashboard Guard:** Menambahkan proteksi SweetAlert pada tombol "Beli Sekarang", "Tambah Keranjang", dan "Daftar Kunjungan" di Halaman Utama (`DashboardCust.jsx`).
+    *   **UX Improvement:** Memastikan empty state pada halaman Riwayat Pesanan tampil rapi jika belum ada data.
+
+*   **Restrukturisasi Akses Kontrol & Navigasi:**
+    *   **Permissive Routes:** Memindahkan route `customer.belanja.*` dan `customer.ulasan.index` keluar dari middleware `auth` agar bisa diakses Publik (Guest).
+    *   **Conditional Navbar:** Menyembunyikan link "Kunjungan" pada Navbar (Desktop & Mobile) untuk Guest, hanya tampil setelah login.
+    *   **Strict Action:** Memastikan Guest bisa melihat produk tapi dipaksa login jika ingin melakukan aksi (Tambah Keranjang/Booking), sesuai user requirement.
+
+*   **Perbaikan Kalender Admin (Kunjungan):**
+    *   **Logic Status Waktu:** Mengimplementasikan logika pemisahan status "Dijadwalkan" berdasarkan waktu.
+        *   **Dijadwalkan (Akan Datang):** Hijau.
+        *   **Menunggu Konfirmasi (Lewat):** Oranye/Kuning (untuk event yang tanggalnya sudah lewat tapi status belum diupdate).
+        *   **Selesai:** Biru.
+        *   **Dibatalkan:** Merah.
+    *   **Backend Fix:** Menambahkan eager loading `with(['tipe'])` pada `KunjunganController` agar data tipe kunjungan muncul di kalender.
+
+*   **Sentralisasi Arsitektur Ulasan Admin (Final):**
+    *   **Penghapusan Menu Global:** Menghapus halaman "Ulasan & Feedback" yang terpisah untuk menyederhanakan navigasi admin.
+    *   **Integrasi Kontekstual:** Ulasan kini ditampilkan langsung di halaman sumbernya (**Riwayat Kunjungan** dan **Pesanan**) menggunakan modal popup, tanpa perlu berpindah halaman.
+    *   **Component Reusability:** Membuat komponen `UlasanPreview.jsx` yang digunakan kembali di kedua halaman tersebut untuk konsistensi tampilan (Card View dengan foto, rating, dan komentar).
+
+*   **HOTFIX: Pesanan Index Syntax Error:**
+    *   **Fix JSX Error:** Memperbaiki 'Adjacent JSX elements' error di `Pesanan/Index.jsx` yang disebabkan oleh duplikasi kode (copy-paste error) di dalam loop tabel.
+    *   **Import Fix:** Menambahkan missing import untuk `UlasanPreview` di `Pesanan/Index.jsx`.
+
+*   **Pembaruan Identitas & Styling Invoice:**
+    *   **Rebranding:** Mengupdate header invoice menjadi "CENTRAL PALANTEA HIDROPONIK" (Bold & Uppercase) dengan alamat resmi Jl. Melayu.
+    *   **Professional UI:** Meningkatkan styling invoice dengan status badge, garis pemisah yang rapi, dan tipografi yang lebih formal.
+    *   **Ongkir Eksplisit:** Menambahkan baris "Ongkos Kirim" pada rincian pembayaran (Total - Subtotal Produk).
+    *   **Auto-Generated Footer:** Menambahkan catatan kaki "Invoice ini dihasilkan secara otomatis oleh sistem".
+
+*   **Refaktorisasi Alur Autentikasi (Security & UX):**
+    *   **Frontend Guard:** Mengimplementasikan proteksi tombol/ikon menggunakan `SweetAlert` pada:
+        *   Ikon Keranjang & Profil di Navbar (`CustomerLayout.jsx`).
+        *   Tombol "Tambah Keranjang" & "Beli Langsung" pada Detail Produk (`BelanjaDetail.jsx`).
+    *   **Behavior:** Pengguna tamu (guest) yang mencoba mengakses fitur transaksional kini mendapatkan popup elegan "Silakan login" alih-alih redirect kasar atau error.
+    *   **Backend Guard:** Memastikan seluruh route krusial (`cart.*`, `checkout.*`, `customer.*`) terlindungi middleware `auth:pelanggan`.
+
+*   **Optimasi Performa (Page Load Speed):**
+    *   **Backend Optimization:** Menghapus query database "dead code" (produk & tipe kunjungan) pada `WelcomeController` yang sebelumnya membebani load time tanpa digunakan.
+    *   **Database Caching:** Membungkus query statistik (`count`) dengan `Cache::remember` (60 menit) untuk mengurangi round-trip database pada setiap request halaman utama.
+    *   **Frontend Asset:** Menerapkan `fetchPriority="high"` pada LCP (Largest Contentful Paint) image (Slide A) dan `loading="lazy"` pada gambar slide lainnya untuk mempercepat rendering awal.
+
+*   **Pembuatan Dokumentasi Proyek Lengkap (`PROJECT_OVERVIEW.md`):**
+    *   Membuat file dokumentasi baru `PROJECT_OVERVIEW.md` di root proyek yang berisi gambaran komprehensif tentang keseluruhan proyek CPH_Project.
+    *   **Konten Dokumentasi:**
+        *   Ringkasan proyek dan tujuan aplikasi
+        *   Tumpukan teknologi (backend: Laravel 12, PHP 8.2; frontend: React 18, Tailwind CSS, Vite)
+        *   Struktur direktori proyek secara visual
+        *   Arsitektur aplikasi dengan diagram Inertia.js
+        *   Modul dan fitur utama (E-Commerce, Kunjungan, Admin)
+        *   Daftar 13 model Eloquent dan fungsinya
+        *   Daftar semua controller aplikasi (admin dan pelanggan)
+        *   Struktur halaman frontend React
+        *   Komponen UI reusable dan layout
+        *   Routing aplikasi lengkap (publik, pelanggan, admin, API)
+        *   Integrasi pihak ketiga (Midtrans, RajaOngkir, DomPDF, Simple Excel)
+        *   Panduan instalasi dan menjalankan proyek
+        *   Perintah-perintah penting (development, database, testing)
+        *   Alur kerja pengembangan dan konvensi kode
+    *   **Tujuan:** Menyediakan referensi lengkap bagi pengembang baru atau siapa pun yang ingin memahami keseluruhan struktur dan arsitektur proyek dengan cepat.
+
 **Senin, 17 November 2025**
 *   **Perbaikan `ReferenceError: useState is not defined` di `Checkout2.jsx`:**
     *   Mengatasi error `Uncaught ReferenceError: useState is not defined` yang terjadi di `resources/js/Pages/Customer/Checkout/Checkout2.jsx`.

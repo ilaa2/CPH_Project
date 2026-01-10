@@ -3,11 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kunjungan;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Spatie\SimpleExcel\SimpleExcelWriter;
 use Barryvdh\DomPDF\Facade\Pdf;
-
 
 class LaporanController extends Controller
 {
@@ -17,39 +17,34 @@ class LaporanController extends Controller
     }
 
     // === Laporan Penjualan
-    public function penjualan($format)
+    public function penjualan(Request $request, $format)
     {
-        $pesanan = DB::table('pesanan_items')
-            ->join('pesanan', 'pesanan_items.pesanan_id', '=', 'pesanan.id')
-            ->join('pelanggans', 'pesanan.id_pelanggan', '=', 'pelanggans.id')
-            ->join('products', 'pesanan_items.produk_id', '=', 'products.id')
-            ->select(
-                'pesanan.id as id_pesanan',
-                'pesanan.tanggal',
-                'pelanggans.nama as pelanggan',
-                'pelanggans.alamat',
-                'pelanggans.telepon',
-                'products.nama as produk',
-                'pesanan_items.jumlah',
-                'pesanan_items.subtotal',
-                'pesanan.total as total_transaksi',
-                'pesanan.status'
-            )
-            ->orderBy('pesanan.tanggal', 'desc')
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $pesanan = \App\Models\Pesanan::with(['pelanggan', 'items.produk'])
+            ->where('status', '!=', 'Dibatalkan')
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('tanggal', [$startDate, $endDate]);
+            })
+            ->orderBy('tanggal', 'desc')
             ->get();
 
         $data = $pesanan->map(function ($p) {
+            // Gabungkan produk dalam format: Produk A (jumlah), Produk B (jumlah)
+            $produkList = $p->items->map(function($item) {
+                return ($item->produk->nama ?? 'Produk Terhapus') . " ({$item->jumlah})";
+            })->implode(', ');
+
             return [
-                'ID Pesanan'       => $p->id_pesanan,
+                'ID'               => $p->id,
                 'Tanggal'          => $p->tanggal,
-                'Nama Pelanggan'   => $p->pelanggan,
-                'Alamat'           => $p->alamat,
-                'Telepon'          => $p->telepon,
-                'Produk'           => $p->produk,
-                'Jumlah'           => $p->jumlah,
-                'Subtotal'         => $p->subtotal,
-                'Total Transaksi'  => $p->total_transaksi,
-                'Status Pesanan'   => $p->status,
+                'Nama Pelanggan'   => $p->pelanggan->nama ?? 'Guest',
+                'Alamat'           => $p->pelanggan->alamat ?? '-',
+                'Telepon'          => "'" . ($p->pelanggan->telepon ?? '-') . "'", // Bungkus dengan kutip agar dianggap string murni
+                'Produk (Qty)'     => $produkList,
+                'Total Transaksi'  => $p->total,
+                'Status'           => $p->status,
             ];
         })->toArray();
 
@@ -57,11 +52,21 @@ class LaporanController extends Controller
     }
 
     // === Laporan Kunjungan
-    public function kunjungan($format)
+    public function kunjungan(Request $request, $format)
     {
-        $kunjungans = Kunjungan::with('pelanggan')->get();
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
+        $kunjungans = Kunjungan::with('pelanggan')
+            ->where('status', '!=', 'Dibatalkan')
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('tanggal', [$startDate, $endDate]);
+            })
+            ->get();
 
         $data = $kunjungans->map(function ($k) {
+            $totalPengunjung = ($k->jumlah_dewasa ?? 0) + ($k->jumlah_anak ?? 0) + ($k->jumlah_balita ?? 0);
+            
             return [
                 'ID Kunjungan'       => $k->id,
                 'Tanggal'            => $k->tanggal,
@@ -70,8 +75,8 @@ class LaporanController extends Controller
                 'Alamat'             => $k->pelanggan->alamat ?? '-',
                 'Telepon'            => $k->pelanggan->telepon ?? '-',
                 'Status'             => $k->status ?? '-',
-                'Jumlah Pengunjung'  => $k->jumlah_pengunjung ?? '-',
-                'Total Biaya'        => $k->total_biaya ?? '-',
+                'Jumlah Pengunjung'  => $totalPengunjung ?: '-', // Tampilkan angka jika > 0, jika 0 tampilkan "-"
+                'Total Biaya'        => $k->total_biaya ?? 0,
             ];
         })->toArray();
 
@@ -79,11 +84,19 @@ class LaporanController extends Controller
     }
 
     // === Laporan Produk Terlaris
-    public function produkTerlaris($format)
+    public function produkTerlaris(Request $request, $format)
     {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
         $produkTerlaris = DB::table('pesanan_items')
-    ->join('products', 'pesanan_items.produk_id', '=', 'products.id')
-    ->select(
+            ->join('products', 'pesanan_items.produk_id', '=', 'products.id')
+            ->join('pesanan', 'pesanan_items.pesanan_id', '=', 'pesanan.id')
+            ->where('pesanan.status', '!=', 'Dibatalkan')
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('pesanan.tanggal', [$startDate, $endDate]);
+            })
+            ->select(
         'products.id as id_produk',
         'products.nama',
         'products.harga',
@@ -115,48 +128,42 @@ $data = $produkTerlaris->map(function ($item) {
     private function handleExport($format, array $data, string $filename)
     {
         if (count($data) === 0) {
-            return redirect()->back()->with('error', 'Data tidak tersedia untuk diekspor.');
+            // Hindari redirect sesuai permintaan user untuk mencegah ERR_INVALID_RESPONSE
+            return response('Data tidak tersedia untuk diekspor.', 404);
         }
+
+        // Matikan output buffering untuk mencegah whitespace/echo merusak file binary
+        if (ob_get_level()) ob_end_clean();
+
+        // Nama file dasar dengan tanggal
+        $fullFilename = "{$filename}_" . date('Ymd');
 
         // === Export Excel & CSV
         if (in_array($format, ['csv', 'excel'])) {
             $ext = $format === 'csv' ? 'csv' : 'xlsx';
-            $filepath = storage_path("app/public/{$filename}.{$ext}");
-
-            SimpleExcelWriter::create($filepath)->addRows($data);
-            return response()->download($filepath)->deleteFileAfterSend(true);
+            // Gunakan pola streamDownload('nama_file')->addRows($data) sesuai permintaan
+            return SimpleExcelWriter::streamDownload("{$fullFilename}.{$ext}")
+                ->addRows(collect($data)->toArray());
         }
 
         // === Export PDF
         if ($format === 'pdf') {
-    $html = "<style>
-                body { font-family: sans-serif; }
-                table { border-collapse: collapse; width: 100%; margin-top: 10px; }
-                th, td { border: 1px solid #444; padding: 8px; text-align: left; font-size: 12px; }
-                th { background-color: #f0f0f0; }
-            </style>";
-    $html .= "<h2>Laporan</h2><table><thead><tr>";
+            $title = str_replace('_', ' ', strtoupper($filename));
+            $startDate = request('start_date');
+            $endDate = request('end_date');
+            $period = ($startDate && $endDate) ? "Periode: {$startDate} s/d {$endDate}" : "Semua Data";
 
-    foreach (array_keys($data[0]) as $header) {
-        $html .= "<th>{$header}</th>";
-    }
-    $html .= "</tr></thead><tbody>";
+            $pdfData = [
+                'title'   => $title,
+                'period'  => $period,
+                'headers' => array_keys($data[0]),
+                'data'    => $data,
+            ];
 
-    foreach ($data as $row) {
-        $html .= "<tr>";
-        foreach ($row as $col) {
-            $html .= "<td>{$col}</td>";
+            // Gunakan Pdf::loadView() dan ->download() sesuai permintaan
+            return Pdf::loadView('laporan.pdf', $pdfData)
+                ->setPaper('a4', 'landscape')
+                ->download("{$fullFilename}.pdf");
         }
-        $html .= "</tr>";
-    }
-
-    $html .= "</tbody></table>";
-
-    // Gunakan dompdf untuk render HTML ke PDF
-    $pdf = Pdf::loadHTML($html)->setPaper('a4', 'landscape');
-
-
-    return $pdf->download("{$filename}.pdf");
-}
     }
 }

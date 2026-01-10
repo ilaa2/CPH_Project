@@ -11,7 +11,6 @@ const PesananProdukCard = ({ pesanan }) => {
     const statusStyles = {
         'Diproses': 'bg-blue-100 text-blue-800',
         'Selesai': 'bg-green-100 text-green-800',
-        'Dibatalkan': 'bg-red-100 text-red-800',
         'pending': 'bg-yellow-100 text-yellow-800',
     };
 
@@ -21,7 +20,7 @@ const PesananProdukCard = ({ pesanan }) => {
                 <div className="p-5">
                     <div className="flex justify-between items-center">
                         <div>
-                            <p className="font-semibold text-green-600 text-sm flex items-center"><FiArchive className="mr-2"/>{pesanan.nomor_pesanan}</p>
+                            <p className="font-semibold text-green-600 text-sm flex items-center"><FiArchive className="mr-2" />{pesanan.nomor_pesanan}</p>
                             <p className="text-xs text-gray-500 mt-1">{formatDate(pesanan.created_at)}</p>
                         </div>
                         <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusStyles[pesanan.status] || 'bg-gray-100 text-gray-800'}`}>
@@ -32,7 +31,7 @@ const PesananProdukCard = ({ pesanan }) => {
                     <div className="flex items-center">
                         <div className="flex -space-x-4">
                             {pesanan.items.slice(0, 3).map(item => (
-                                <img key={item.id} src={`/storage/${item.produk.gambar}`} alt={item.produk.nama} className="w-12 h-12 rounded-full border-2 border-white object-cover"/>
+                                <img key={item.id} src={`/storage/${item.produk.gambar}`} alt={item.produk.nama} className="w-12 h-12 rounded-full border-2 border-white object-cover" />
                             ))}
                         </div>
                         {pesanan.items.length > 3 && (
@@ -74,8 +73,7 @@ const PesananKunjunganCard = ({ kunjungan }) => {
 
     const statusStyles = {
         'Selesai': 'bg-green-100 text-green-800',
-        'Direncanakan': 'bg-blue-100 text-blue-800',
-        'Dibatalkan': 'bg-red-100 text-red-800',
+        'Dijadwalkan': 'bg-blue-100 text-blue-800',
     };
 
     return (
@@ -84,7 +82,7 @@ const PesananKunjunganCard = ({ kunjungan }) => {
                 <div className="flex justify-between items-center">
                     <div>
                         <p className="font-semibold text-green-600 text-sm flex items-center">
-                            <FiCalendar className="mr-2"/>
+                            <FiCalendar className="mr-2" />
                             {kunjungan.tipe ? kunjungan.tipe.nama_tipe : 'Kunjungan'}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">{formatDate(kunjungan.tanggal)}</p>
@@ -95,7 +93,7 @@ const PesananKunjunganCard = ({ kunjungan }) => {
                 </div>
                 <div className="border-t my-4"></div>
                 <div className="flex items-center text-sm text-gray-700">
-                    <FiUsers className="mr-2"/>
+                    <FiUsers className="mr-2" />
                     <span>{kunjungan.jumlah_pengunjung} Pengunjung</span>
                     <span className="mx-2 text-gray-300">|</span>
                     <span className="font-medium">Lihat Detail Kunjungan</span>
@@ -135,9 +133,8 @@ export default function Riwayat({ riwayatProduk, riwayatKunjungan, auth }) {
     const TabButton = ({ tabName, label, icon }) => (
         <button
             onClick={() => setActiveTab(tabName)}
-            className={`flex items-center w-full justify-center sm:w-auto px-4 py-2.5 text-sm sm:text-base font-semibold rounded-lg transition-colors ${
-                activeTab === tabName ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'
-            }`}
+            className={`flex items-center w-full justify-center sm:w-auto px-4 py-2.5 text-sm sm:text-base font-semibold rounded-lg transition-colors ${activeTab === tabName ? 'bg-green-100 text-green-700' : 'text-gray-600 hover:bg-gray-100'
+                }`}
         >
             {icon} {label}
         </button>
@@ -152,8 +149,8 @@ export default function Riwayat({ riwayatProduk, riwayatKunjungan, auth }) {
                     <h1 className="text-3xl font-bold text-gray-900 tracking-tight mb-8">Riwayat Transaksi Saya</h1>
 
                     <div className="bg-white p-2 rounded-xl shadow-sm border mb-8 flex space-x-2">
-                        <TabButton tabName="produk" label="Pesanan Produk" icon={<FiShoppingBag className="mr-2"/>}/>
-                        <TabButton tabName="kunjungan" label="Jadwal Kunjungan" icon={<FiCalendar className="mr-2"/>}/>
+                        <TabButton tabName="produk" label="Pesanan Produk" icon={<FiShoppingBag className="mr-2" />} />
+                        <TabButton tabName="kunjungan" label="Jadwal Kunjungan" icon={<FiCalendar className="mr-2" />} />
                     </div>
 
                     <div>
@@ -163,7 +160,7 @@ export default function Riwayat({ riwayatProduk, riwayatKunjungan, auth }) {
                                     riwayatProduk.map(pesanan => <PesananProdukCard key={pesanan.id} pesanan={pesanan} />)
                                 ) : (
                                     <div className="text-center py-16 bg-white rounded-lg shadow-sm border">
-                                        <FiArchive className="mx-auto text-5xl text-gray-300"/>
+                                        <FiArchive className="mx-auto text-5xl text-gray-300" />
                                         <h3 className="mt-4 text-lg font-medium text-gray-800">Belum Ada Pesanan</h3>
                                         <p className="mt-1 text-sm text-gray-500">Sepertinya Anda belum pernah berbelanja produk.</p>
                                         <Link href={route('belanja.index')} className="mt-6 inline-block bg-green-600 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-green-700 transition-colors">
@@ -175,12 +172,12 @@ export default function Riwayat({ riwayatProduk, riwayatKunjungan, auth }) {
                         )}
 
                         {activeTab === 'kunjungan' && (
-                             <div className="space-y-6">
+                            <div className="space-y-6">
                                 {riwayatKunjungan.length > 0 ? (
                                     riwayatKunjungan.map(kunjungan => <PesananKunjunganCard key={kunjungan.id} kunjungan={kunjungan} />)
                                 ) : (
                                     <div className="text-center py-16 bg-white rounded-lg shadow-sm border">
-                                        <FiCalendar className="mx-auto text-5xl text-gray-300"/>
+                                        <FiCalendar className="mx-auto text-5xl text-gray-300" />
                                         <h3 className="mt-4 text-lg font-medium text-gray-800">Belum Ada Jadwal</h3>
                                         <p className="mt-1 text-sm text-gray-500">Anda belum pernah menjadwalkan kunjungan.</p>
                                         <Link href={route('kunjungan.index')} className="mt-6 inline-block bg-green-600 text-white font-bold py-2.5 px-6 rounded-lg hover:bg-green-700 transition-colors">

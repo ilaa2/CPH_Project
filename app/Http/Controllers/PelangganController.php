@@ -12,8 +12,11 @@ use Illuminate\Validation\ValidationException;
 class PelangganController extends Controller
 {
     public function index(Request $request)
-{
-    $query = Pelanggan::query()->orderBy('created_at', 'desc');
+    {
+        $query = Pelanggan::query()
+            ->withCount('pesanan')
+            ->withSum('pesanan as total_belanja', 'total')
+            ->orderBy('created_at', 'desc');
 
     // Filter pencarian nama
     if ($request->has('search')) {
