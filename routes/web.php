@@ -64,6 +64,7 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::get('/profile', [CustomerProfileController::class, 'edit'])->name('customer.profile.edit');
     Route::patch('/profile', [CustomerProfileController::class, 'update'])->name('customer.profile.update');
     Route::put('/profile/password', [CustomerProfileController::class, 'updatePassword'])->name('customer.profile.password.update');
+    Route::post('/profile/photo', [CustomerProfileController::class, 'updatePhoto'])->name('customer.profile.update-photo');
     Route::delete('/profile', [CustomerProfileController::class, 'destroy'])->name('customer.profile.destroy');
 
     // Route Pesanan Customer
@@ -131,9 +132,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/kunjungan/kalender', [KunjunganController::class, 'kalender'])->name('kunjungan.kalender');
     Route::get('/kunjungan/riwayat', [KunjunganController::class, 'riwayat'])->name('kunjungan.riwayat');
 
-    // Laporan
-    Route::prefix('laporan')->controller(LaporanController::class)->group(function () {
-        Route::get('/', 'index')->name('laporan.index');
+    // Laporan Page (With Inertia Middleware)
+    Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
+
+    // Laporan Data & Export (Bypass Inertia Middleware)
+    Route::prefix('laporan')->controller(LaporanController::class)->withoutMiddleware([\App\Http\Middleware\HandleInertiaRequests::class])->group(function () {
+        Route::get('/{type}/json', 'data')->name('laporan.data'); // Data Preview (JSON)
         Route::get('/penjualan/{format}', 'penjualan')->name('laporan.penjualan');
         Route::get('/kunjungan/{format}', 'kunjungan')->name('laporan.kunjungan');
         Route::get('/produk-terlaris/{format}', 'produkTerlaris')->name('laporan.terlaris');

@@ -23,6 +23,8 @@ class Pesanan extends Model
         'alamat_pengiriman',
         'metode_pengiriman',
         'biaya_pengiriman',
+        'ekspedisi',
+        'estimasi',
         'tanggal',
     ];
 

@@ -31,18 +31,47 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        // 3. Ambil Aktivitas Terbaru
+        // 3. Ambil Kunjungan Hari Ini (Prioritas)
+        $kunjunganHariIni = Kunjungan::with(['pelanggan', 'tipe'])
+            ->whereDate('tanggal', now()->today())
+            ->where('status', 'Dijadwalkan')
+            ->orderBy('jam', 'asc')
+            ->get()
+            ->map(function ($k) {
+                $k->nama_pelanggan = $k->pelanggan ? ($k->pelanggan->name ?? $k->pelanggan->nama ?? 'Guest') : 'Guest';
+                return $k;
+            });
+
+        // 4. Statistik Grafik (7 Hari Terakhir)
+        $grafikPendapatan = Pesanan::selectRaw('DATE(tanggal) as date, SUM(total) as total')
+            ->where('status', 'Selesai')
+            ->where('tanggal', '>=', now()->subDays(6))
+            ->groupBy('date')
+            ->orderBy('date', 'asc')
+            ->get();
+
+        // 5. Ambil Aktivitas Terbaru
         $pesananTerbaru = Pesanan::with('pelanggan')
             ->where('status', '!=', 'Dibatalkan')
             ->orderBy('created_at', 'desc')
             ->take(5)
-            ->get();
+            ->get()
+            ->map(function ($p) {
+                $p->nama_pelanggan = $p->pelanggan ? ($p->pelanggan->name ?? $p->pelanggan->nama ?? 'Guest') : 'Guest';
+                return $p;
+            });
 
         $pelangganTerbaru = Pelanggan::orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
-        // 4. Kirim data ke view
+        // Transform Pesanan Perlu Diproses
+        $pesananPerluDiproses->transform(function ($p) {
+            $p->nama_pelanggan = $p->pelanggan ? ($p->pelanggan->name ?? $p->pelanggan->nama ?? 'Guest') : 'Guest';
+            return $p;
+        });
+
+        // 6. Kirim data ke view
         return Inertia::render('Dashboard', [
             'stats' => [
                 'totalProduk' => $totalProduk,
@@ -52,6 +81,8 @@ class DashboardController extends Controller
             ],
             'stokMenipis' => $stokMenipis,
             'pesananPerluDiproses' => $pesananPerluDiproses,
+            'kunjunganHariIni' => $kunjunganHariIni,
+            'grafikPendapatan' => $grafikPendapatan,
             'pesananTerbaru' => $pesananTerbaru,
             'pelangganTerbaru' => $pelangganTerbaru,
         ]);

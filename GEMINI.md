@@ -155,6 +155,11 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 ### Riwayat Perubahan
 
 **Minggu, 11 Januari 2026**
+*   **Timezone Fix (WIB):**
+    *   Mengubah `config/app.php` timezone dari `UTC` ke `Asia/Jakarta`.
+    *   Menggunakan `Carbon::now('Asia/Jakarta')` pada `LaporanController` untuk tanggal cetak filename.
+    *   Menjalankan `config:clear` dan `cache:clear` untuk menerapkan perubahan.
+
 *   **Perbaikan Flow Update Kunjungan (Admin):**
     *   **Fix Bug "Simpan Perubahan":** Memperbaiki masalah tombol simpan pada modal edit kunjungan yang tidak merespon dengan melengkapi field form (`pelanggan_id`, `tipe_id`, `tanggal`, `jam`) sesuai kebutuhan validasi backend.
     *   **Backend Validation:** Mengoptimasi `KunjunganController@update` agar lebih fleksibel menggunakan aturan `sometimes` pada validasi.
@@ -166,11 +171,11 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
     *   **Interactive Design:** Menambahkan hover effect, shadow, dan tooltip penjelas pada setiap tombol aksi untuk meningkatkan kejelasan visual.
     *   **Consistency:** Menyelaraskan desain kolom AKSI agar seragam dengan modul Pesanan dan Jadwal Kunjungan.
 
-*   **Finalisasi Fitur Laporan (PDF & Excel - STABLE):**
-    *   **Fix ERR_INVALID_RESPONSE:** Mengatasi error navigasi dengan memastikan seluruh endpoint ekspor mengembalikan response binary langsung, tanpa redirect atau output HTML/Inertia.
-    *   **Fix Blade Syntax:** Memperbaiki kesalahan fatal `@end@foreach` pada template PDF yang menyebabkan kegagalan render dokumen.
-    *   **Standarisasi Excel:** Memperbaiki penggunaan `SimpleExcelWriter::streamDownload()` agar menggunakan string nama file sebagai parameter pertama, sesuai dokumentasi terbaru.
-    *   **Zero-Corruption Logic:** Mengimplementasikan pembersihan buffer (`ob_end_clean`) dan pemaksaan filter koleksi untuk menjamin keaslian data binary yang dikirim ke browser.
+*   **Redesain Total Halaman Laporan (Modern UI):**
+    *   **Summary Dashboard:** Menambahkan widget ringkasan data (Total Pendapatan, Transaksi, Kunjungan) di bagian atas untuk insight cepat.
+    *   **Interactive Preview:** Admin kini bisa melihat grafik tren dan tabel transaksi langsung di halaman ("Lihat Laporan") sebelum memutuskan untuk mengekspor.
+    *   **Advanced Filter:** Filter tanggal kini dilengkapi preset cepat (Hari Ini, Minggu Ini, Bulan Ini, Tahun Ini) dan loading indicator.
+    *   **Backend API:** Menambahkan endpoint JSON internal `/laporan/{type}/json` untuk menyuplai data visualisasi Chart.js secara dinamis.
 
 *   **Standarisasi UI/UX Filter & Search (Admin Panel):**
     *   **Komponen Baru:** Membuat `FilterHeader.jsx` sebagai komponen standar untuk filter tab/pill dan bar pencarian di seluruh Admin Panel.
@@ -226,7 +231,12 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
         *   Memastikan ekspor PDF dan Excel mematuhi filter tanggal yang dipilih.
     *   **UI/UX Global:**
         *   Menyederhanakan Sidebar dengan menyembunyikan menu non-fungsional (Setelan & Bantuan).
-        *   Standarisasi dialog konfirmasi hapus menggunakan `SweetAlert` dalam Bahasa Indonesia.
+        *   **Standarisasi Dialog:** Menggunakan `SweetAlert` untuk konfirmasi hapus data yang lebih aman dan estetik.
+    *   **Finalisasi Fitur Ekspor (Critical Fix):**
+        *   **Architecture Upgrade:** Memisahkan route ekspor (`/laporan/x/pdf`) dari middleware Inertia (`withoutMiddleware`) untuk menjamin integritas file.
+        *   **Frontend Hardening:** Mengganti handler ekspor frontend menjadi `window.location.href` (Hard Navigation) untuk mem-bypass intervensi library SPA.
+        *   **Backend Stability:** Menambahkan loop `ob_end_clean()` untuk sanitasi buffer dan memisahkan logika CSV ke native PHP (`fputcsv`).
+        *   **Result:** Excel dan PDF kini terunduh dengan nama valid (`laporan_...`), size normal, dan magic bytes valid (`PK..` / `%PDF`), bebas dari error UUID/Corrupt.
         *   Konsistensi label dan loading states di seluruh modul admin.
 
 **Jumat, 10 Januari 2026**
