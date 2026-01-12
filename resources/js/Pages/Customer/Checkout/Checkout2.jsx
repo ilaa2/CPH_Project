@@ -1,279 +1,258 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
-import React, { useState, useEffect } from 'react';
+import CheckoutStepper from '@/Components/CheckoutStepper';
+import React, { useState } from 'react';
+import { FiCheck, FiTruck, FiPackage, FiAlertTriangle, FiArrowLeft, FiArrowRight, FiInfo } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
-export default function Checkout2({ alamat, auth, shippingOptions = [], isLocal }) {
-    const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState(isLocal ? 'ambil_sendiri' : 'ekspedisi');
-    const [pickupTime, setPickupTime] = useState('');
-    const [showCourierDropdown, setShowCourierDropdown] = useState(false); // State for non-Duri dropdown
+export default function Checkout2({ alamat, auth, shippingOptions = [], shippingError, checkoutMethod, distance }) {
+    const [selectedOption, setSelectedOption] = useState(null);
 
-    const getMinPickupTime = () => {
-        const now = new Date();
-        now.setHours(now.getHours() + 1); // Add 1 hour for earliest pickup
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        return `${year}-${month}-${day}T${hours}:${minutes}`;
-    };
-
-    useEffect(() => {
-        if (isLocal) {
-            setSelectedDeliveryMethod('ambil_sendiri');
-            setPickupTime(getMinPickupTime().substring(11, 16)); // Set default pickup time to 1 hour from now
-        } else {
-            setSelectedDeliveryMethod('ekspedisi');
-        }
-    }, [isLocal]);
-
-    const { data, setData, post, processing, errors } = useForm({
+    const { data, setData, post, processing } = useForm({
         pengiriman: null,
-        pickup_time: '', // Add pickup_time to form data
     });
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-
-        let shippingDataToSend = null;
-
-        if (isLocal) {
-            if (selectedDeliveryMethod === 'ambil_sendiri') {
-                if (!pickupTime) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        text: 'Anda harus memilih waktu pengambilan!',
-                    });
-                    return;
-                }
-                shippingDataToSend = {
-                    name: 'Ambil Sendiri',
-                    price: 0,
-                    description: `Pengambilan pada ${pickupTime}`,
-                };
-                setData('pickup_time', pickupTime);
-            } else if (selectedDeliveryMethod === 'ekspedisi') {
-                if (!data.pengiriman) {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Oops...',
-                        text: 'Anda harus memilih satu metode pengiriman!',
-                    });
-                    return;
-                }
-                shippingDataToSend = data.pengiriman;
-            }
-        } else { // Not Kota Duri, only ekspedisi
-            if (!data.pengiriman) {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Oops...',
-                    text: 'Anda harus memilih satu metode pengiriman!',
-                });
-                return;
-            }
-            shippingDataToSend = data.pengiriman;
-        }
-
-        if (!shippingDataToSend) {
-            Swal.fire({
-                icon: 'error',
-                title: 'Oops...',
-                text: 'Metode pengiriman tidak valid.',
-            });
-            return;
-        }
-
-        post(route('checkout.saveShipping'), {
-            data: {
-                pengiriman: shippingDataToSend,
-                pickup_time: data.pickup_time, // Ensure pickup_time is sent if applicable
-            },
-            onError: (errors) => {
-                console.error("Error saving shipping:", errors);
-                const errorMessage = Object.values(errors).join(' ');
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Gagal menyimpan pengiriman',
-                    text: errorMessage || 'Terjadi kesalahan saat menyimpan metode pengiriman.',
-                });
-            }
-        });
-    };
 
     const formatCurrency = (number) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     };
 
+    const handleSelect = (option) => {
+        setSelectedOption(option);
+        setData('pengiriman', {
+            name: `${option.name} - ${option.service}`,
+            price: option.cost,
+            description: `Estimasi ${option.etd}`,
+        });
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        if (!selectedOption) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Pilih Pengiriman',
+                text: 'Silakan pilih metode pengiriman terlebih dahulu.',
+            });
+            return;
+        }
+
+        post(route('checkout.saveShipping'), {
+            data: { pengiriman: data.pengiriman },
+            onError: (errors) => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal',
+                    text: Object.values(errors).join(' ') || 'Terjadi kesalahan.',
+                });
+            }
+        });
+    };
+
     const formatAddress = (addressString) => {
         if (!addressString) return '';
         const parts = addressString.split(', ');
-        const filteredParts = parts.filter(part => part && part.trim() !== 'undefined' && part.trim() !== 'null');
-        return filteredParts.join(', ');
+        return parts.filter(part => part && part.trim() !== 'undefined' && part.trim() !== 'null').join(', ');
     };
+
+    const methodLabel = checkoutMethod === 'local' ? 'Kurir Lokal' : 'Ekspedisi';
 
     return (
         <>
-            <Head title="Checkout - Metode Pengiriman" />
+            <Head title="Checkout - Pilih Pengiriman" />
             <SiteHeader auth={auth} />
 
-            <main className="bg-gray-50 min-h-screen py-10">
+            <main className="bg-gradient-to-b from-gray-50 to-white min-h-screen py-8">
                 <div className="max-w-4xl mx-auto px-4">
-                    {/* Progress Bar */}
-                    <div className="flex items-center justify-center mb-8">
-                        <div className="flex items-center text-green-600">
-                            <div className="rounded-full border-2 border-green-600 bg-white text-green-600 w-8 h-8 flex items-center justify-center font-bold">✓</div>
-                            <span className="hidden sm:inline font-semibold ml-2">Metode</span>
-                        </div>
-                        <div className="flex-auto border-t-2 border-green-600 mx-2 sm:mx-4"></div>
-                        <div className="flex items-center text-green-600">
-                            <div className="rounded-full border-2 border-green-600 bg-white text-green-600 w-8 h-8 flex items-center justify-center font-bold">✓</div>
-                            <span className="hidden sm:inline font-semibold ml-2">Alamat</span>
-                        </div>
-                        <div className="flex-auto border-t-2 border-green-600 mx-2 sm:mx-4"></div>
-                        <div className="flex items-center text-green-600">
-                            <div className="rounded-full border-2 border-green-600 bg-white text-green-600 w-8 h-8 flex items-center justify-center font-bold">3</div>
-                            <span className="font-semibold ml-2">Pengiriman</span>
-                        </div>
-                        <div className="flex-auto border-t-2 border-gray-300 mx-2 sm:mx-4"></div>
-                        <div className="flex items-center text-gray-500">
-                            <div className="rounded-full border-2 border-gray-300 w-8 h-8 flex items-center justify-center">4</div>
-                            <span className="hidden sm:inline font-medium ml-2">Bayar</span>
-                        </div>
-                    </div>
+                    {/* Stepper */}
+                    <CheckoutStepper currentStep={3} />
 
-                    <div className="bg-white p-6 rounded-lg shadow-md">
-                        {/* Alamat Pengiriman */}
-                        <div className="border border-gray-200 rounded-lg p-4 mb-6">
-                            <h2 className="font-bold text-lg mb-2">Alamat Pengiriman</h2>
-                            <p className="font-semibold">{alamat.nama}</p>
-                            <p className="text-gray-600">{alamat.telepon}</p>
-                            <p className="text-gray-600 mt-1">
-                                {formatAddress(alamat.full_address_string)}
-                            </p>
-                            <Link href={route('checkout.index')} className="text-green-600 hover:underline text-sm mt-2 inline-block">
-                                Ubah Alamat
-                            </Link>
-                        </div>
-
-                        <h2 className="font-bold text-lg mb-4">Pilih Metode Pengiriman</h2>
-                        <form onSubmit={handleSubmit}>
-                            {isLocal ? (
-                                // Tampilan untuk Pengguna Lokal (Duri & Sekitarnya)
-                                <div className="space-y-4">
-                                    <div className="flex space-x-4">
-                                        <label className={`flex-1 flex items-center p-4 border rounded-lg cursor-pointer transition-all ${selectedDeliveryMethod === 'ambil_sendiri' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-300'}`}>
-                                            <input type="radio" name="deliveryMethod" className="hidden" checked={selectedDeliveryMethod === 'ambil_sendiri'} onChange={() => setSelectedDeliveryMethod('ambil_sendiri')} />
-                                            <div className="w-5 h-5 mr-4 flex items-center justify-center rounded-full border-2 border-gray-400">
-                                                {selectedDeliveryMethod === 'ambil_sendiri' && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
-                                            </div>
-                                            <span className="font-semibold">Ambil Sendiri</span>
-                                        </label>
-                                        <label className={`flex-1 flex items-center p-4 border rounded-lg cursor-pointer transition-all ${selectedDeliveryMethod === 'ekspedisi' ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-300'}`}>
-                                            <input type="radio" name="deliveryMethod" className="hidden" checked={selectedDeliveryMethod === 'ekspedisi'} onChange={() => setSelectedDeliveryMethod('ekspedisi')} />
-                                            <div className="w-5 h-5 mr-4 flex items-center justify-center rounded-full border-2 border-gray-400">
-                                                {selectedDeliveryMethod === 'ekspedisi' && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}
-                                            </div>
-                                            <span className="font-semibold">Pakai Ekspedisi</span>
-                                        </label>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Left Column - Shipping Options */}
+                        <div className="lg:col-span-2 space-y-4">
+                            {/* Address Card */}
+                            <div className="bg-white p-4 rounded-xl shadow-sm border">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-bold text-gray-800">{alamat?.nama}</p>
+                                        <p className="text-sm text-gray-600">{alamat?.telepon}</p>
+                                        <p className="text-sm text-gray-500 mt-1">{formatAddress(alamat?.full_address_string)}</p>
                                     </div>
-
-                                    {selectedDeliveryMethod === 'ambil_sendiri' && (
-                                        <div className="p-4 border-t mt-4">
-                                            <label htmlFor="pickupTime" className="block font-semibold mb-2">Pilih Jam Pengambilan:</label>
-                                            <input
-                                                type="time"
-                                                id="pickupTime"
-                                                value={pickupTime}
-                                                onChange={(e) => setPickupTime(e.target.value)}
-                                                className="w-full p-2 border rounded-lg"
-                                                min={getMinPickupTime().substring(11, 16)}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {selectedDeliveryMethod === 'ekspedisi' && (
-                                        <div className="pt-4 border-t mt-4 space-y-4">
-                                            {/* Opsi Kurir */}
-                                            {shippingOptions && shippingOptions.length > 0 ? (
-                                                shippingOptions.map((option) => {
-                                                    const isSelected = data.pengiriman && data.pengiriman.name === `${option.code.toUpperCase()} - ${option.service}`;
-                                                    return (
-                                                        <label key={`${option.code}-${option.service}`} className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all ${isSelected ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-300'}`}>
-                                                            <input type="radio" name="shippingOption" className="hidden" checked={!!isSelected} onChange={() => setData('pengiriman', { name: `${option.code.toUpperCase()} - ${option.service}`, price: option.cost, description: `Estimasi ${option.etd}` })} />
-                                                            <div className="flex-grow">
-                                                                <p className="font-semibold">{option.name} - {option.service}</p>
-                                                                <p className="text-sm text-gray-500">{option.description} (Estimasi: {option.etd})</p>
-                                                            </div>
-                                                            <div className="font-bold text-lg">{formatCurrency(option.cost)}</div>
-                                                            <div className="w-5 h-5 ml-4 flex items-center justify-center rounded-full border-2 border-gray-400">{isSelected && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}</div>
-                                                        </label>
-                                                    );
-                                                })
-                                            ) : (
-                                                <p className="text-yellow-800">Tidak ada opsi kurir.</p>
-                                            )}
-                                        </div>
-                                    )}
+                                    <Link href={route('checkout.address')} className="text-green-600 text-sm hover:underline">
+                                        Ubah
+                                    </Link>
                                 </div>
-                            ) : (
-                                // Tampilan untuk Pengguna di Luar Duri
-                                <div className="space-y-4">
-                                    <button type="button" onClick={() => setShowCourierDropdown(!showCourierDropdown)} className="w-full flex justify-between items-center p-4 border rounded-lg bg-white hover:bg-gray-50">
-                                        <span className="font-semibold">Pilih Ekspedisi</span>
-                                        <svg className={`w-5 h-5 transition-transform ${showCourierDropdown ? 'transform rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    </button>
+                            </div>
 
-                                    {showCourierDropdown && (
-                                        <div className="pt-4 space-y-4">
-                                            {shippingOptions && shippingOptions.length > 0 ? (
-                                                shippingOptions.map((option) => {
-                                                    const isSelected = data.pengiriman && data.pengiriman.name === `${option.code.toUpperCase()} - ${option.service}`;
-                                                    return (
-                                                        <label key={`${option.code}-${option.service}`} className={`flex items-center p-4 border rounded-lg cursor-pointer transition-all ${isSelected ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-300'}`}>
-                                                            <input type="radio" name="shippingOption" className="hidden" checked={!!isSelected} onChange={() => setData('pengiriman', { name: `${option.code.toUpperCase()} - ${option.service}`, price: option.cost, description: `Estimasi ${option.etd}` })} />
-                                                            <div className="flex-grow">
-                                                                <p className="font-semibold">{option.name} - {option.service}</p>
-                                                                <p className="text-sm text-gray-500">{option.description} (Estimasi: {option.etd})</p>
-                                                            </div>
-                                                            <div className="font-bold text-lg">{formatCurrency(option.cost)}</div>
-                                                            <div className="w-5 h-5 ml-4 flex items-center justify-center rounded-full border-2 border-gray-400">{isSelected && <div className="w-3 h-3 bg-green-500 rounded-full"></div>}</div>
-                                                        </label>
-                                                    );
-                                                })
-                                            ) : (
-                                                <div className="p-4 border border-red-300 bg-red-50 rounded-lg">
-                                                    <p className="text-red-800 font-bold mb-2">⚠️ Peringatan Kualitas Produk</p>
-                                                    <p className="text-red-700 text-sm">
-                                                        Pengiriman ke alamat Anda membutuhkan waktu lebih dari 5 hari.
-                                                        Karena produk berupa sayuran dan buah segar, kualitas tidak dapat dijamin.
-                                                        Demi keamanan produk, kami tidak dapat melanjutkan pengiriman via ekspedisi ini.
-                                                    </p>
-                                                    <p className="text-red-700 text-sm mt-2 font-semibold">
-                                                        Silakan pilih opsi "Ambil Sendiri" jika memungkinkan, atau hubungi admin.
-                                                    </p>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                            {/* Title */}
+                            <div className="flex items-center gap-2 pt-2">
+                                {checkoutMethod === 'local' ? <FiPackage className="text-blue-600" /> : <FiTruck className="text-orange-600" />}
+                                <h2 className="font-bold text-lg text-gray-800">Pilih {methodLabel}</h2>
+                            </div>
+
+                            {/* Error Message */}
+                            {shippingError && (
+                                <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+                                    <FiAlertTriangle className="text-red-600 text-xl flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-semibold text-red-800">Tidak Tersedia</p>
+                                        <p className="text-sm text-red-700">{shippingError}</p>
+                                        <Link href={route('checkout.index')} className="text-red-600 font-semibold text-sm mt-2 inline-block hover:underline">
+                                            ← Pilih Metode Lain
+                                        </Link>
+                                    </div>
                                 </div>
                             )}
 
-                            <div className="flex justify-between items-center mt-8">
-                                <Link href={route('checkout.index')} className="text-gray-600 hover:text-black">
-                                    ← Kembali ke Alamat
-                                </Link>
-                                <button
-                                    type="submit"
-                                    disabled={processing}
-                                    className="bg-green-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-700 disabled:opacity-50 transition-colors"
-                                >
-                                    {processing ? 'Memproses...' : 'Lanjut ke Pembayaran'}
-                                </button>
+                            {/* Info Box for Fresh Produce */}
+                            {checkoutMethod === 'expedition' && !shippingError && (
+                                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                                    <FiInfo className="text-amber-600 text-lg flex-shrink-0 mt-0.5" />
+                                    <p className="text-sm text-amber-800">
+                                        <strong>🌿 Produk Segar:</strong> Untuk menjaga kualitas sayur dan buah, disarankan memilih layanan dengan estimasi maksimal 5 hari.
+                                    </p>
+                                </div>
+                            )}
+
+                            {/* Shipping Options */}
+                            {!shippingError && shippingOptions.length > 0 && (
+                                <div className="space-y-3">
+                                    {shippingOptions.map((option, index) => {
+                                        const isSelected = selectedOption &&
+                                            selectedOption.name === option.name &&
+                                            selectedOption.service === option.service;
+                                        const isNotRecommended = option.max_days > 5;
+
+                                        return (
+                                            <button
+                                                key={`${option.code}-${option.service}-${index}`}
+                                                type="button"
+                                                onClick={() => handleSelect(option)}
+                                                className={`w-full text-left p-4 rounded-xl border-2 transition-all ${isSelected
+                                                    ? 'border-green-500 bg-green-50 shadow-md'
+                                                    : isNotRecommended
+                                                        ? 'border-orange-200 bg-orange-50 hover:border-orange-300'
+                                                        : 'border-gray-200 hover:border-gray-300 bg-white'
+                                                    }`}
+                                            >
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        {/* Radio indicator */}
+                                                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${isSelected ? 'border-green-500 bg-green-500' : 'border-gray-300'
+                                                            }`}>
+                                                            {isSelected && <FiCheck className="text-white text-xs" />}
+                                                        </div>
+
+                                                        <div>
+                                                            <div className="flex items-center gap-2">
+                                                                <span className="font-bold text-gray-800">{option.name}</span>
+                                                                <span className="text-gray-600">- {option.service}</span>
+                                                                {isNotRecommended && (
+                                                                    <span className="text-xs bg-orange-500 text-white px-2 py-0.5 rounded font-semibold">
+                                                                        Tidak Disarankan
+                                                                    </span>
+                                                                )}
+                                                                {option.is_recommended && !isNotRecommended && (
+                                                                    <span className="text-xs bg-green-500 text-white px-2 py-0.5 rounded font-semibold">
+                                                                        Disarankan
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <p className="text-sm text-gray-500">
+                                                                {option.description} • Estimasi: <strong>{option.etd}</strong>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="text-right">
+                                                        <p className="font-bold text-lg text-green-600">{formatCurrency(option.cost)}</p>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* No Options */}
+                            {!shippingError && shippingOptions.length === 0 && (
+                                <div className="bg-gray-100 rounded-xl p-6 text-center">
+                                    <p className="text-gray-600">Memuat opsi pengiriman...</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Right Column - Summary (Sticky) */}
+                        <div className="lg:col-span-1">
+                            <div className="bg-white rounded-xl shadow-sm border sticky top-24 overflow-hidden">
+                                <div className="px-5 py-4 border-b bg-gradient-to-r from-gray-50 to-white">
+                                    <h3 className="font-bold text-gray-800">Ringkasan Pengiriman</h3>
+                                </div>
+
+                                <div className="p-5 space-y-4">
+                                    {/* Selected Method */}
+                                    <div className="flex justify-between text-sm">
+                                        <span className="text-gray-600">Metode</span>
+                                        <span className="font-medium text-gray-800">{methodLabel}</span>
+                                    </div>
+
+                                    {checkoutMethod === 'local' && distance > 0 && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-gray-600">Jarak</span>
+                                            <span className="font-medium text-gray-800">~{distance} km</span>
+                                        </div>
+                                    )}
+
+                                    {selectedOption && (
+                                        <>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-600">Kurir</span>
+                                                <span className="font-medium text-gray-800">{selectedOption.name}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-600">Layanan</span>
+                                                <span className="font-medium text-gray-800">{selectedOption.service}</span>
+                                            </div>
+                                            <div className="flex justify-between text-sm">
+                                                <span className="text-gray-600">Estimasi</span>
+                                                <span className="font-medium text-gray-800">{selectedOption.etd}</span>
+                                            </div>
+                                        </>
+                                    )}
+
+                                    <div className="border-t-2 border-dashed border-gray-200 pt-4">
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold text-gray-800">Ongkos Kirim</span>
+                                            <span className="text-xl font-extrabold text-green-600">
+                                                {selectedOption ? formatCurrency(selectedOption.cost) : 'Rp -'}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Buttons */}
+                                    <div className="space-y-3 pt-2">
+                                        <button
+                                            onClick={handleSubmit}
+                                            disabled={!selectedOption || processing || shippingError}
+                                            className={`w-full py-4 rounded-xl font-bold text-white flex items-center justify-center gap-2 transition-all ${selectedOption && !processing && !shippingError
+                                                ? 'bg-green-600 hover:bg-green-700 shadow-lg hover:shadow-xl'
+                                                : 'bg-gray-300 cursor-not-allowed'
+                                                }`}
+                                        >
+                                            {processing ? 'Memproses...' : 'Lanjut ke Pembayaran'}
+                                            {!processing && <FiArrowRight />}
+                                        </button>
+
+                                        <Link
+                                            href={route('checkout.address')}
+                                            className="w-full py-3 rounded-xl font-semibold text-gray-600 border-2 border-gray-200 flex items-center justify-center gap-2 hover:bg-gray-50 transition"
+                                        >
+                                            <FiArrowLeft /> Ubah Alamat
+                                        </Link>
+                                    </div>
+                                </div>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </main>

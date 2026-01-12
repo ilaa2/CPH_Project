@@ -39,8 +39,7 @@ Route::get('/tentang-kami', [WelcomeController::class, 'tentangKami'])->name('te
 Route::get('/customer/belanja', [BelanjaController::class, 'index'])->name('belanja.index');
 Route::get('/customer/belanja/{product}', [BelanjaController::class, 'show'])->name('belanja.show');
 
-// Route Ulasan (Public - Read Only)
-Route::get('/customer/ulasan', [UlasanController::class, 'indexCust'])->name('customer.ulasan.index');
+// Route Ulasan Global dihapus - Ulasan sekarang diakses dari Riwayat Pesanan dan Detail Produk
 
 // Route Kunjungan (Public - Form Info)
 Route::get('/customer/kunjungan', [KunjunganControllerCust::class, 'index'])->name('kunjungan.index');
@@ -87,10 +86,11 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
         // Grup Route untuk Checkout
     Route::prefix('checkout')->name('checkout.')->group(function () {
         Route::get('/', [CheckoutController::class, 'index'])->name('index'); // Select Method (Step 1)
+        Route::get('/method', [CheckoutController::class, 'index'])->name('method'); // Alias for Method Page
         Route::post('/method', [CheckoutController::class, 'saveMethod'])->name('saveMethod'); // Save Method
         
         Route::get('/address', [CheckoutController::class, 'address'])->name('address'); // Input Address (Step 2 - Delivery Only)
-        Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('saveAddress'); // Save Address
+        Route::post('/address', [CheckoutController::class, 'saveAddress'])->name('save-address'); // Save Address
 
         Route::get('/shipping', [CheckoutController::class, 'shipping'])->name('shipping'); // Select Shipping (Step 3 - Delivery Only)
         Route::post('/shipping', [CheckoutController::class, 'saveShipping'])->name('saveShipping'); // Save Shipping

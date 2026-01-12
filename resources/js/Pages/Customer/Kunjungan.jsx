@@ -2,7 +2,7 @@ import CustomerLayout from '@/Layouts/CustomerLayout';
 import { useForm, usePage, Head, router } from '@inertiajs/react';
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { FiUser, FiPhone, FiCalendar, FiUsers, FiSend, FiCheckCircle, FiClipboard, FiDollarSign, FiArrowRight, FiSmile, FiBriefcase } from 'react-icons/fi';
+import { FiUser, FiPhone, FiCalendar, FiUsers, FiSend, FiCheckCircle, FiClipboard, FiDollarSign, FiArrowRight, FiSmile, FiBriefcase, FiClock } from 'react-icons/fi';
 import Swal from 'sweetalert2';
 
 // Komponen InputField yang Ditingkatkan
@@ -64,6 +64,7 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
         nama_lengkap: auth?.pelanggan?.nama || '',
         no_hp: auth?.pelanggan?.telepon || '',
         tanggal_kunjungan: '',
+        jam_kunjungan: '',
         tipe_kunjungan_id: tipeKunjungan.length > 0 ? tipeKunjungan[0].id : '',
         jumlah_dewasa: 1,
         jumlah_anak: 0,
@@ -193,8 +194,8 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
         <>
             <Head title="Jadwalkan Kunjungan" />
 
-            <section className="relative h-[300px] sm:h-[400px] bg-cover bg-center" style={{ backgroundImage: "url('/storage/galeri/foto-palantea-14.jpeg')" }}>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20"></div>
+            <section className="relative h-[300px] sm:h-[400px] bg-cover bg-center" style={{ backgroundImage: "url('/storage/banners/kunjungan_hero.png')" }}>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/10"></div>
                 <div className="relative z-10 max-w-6xl mx-auto text-center px-6 flex flex-col justify-end h-full pb-20 text-white">
                     <motion.h1 initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="text-4xl sm:text-5xl font-extrabold mb-2 drop-shadow-lg">
                         Jadwalkan Kunjungan Anda
@@ -235,6 +236,33 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
                                     <InputField id="nama_lengkap" label="Nama Lengkap Kontak" type="text" value={data.nama_lengkap} onChange={e => setData('nama_lengkap', e.target.value)} error={errors.nama_lengkap} icon={<FiUser />} required />
                                     <InputField id="no_hp" label="Nomor HP (WhatsApp)" type="tel" value={data.no_hp} onChange={e => setData('no_hp', e.target.value)} error={errors.no_hp} icon={<FiPhone />} placeholder="08xxxxxxxxxx" required />
                                     <InputField id="tanggal_kunjungan" label="Tanggal Kunjungan" type="date" value={data.tanggal_kunjungan} onChange={e => setData('tanggal_kunjungan', e.target.value)} error={errors.tanggal_kunjungan} icon={<FiCalendar />} min={new Date().toISOString().split("T")[0]} required />
+
+                                    {/* Jam Kunjungan Dropdown */}
+                                    <div className="space-y-2">
+                                        <label htmlFor="jam_kunjungan" className="block text-sm font-semibold text-gray-700">Jam Kunjungan</label>
+                                        <div className="relative group">
+                                            <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-400 group-focus-within:text-green-600 transition-colors duration-300">
+                                                <FiClock />
+                                            </span>
+                                            <select
+                                                id="jam_kunjungan"
+                                                value={data.jam_kunjungan}
+                                                onChange={e => setData('jam_kunjungan', e.target.value)}
+                                                className={`block w-full pl-12 pr-4 py-3 rounded-lg border ${errors.jam_kunjungan ? 'border-red-500' : 'border-gray-300'} bg-gray-50 focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all duration-300 text-sm appearance-none cursor-pointer`}
+                                                required
+                                            >
+                                                <option value="">Pilih Jam</option>
+                                                <option value="09:00">09.00 – 11.00 WIB</option>
+                                                <option value="11:00">11.00 – 13.00 WIB</option>
+                                                <option value="13:00">13.00 – 15.00 WIB</option>
+                                                <option value="15:00">15.00 – 17.00 WIB</option>
+                                            </select>
+                                            <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 pointer-events-none">
+                                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                                            </span>
+                                        </div>
+                                        {errors.jam_kunjungan && <div className="text-red-600 text-xs mt-1">{errors.jam_kunjungan}</div>}
+                                    </div>
                                 </div>
 
                                 {/* --- PERUBAHAN DIMULAI DI SINI --- */}

@@ -276,9 +276,9 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
     <Mainbar header={
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">Pesanan</h2>
-        <button onClick={() => openModal('form')} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105">
+        <Link href={route('pesanan.create')} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105">
           + Tambah Pesanan
-        </button>
+        </Link>
       </div>
     }>
       <Head title="Manajemen Pesanan" />
@@ -321,7 +321,7 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
                     <td className="px-4 py-2">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full" title="Lihat Detail">👁️</button>
-                        <button onClick={() => openModal('form', item)} className="p-2 bg-blue-100 hover:bg-blue-200 rounded-full" title="Edit">✏️</button>
+                        <Link href={route('pesanan.edit', item.id)} className="p-2 bg-blue-100 hover:bg-blue-200 rounded-full inline-flex items-center justify-center" title="Edit">✏️</Link>
                         <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-100 hover:bg-red-200 rounded-full" title="Hapus">🗑️</button>
                         {item.status === 'Selesai' && item.ulasan && (
                           <button

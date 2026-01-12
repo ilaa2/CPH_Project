@@ -36,11 +36,35 @@ class BelanjaController extends Controller
             'filters' => ['kategori' => $kategoriFilter, 'search' => $searchFilter]
         ]);
     }
-        public function show($id)
+    public function show($id)
     {
         $product = Produk::with('kategori')->findOrFail($id); // ambil produk beserta kategori
+        
+        // Load ulasan dengan pelanggan
+        $reviews = $product->ulasan()
+            ->with('pelanggan:id,nama,foto_profil', 'fotos')
+            ->orderBy('tanggal', 'desc')
+            ->get();
+
+        $totalUlasan = $reviews->count();
+        $averageRating = $totalUlasan > 0 ? $reviews->avg('rating') : 0;
+
+        $ratingCounts = [
+            5 => $reviews->where('rating', 5)->count(),
+            4 => $reviews->where('rating', 4)->count(),
+            3 => $reviews->where('rating', 3)->count(),
+            2 => $reviews->where('rating', 2)->count(),
+            1 => $reviews->where('rating', 1)->count(),
+        ];
+
         return Inertia::render('Customer/BelanjaDetail', [
             'product' => $product,
+            'reviews' => $reviews,
+            'reviewStats' => [
+                'total' => $totalUlasan,
+                'average' => round($averageRating, 1),
+                'counts' => $ratingCounts
+            ]
         ]);
     }
 

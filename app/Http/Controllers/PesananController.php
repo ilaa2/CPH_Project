@@ -66,7 +66,7 @@ class PesananController extends Controller
             'alamat_pengiriman' => 'required_if:metode_pengiriman,local,shipping',
             'ekspedisi' => 'required_if:metode_pengiriman,shipping', // Only required for expedition
             'estimasi'  => 'nullable|string',
-            'biaya_pengiriman' => 'nullable|integer|min:0',
+            'biaya_pengiriman' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
@@ -177,7 +177,7 @@ class PesananController extends Controller
             'alamat_pengiriman' => 'required_if:metode_pengiriman,local,shipping',
             'ekspedisi' => 'required_if:metode_pengiriman,shipping,local',
             'estimasi'  => 'nullable|string',
-            'biaya_pengiriman' => 'nullable|integer|min:0',
+            'biaya_pengiriman' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();

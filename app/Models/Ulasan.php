@@ -13,6 +13,7 @@ class Ulasan extends Model
         'pelanggan_id',
         'kunjungan_id',
         'pesanan_id',
+        'produk_id',
         'komentar',
         'rating',
         'tanggal',
@@ -33,6 +34,11 @@ class Ulasan extends Model
     public function pesanan()
     {
         return $this->belongsTo(Pesanan::class);
+    }
+
+    public function produk()
+    {
+        return $this->belongsTo(Produk::class, 'produk_id');
     }
 
     public function fotos()

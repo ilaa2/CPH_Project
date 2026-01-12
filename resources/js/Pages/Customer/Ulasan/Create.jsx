@@ -1,50 +1,40 @@
-import React, { useState } from 'react';
-import { Head, useForm } from '@inertiajs/react';
-import { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
-import PrimaryButton from '@/Components/PrimaryButton';
+import React from 'react';
+import CustomerLayout, { SiteHeader, FooterNote } from '@/Layouts/CustomerLayout';
+import { Head, useForm, Link } from '@inertiajs/react';
+import { FaStar } from 'react-icons/fa';
 import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import TextInput from '@/Components/TextInput';
-import { FiStar } from 'react-icons/fi';
+import PrimaryButton from '@/Components/PrimaryButton';
 
-const StarRating = ({ rating, setRating }) => {
-    return (
-        <div className="flex space-x-1">
-            {[...Array(5)].map((_, index) => {
-                const starValue = index + 1;
-                return (
-                    <FiStar
-                        key={starValue}
-                        className={`w-8 h-8 cursor-pointer ${starValue <= rating ? 'text-yellow-400' : 'text-gray-300'}`}
-                        fill={starValue <= rating ? 'currentColor' : 'none'}
-                        onClick={() => setRating(starValue)}
-                    />
-                );
-            })}
-        </div>
-    );
-};
-
-export default function CreateUlasan({ auth, pesanan_id }) {
+export default function Create({ auth, pesanan }) {
+    // Inisialisasi state reviews berdasarkan item pesanan
     const { data, setData, post, processing, errors } = useForm({
-        rating: 0,
-        komentar: '',
-        foto_ulasan: [],
-        pesanan_id: pesanan_id,
+        pesanan_id: pesanan.id,
+        reviews: pesanan.items.map(item => ({
+            produk_id: item.produk_id,
+            nama_produk: item.produk ? item.produk.nama : 'Produk Tidak Ditemukan',
+            gambar_produk: item.produk ? item.produk.gambar : null,
+            rating: 5,
+            komentar: '',
+            fotos: []
+        }))
     });
 
-    const [preview, setPreview] = useState([]);
+    // Helper untuk mengubah data review spesifik
+    const handleReviewChange = (index, field, value) => {
+        const newReviews = [...data.reviews];
+        newReviews[index][field] = value;
+        setData('reviews', newReviews);
+    };
 
-    const handleFileChange = (e) => {
+    // Helper untuk upload foto review spesifik
+    const handleFotoChange = (index, e) => {
         const files = Array.from(e.target.files);
-        setData('foto_ulasan', files);
-
-        if (files.length > 0) {
-            const newPreviews = files.map(file => URL.createObjectURL(file));
-            setPreview(newPreviews);
-        } else {
-            setPreview([]);
+        // Batasi maksimal 3 foto per produk
+        if (files.length > 3) {
+            alert('Maksimal 3 foto per produk.');
+            return;
         }
+        handleReviewChange(index, 'fotos', files);
     };
 
     const submit = (e) => {
@@ -54,74 +44,105 @@ export default function CreateUlasan({ auth, pesanan_id }) {
 
     return (
         <>
-            <Head title="Beri Ulasan" />
+            <Head title="Beri Ulasan Produk" />
             <SiteHeader auth={auth} />
 
-            <main className="bg-gray-50 font-sans">
-                <div className="max-w-2xl mx-auto px-4 py-12">
-                    <div className="bg-white p-8 rounded-xl shadow-sm border">
-                        <h1 className="text-2xl font-bold text-gray-900 tracking-tight mb-6">Beri Ulasan Anda</h1>
+            <div className="py-12 bg-gray-50 min-h-screen">
+                <div className="max-w-4xl mx-auto sm:px-6 lg:px-8">
+                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                        <div className="p-6 text-gray-900">
+                            <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-4">Beri Ulasan Pesanan #{pesanan.nomor_pesanan}</h2>
 
-                        <form onSubmit={submit} className="space-y-6">
-                            <div>
-                                <InputLabel value="Rating Anda" />
-                                <div className="mt-2">
-                                    <StarRating rating={data.rating} setRating={(value) => setData('rating', value)} />
-                                </div>
-                                <InputError message={errors.rating} className="mt-2" />
-                            </div>
+                            <form onSubmit={submit} encType="multipart/form-data">
+                                <div className="space-y-8">
+                                    {data.reviews.map((review, index) => (
+                                        <div key={review.produk_id} className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+                                            <div className="flex items-center gap-4 mb-4">
+                                                <div className="w-16 h-16 bg-white rounded-md border overflow-hidden flex-shrink-0">
+                                                    {review.gambar_produk ? (
+                                                        <img src={`/storage/${review.gambar_produk}`} alt={review.nama_produk} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">No Img</div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-lg text-gray-800">{review.nama_produk}</h3>
+                                                    <p className="text-sm text-gray-500">Bagaimana kualitas produk ini?</p>
+                                                </div>
+                                            </div>
 
-                            <div>
-                                <InputLabel htmlFor="komentar" value="Ulasan Anda" />
-                                <textarea
-                                    id="komentar"
-                                    value={data.komentar}
-                                    onChange={(e) => setData('komentar', e.target.value)}
-                                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm"
-                                    rows="5"
-                                    placeholder="Bagaimana pengalaman Anda dengan produk ini?"
-                                ></textarea>
-                                <InputError message={errors.komentar} className="mt-2" />
-                            </div>
+                                            {/* Rating Stars */}
+                                            <div className="mb-4">
+                                                <label className="block font-medium text-sm text-gray-700 mb-1">Rating</label>
+                                                <div className="flex items-center gap-1">
+                                                    {[1, 2, 3, 4, 5].map((star) => (
+                                                        <button
+                                                            type="button"
+                                                            key={star}
+                                                            onClick={() => handleReviewChange(index, 'rating', star)}
+                                                            className="focus:outline-none transition-colors"
+                                                        >
+                                                            <FaStar
+                                                                size={28}
+                                                                className={star <= review.rating ? "text-yellow-400" : "text-gray-300"}
+                                                            />
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                {errors[`reviews.${index}.rating`] && (
+                                                    <div className="text-red-600 text-sm mt-1">{errors[`reviews.${index}.rating`]}</div>
+                                                )}
+                                            </div>
 
-                            <div>
-                                <InputLabel htmlFor="foto_ulasan" value="Unggah Foto (Opsional)" />
-                                <TextInput
-                                    id="foto_ulasan"
-                                    type="file"
-                                    className="mt-1 block w-full"
-                                    onChange={handleFileChange}
-                                    multiple // Memungkinkan pemilihan banyak file
-                                    accept="image/*" // Membatasi hanya untuk file gambar
-                                />
-                                {preview.length > 0 && (
-                                    <div className="mt-4">
-                                        <p className="font-medium text-sm text-gray-700 mb-2">Pratinjau Gambar:</p>
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                                            {preview.map((url, index) => (
-                                                <img
-                                                    key={index}
-                                                    src={url}
-                                                    alt={`Preview ${index + 1}`}
-                                                    className="w-full h-24 object-cover rounded-lg border"
+                                            {/* Komentar */}
+                                            <div className="mb-4">
+                                                <label className="block font-medium text-sm text-gray-700 mb-1">Komentar Anda</label>
+                                                <textarea
+                                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                                                    rows="3"
+                                                    placeholder={`Ceritakan pengalaman Anda menggunakan ${review.nama_produk}...`}
+                                                    value={review.komentar}
+                                                    onChange={(e) => handleReviewChange(index, 'komentar', e.target.value)}
+                                                ></textarea>
+                                                {errors[`reviews.${index}.komentar`] && (
+                                                    <div className="text-red-600 text-sm mt-1">{errors[`reviews.${index}.komentar`]}</div>
+                                                )}
+                                            </div>
+
+                                            {/* Foto Upload */}
+                                            <div>
+                                                <label className="block font-medium text-sm text-gray-700 mb-1">Foto Produk (Opsional, Max 3)</label>
+                                                <input
+                                                    type="file"
+                                                    multiple
+                                                    accept="image/*"
+                                                    onChange={(e) => handleFotoChange(index, e)}
+                                                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100 transition"
                                                 />
-                                            ))}
+                                                {errors[`reviews.${index}.fotos`] && (
+                                                    <div className="text-red-600 text-sm mt-1">{errors[`reviews.${index}.fotos`]}</div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                                <InputError message={errors.foto_ulasan} className="mt-2" />
-                            </div>
+                                    ))}
+                                </div>
 
-                            <div className="flex justify-end">
-                                <PrimaryButton disabled={processing}>
-                                    {processing ? 'Mengirim...' : 'Kirim Ulasan'}
-                                </PrimaryButton>
-                            </div>
-                        </form>
+                                <div className="mt-8 flex justify-end gap-3">
+                                    <Link
+                                        href={route('customer.pesanan.index')}
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
+                                    >
+                                        Batal
+                                    </Link>
+                                    <PrimaryButton disabled={processing}>
+                                        {processing ? 'Mengirim...' : 'Kirim Semua Ulasan'}
+                                    </PrimaryButton>
+                                </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
-            </main>
-
+            </div>
             <FooterNote />
         </>
     );

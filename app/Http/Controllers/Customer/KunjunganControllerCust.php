@@ -38,8 +38,9 @@ class KunjunganControllerCust extends Controller
             'nama_lengkap'      => 'required|string|max:255',
             'no_hp'             => 'required|string|max:15',
             'tanggal_kunjungan' => 'required|date|after_or_equal:today',
+            'jam_kunjungan'     => 'required|in:09:00,11:00,13:00,15:00',
             'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
-            'jumlah_dewasa'     => 'required|integer|min:0', // Ubah min:1 menjadi min:0
+            'jumlah_dewasa'     => 'required|integer|min:0',
             'jumlah_anak'       => 'required|integer|min:0',
             'jumlah_balita'     => 'required|integer|min:0',
         ]);
@@ -76,9 +77,18 @@ class KunjunganControllerCust extends Controller
         // Kalkulasi biaya di backend, meniru logika frontend
         $totalBiaya = $this->calculateTotalCost($detailTipe, $dataFromSession);
 
+        // Mapping jam ke label display
+        $jamLabels = [
+            '09:00' => '09.00 – 11.00 WIB',
+            '11:00' => '11.00 – 13.00 WIB',
+            '13:00' => '13.00 – 15.00 WIB',
+            '15:00' => '15.00 – 17.00 WIB',
+        ];
+
         // Siapkan data lengkap untuk dikirim ke view React
         $dataKunjungan = array_merge($dataFromSession, [
             'nama_tipe'   => $detailTipe->nama_tipe,
+            'jam_label'   => $jamLabels[$dataFromSession['jam_kunjungan']] ?? $dataFromSession['jam_kunjungan'],
             'total_biaya' => $totalBiaya,
         ]);
 
@@ -98,8 +108,9 @@ class KunjunganControllerCust extends Controller
             'nama_lengkap'      => 'required|string|max:255',
             'no_hp'             => 'required|string|max:15',
             'tanggal_kunjungan' => 'required|date',
+            'jam_kunjungan'     => 'required|in:09:00,11:00,13:00,15:00',
             'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
-            'jumlah_dewasa'     => 'required|integer|min:0', // Ubah min:1 menjadi min:0
+            'jumlah_dewasa'     => 'required|integer|min:0',
             'jumlah_anak'       => 'required|integer|min:0',
             'jumlah_balita'     => 'required|integer|min:0',
         ]);
@@ -121,7 +132,7 @@ class KunjunganControllerCust extends Controller
             'pelanggan_id'      => Auth::guard('pelanggan')->id(),
             'tipe_id'           => $validated['tipe_kunjungan_id'],
             'tanggal'           => $validated['tanggal_kunjungan'],
-            'jam'               => '09:00:00', // Jam default
+            'jam'               => $validated['jam_kunjungan'] . ':00',
             'jumlah_dewasa'     => $validated['jumlah_dewasa'],
             'jumlah_anak'       => $validated['jumlah_anak'],
             'jumlah_balita'     => $validated['jumlah_balita'],

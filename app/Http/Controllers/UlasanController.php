@@ -17,6 +17,7 @@ class UlasanController extends Controller
         $ulasanQuery = Ulasan::with([
             'pelanggan:id,nama,foto_profil',
             'pesanan',
+            'produk', // Load produk relationship
             'kunjungan.tipe', // Memuat relasi 'tipe' dari 'kunjungan'
             'fotos' // Memuat foto ulasan
         ])
@@ -38,9 +39,12 @@ class UlasanController extends Controller
             $subject = 'N/A';
             $type = 'Tidak Diketahui';
 
-            if ($item->pesanan) {
+            if ($item->produk) {
                 $type = 'Produk';
-                $subject = 'Pesanan #' . $item->pesanan->nomor_pesanan;
+                $subject = $item->produk->nama . ' (Pesanan #' . $item->pesanan->nomor_pesanan . ')';
+            } elseif ($item->pesanan) {
+                $type = 'Produk'; // Fallback for old data
+                 $subject = 'Pesanan #' . $item->pesanan->nomor_pesanan;
             } elseif ($item->kunjungan) {
                 $type = 'Kunjungan';
                 // Pastikan relasi 'tipe' ada sebelum diakses
@@ -153,38 +157,47 @@ class UlasanController extends Controller
 
     public function createCust($id)
     {
-        // Logika untuk menampilkan form pembuatan ulasan
-        // Anda mungkin perlu mengambil data pesanan di sini
+        // Load pesanan beserta items dan produknya
+        $pesanan = \App\Models\Pesanan::with('items.produk')->findOrFail($id);
+        
         return Inertia::render('Customer/Ulasan/Create', [
-            'pesanan_id' => $id
+            'pesanan' => $pesanan
         ]);
     }
 
     public function storeCust(Request $request)
     {
         $request->validate([
-            'rating' => 'required|integer|min:1|max:5',
-            'komentar' => 'required|string',
             'pesanan_id' => 'required|exists:pesanan,id',
-            'foto_ulasan' => 'nullable|array', // Validasi bahwa ini adalah array
-            'foto_ulasan.*' => 'image|mimes:jpg,jpeg,png|max:2048', // Validasi setiap item dalam array
+            'reviews' => 'required|array',
+            'reviews.*.produk_id' => 'required|exists:products,id',
+            'reviews.*.rating' => 'required|integer|min:1|max:5',
+            'reviews.*.komentar' => 'nullable|string',
+            'reviews.*.fotos' => 'nullable|array',
+            'reviews.*.fotos.*' => 'image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        $ulasan = Ulasan::create([
-            'pesanan_id' => $request->pesanan_id,
-            'pelanggan_id' => auth('pelanggan')->id(),
-            'rating' => $request->rating,
-            'komentar' => $request->komentar,
-            'tanggal' => now(),
-        ]);
+        foreach ($request->reviews as $reviewData) {
+            // Skip if rating is 0 or null (optional, depends on UX)
+            // But we requested rating required so it should be there.
+            
+            $ulasan = Ulasan::create([
+                'pesanan_id' => $request->pesanan_id,
+                'produk_id' => $reviewData['produk_id'],
+                'pelanggan_id' => auth('pelanggan')->id(),
+                'rating' => $reviewData['rating'],
+                'komentar' => $reviewData['komentar'] ?? '',
+                'tanggal' => now(),
+            ]);
 
-        if ($request->hasFile('foto_ulasan')) {
-            foreach ($request->file('foto_ulasan') as $foto) {
-                $path = $foto->store('ulasan-fotos', 'public');
-                UlasanFoto::create([
-                    'ulasan_id' => $ulasan->id,
-                    'foto_path' => $path,
-                ]);
+            if (isset($reviewData['fotos'])) {
+                foreach ($reviewData['fotos'] as $foto) {
+                    $path = $foto->store('ulasan-fotos', 'public');
+                    UlasanFoto::create([
+                        'ulasan_id' => $ulasan->id,
+                        'foto_path' => $path,
+                    ]);
+                }
             }
         }
 

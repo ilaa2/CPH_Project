@@ -16,5 +16,10 @@ class Produk extends Model
         return $this->belongsTo(ProductCategory::class, 'id_kategori');
     }
 
+    public function ulasan()
+    {
+        return $this->hasMany(Ulasan::class, 'produk_id');
+    }
+
 
 }

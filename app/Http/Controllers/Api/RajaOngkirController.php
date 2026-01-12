@@ -3,64 +3,170 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 class RajaOngkirController extends Controller
 {
-    protected $apiKey;
-    protected $baseUrl;
-
-    public function __construct()
+    private function getApiKey()
     {
-        // Mengembalikan ke cara yang benar setelah debugging
-        $this->apiKey = config('rajaongkir.api_key');
-        $this->baseUrl = config('rajaongkir.base_url');
+        return config('rajaongkir.api_key');
     }
 
-    private function sendApiResponse($response, $errorMessage)
+    private function getBaseUrl()
     {
-        if ($response->failed()) {
-            Log::error("Komerce API Error: {$errorMessage}", [
-                'status' => $response->status(),
-                'body' => $response->body()
-            ]);
-            return response()->json(['error' => $errorMessage], 500);
+        return config('rajaongkir.base_url');
+    }
+
+    /**
+     * Get all provinces
+     */
+    /**
+     * Get all provinces
+     */
+    public function provinces()
+    {
+        // Cache for 24 hours
+        $provinces = Cache::remember('rajaongkir_provinces', 86400, function () {
+            try {
+                $url = $this->getBaseUrl() . '/province';
+                Log::info('RajaOngkir Request URL: ' . $url);
+                
+                $response = Http::withHeaders(['key' => $this->getApiKey()])
+                    ->get($url);
+
+                Log::info('RajaOngkir provinces response: ' . $response->body());
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    
+                    if (isset($json['data']) && is_array($json['data'])) {
+                        return $json['data'];
+                    }
+                    if (isset($json['rajaongkir']['results'])) {
+                        return $json['rajaongkir']['results'];
+                    }
+                    
+                    return $json;
+                }
+
+                $errorMessage = $response->json()['message'] ?? $response->body();
+                Log::error('RajaOngkir provinces error: ' . $response->status() . ' - ' . $errorMessage);
+                return ['error' => $errorMessage, 'status' => $response->status()];
+            } catch (\Exception $e) {
+                Log::error('RajaOngkir provinces exception: ' . $e->getMessage());
+                return ['error' => $e->getMessage(), 'status' => 500];
+            }
+        });
+
+        if (isset($provinces['error'])) {
+            return response()->json(['error' => $provinces['error']], $provinces['status'] ?? 502);
         }
 
-        return response()->json($response->json()['data'] ?? []);
+        return response()->json($provinces);
     }
 
-    public function getProvinces()
+    /**
+     * Get cities by province ID
+     */
+    /**
+     * Get cities by province ID
+     */
+    public function cities($provinceId)
     {
-        $response = Http::withHeaders(['key' => $this->apiKey])
-            ->get($this->baseUrl . '/destination/province');
+        $cacheKey = "rajaongkir_cities_{$provinceId}";
         
-        return $this->sendApiResponse($response, 'Gagal mengambil daftar provinsi.');
+        $cities = Cache::remember($cacheKey, 86400, function () use ($provinceId) {
+            try {
+                $url = $this->getBaseUrl() . '/city';
+                $response = Http::withHeaders(['key' => $this->getApiKey()])
+                    ->get($url, [
+                        'province' => $provinceId // Parameter name for city endpoint is usually 'province'
+                    ]);
+
+                Log::info('RajaOngkir cities response: ' . $response->body());
+
+                if ($response->successful()) {
+                    $json = $response->json();
+                    
+                    if (isset($json['data']) && is_array($json['data'])) {
+                        return $json['data'];
+                    }
+                    if (isset($json['rajaongkir']['results'])) {
+                        return $json['rajaongkir']['results'];
+                    }
+                    
+                    return $json;
+                }
+
+                Log::error('RajaOngkir cities error: ' . $response->status() . ' - ' . $response->body());
+                return null;
+            } catch (\Exception $e) {
+                Log::error('RajaOngkir cities exception: ' . $e->getMessage());
+                return null;
+            }
+        });
+
+        if ($cities === null) {
+            return response()->json(['error' => 'Failed to fetch cities from RajaOngkir'], 502);
+        }
+
+        return response()->json($cities);
     }
 
-    public function getCities($provinceId)
+    /**
+     * Get subdistricts by city ID
+     */
+    /**
+     * Get subdistricts by city ID
+     */
+    public function subdistricts($cityId)
     {
-        $response = Http::withHeaders(['key' => $this->apiKey])
-            ->get($this->baseUrl . '/destination/city/' . $provinceId);
+        $cacheKey = "rajaongkir_subdistricts_{$cityId}";
+        
+        $subdistricts = Cache::remember($cacheKey, 86400, function () use ($cityId) {
+            try {
+                $url = $this->getBaseUrl() . '/subdistrict';
+                $response = Http::withHeaders(['key' => $this->getApiKey()])
+                    ->get($url, [
+                        'city' => $cityId // Parameter name for subdistrict endpoint is usually 'city'
+                    ]);
 
-        return $this->sendApiResponse($response, 'Gagal mengambil daftar kota.');
-    }
+                Log::info('RajaOngkir subdistricts response: ' . $response->body());
 
-    public function getDistricts($cityId)
-    {
-        $response = Http::withHeaders(['key' => $this->apiKey])
-            ->get($this->baseUrl . '/destination/district/' . $cityId);
+                if ($response->successful()) {
+                    $json = $response->json();
+                    
+                    if (isset($json['data']) && is_array($json['data'])) {
+                        return $json['data'];
+                    }
+                    if (isset($json['rajaongkir']['results'])) {
+                        return $json['rajaongkir']['results'];
+                    }
+                    
+                    return $json;
+                }
 
-        return $this->sendApiResponse($response, 'Gagal mengambil daftar kecamatan.');
-    }
+                // If 400 Bad Request, it might be due to starter plan not supporting subdistrict
+                if ($response->status() === 400) {
+                     Log::warning('RajaOngkir subdistrict fetch failed (possibly unavailable in Starter plan): ' . $response->body());
+                     // Return empty array for starter plan so it doesn't break the UI, just no subdistricts
+                     return [];
+                }
 
-    public function getSubdistricts($districtId)
-    {
-        $response = Http::withHeaders(['key' => $this->apiKey])
-            ->get($this->baseUrl . '/destination/sub-district/' . $districtId);
+                Log::error('RajaOngkir subdistricts error: ' . $response->status() . ' - ' . $response->body());
+                return null;
+            } catch (\Exception $e) {
+                Log::error('RajaOngkir subdistricts exception: ' . $e->getMessage());
+                return null;
+            }
+        });
 
-        return $this->sendApiResponse($response, 'Gagal mengambil daftar kelurahan.');
+        if ($subdistricts === null) {
+            return response()->json(['error' => 'Failed to fetch subdistricts from RajaOngkir'], 502);
+        }
+
+        return response()->json($subdistricts);
     }
 }
