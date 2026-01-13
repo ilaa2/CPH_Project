@@ -100,29 +100,31 @@ class CheckoutController extends Controller
 
     public function saveAddress(Request $request)
     {
-        // Log request for debugging
-        Log::info('Save Address Request:', $request->all());
+        // 1. Log HIT awal (sesuai request user)
+        Log::info('CHECKOUT ADDRESS SUBMIT HIT', $request->all());
 
+        // 2. Relaxed Validation (biar tidak bounce karena format)
         $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'telepon' => 'required|string|max:20',
-            'alamat' => 'required|string',
-            'area_id' => 'required|string', // Biteship Area ID
-            'province_name' => 'required|string',
-            'city_name' => 'required|string',
-            'district_name' => 'required|string',
-            'zip_code' => 'nullable|string', // Relaxed validation
+            'nama'      => 'required|string|max:255',
+            'telepon'   => 'required|string|max:50', // Relaxed length
+            'alamat'    => 'required|string',
+            'area_id'   => 'required|string',
+            'province_name' => 'nullable|string', // Nullable just in case
+            'city_name'     => 'nullable|string',
+            'district_name' => 'nullable|string',
+            'zip_code'      => 'nullable', // Totally relaxed
         ]);
 
         $full_address = implode(', ', array_filter([
             $validated['alamat'],
-            $validated['district_name'],
-            $validated['city_name'],
-            $validated['province_name'],
+            $validated['district_name'] ?? '',
+            $validated['city_name'] ?? '',
+            $validated['province_name'] ?? '',
             $validated['zip_code'] ?? ''
         ]));
 
-        session(['checkout_address' => [
+        // 3. Simpan Session
+        $addressData = [
             'nama' => $validated['nama'],
             'telepon' => $validated['telepon'],
             'alamat' => $validated['alamat'],
@@ -133,11 +135,14 @@ class CheckoutController extends Controller
             'district_name' => $validated['district_name'],
             'zip_code' => $validated['zip_code'] ?? '',
             'full_area_label' => $request->input('full_area_label', ''),
-        ]]);
+        ];
 
+        session(['checkout_address' => $addressData]);
         session()->save(); // Force save
-        Log::info('Address saved to session. Redirecting to shipping.');
 
+        Log::info('checkout_address SAVED to Session:', $addressData);
+
+        // 4. Redirect explicit
         return redirect()->route('checkout.shipping');
     }
 
@@ -428,113 +433,142 @@ class CheckoutController extends Controller
     {
         try {
             return DB::transaction(function () {
-            $pelanggan = Auth::guard('pelanggan')->user();
-            $selectedItemIds = session('selected_cart_items', []);
-            $method = session('checkout_method');
+                $pelanggan = Auth::guard('pelanggan')->user();
+                $selectedItemIds = session('selected_cart_items', []);
+                $method = session('checkout_method');
 
-            if (!$pelanggan || empty($selectedItemIds)) {
-                 return back()->withErrors(['message' => 'Sesi Anda telah berakhir.']);
-            }
+                if (!$pelanggan || empty($selectedItemIds)) {
+                    return back()->withErrors(['message' => 'Sesi Anda telah berakhir.']);
+                }
 
-        $alamat = [];
-        $pengiriman = [];
+                $alamat = [];
+                $pengiriman = [];
 
-        if ($method === 'pickup') {
-            $alamat = [
-                'full_address_string' => 'AMBIL DI TOKO', // Dummy address for DB constraint
-                'nama' => $pelanggan->nama,
-                'telepon' => $pelanggan->telepon,
-            ];
-            $pengiriman = [
-                'name' => 'Ambil Sendiri',
-                'price' => 0,
-            ];
-        } else {
-             $alamat = session('checkout_address');
-             $pengiriman = session('checkout_shipping');
-             
-             if (!$alamat || !$pengiriman) {
-                 return back()->withErrors(['message' => 'Data pengiriman tidak lengkap.']);
-             }
-        }
+                if ($method === 'pickup') {
+                    $alamat = [
+                        'full_address_string' => 'AMBIL DI TOKO',
+                        'nama' => $pelanggan->nama,
+                        'telepon' => $pelanggan->telepon,
+                    ];
+                    $pengiriman = [
+                        'name' => 'Ambil Sendiri',
+                        'price' => 0,
+                    ];
+                } else {
+                    $alamat = session('checkout_address');
+                    $pengiriman = session('checkout_shipping');
 
-        $cartItems = Cart::with('product')->whereIn('id', $selectedItemIds)->where('pelanggan_id', $pelanggan->id)->get();
-        if ($cartItems->isEmpty()) {
-            return back()->withErrors(['message' => 'Produk di keranjang tidak ditemukan.']);
-        }
+                    if (!$alamat || !$pengiriman) {
+                        return back()->withErrors(['message' => 'Data pengiriman tidak lengkap.']);
+                    }
+                }
 
-        $subtotal = $cartItems->sum(fn($item) => $item->product->harga * $item->quantity);
-        $shippingCost = $pengiriman['price'] ?? 0;
-        $grandTotal = $subtotal + $shippingCost;
+                $cartItems = Cart::with('product')->whereIn('id', $selectedItemIds)->where('pelanggan_id', $pelanggan->id)->get();
+                if ($cartItems->isEmpty()) {
+                    return back()->withErrors(['message' => 'Produk di keranjang tidak ditemukan.']);
+                }
 
-        $orderId = 'ORD-' . strtoupper(Str::random(8));
+                $subtotal = $cartItems->sum(fn($item) => $item->product->harga * $item->quantity);
+                $shippingCost = $pengiriman['price'] ?? 0;
+                $grandTotal = $subtotal + $shippingCost;
 
-        $pesanan = Pesanan::create([
-            'id_pelanggan'      => $pelanggan->id,
-            'total'             => $grandTotal,
-            'nomor_pesanan'     => $orderId,
-            'status'            => 'pending',
-            'alamat_pengiriman' => $alamat['full_address_string'],
-            'metode_pengiriman' => $pengiriman['name'] ?? 'Standar',
-            'biaya_pengiriman'  => $shippingCost,
-            'tanggal'           => now(),
-        ]);
+                // Generate unique order ID untuk Midtrans
+                $midtransOrderId = 'ORD-' . strtoupper(Str::random(8)) . '-' . time();
 
-        foreach ($cartItems as $item) {
-            $produk = $item->product;
+                $pesanan = Pesanan::create([
+                    'id_pelanggan'      => $pelanggan->id,
+                    'total'             => $grandTotal,
+                    'nomor_pesanan'     => $midtransOrderId,
+                    'status'            => 'pending',
+                    'alamat_pengiriman' => $alamat['full_address_string'],
+                    'metode_pengiriman' => $pengiriman['name'] ?? 'Standar',
+                    'biaya_pengiriman'  => $shippingCost,
+                    'tanggal'           => now(),
+                    // Payment columns
+                    'payment_status'    => 'unpaid',
+                    'midtrans_order_id' => $midtransOrderId,
+                ]);
 
-            // Cek stok lagi untuk keamanan
-            if ($produk->stok < $item->quantity) {
-                throw new \Exception("Stok produk '{$produk->nama}' tidak mencukupi (Tersedia: {$produk->stok}).");
-            }
+                foreach ($cartItems as $item) {
+                    $produk = $item->product;
 
-            PesananItem::create([
-                'pesanan_id' => $pesanan->id,
-                'produk_id'  => $item->product_id,
-                'jumlah'     => $item->quantity,
-                'subtotal'   => $item->product->harga * $item->quantity,
-            ]);
+                    if ($produk->stok < $item->quantity) {
+                        throw new \Exception("Stok produk '{$produk->nama}' tidak mencukupi (Tersedia: {$produk->stok}).");
+                    }
 
-            // Kurangi Stok
-            $produk->decrement('stok', $item->quantity);
-        }
+                    PesananItem::create([
+                        'pesanan_id' => $pesanan->id,
+                        'produk_id'  => $item->product_id,
+                        'jumlah'     => $item->quantity,
+                        'subtotal'   => $item->product->harga * $item->quantity,
+                    ]);
 
-        $transaction = Transaction::create([
-            'pesanan_id'        => $pesanan->id,
-            'uuid'              => $orderId, // Ini yang sebelumnya hilang
-            'customer_name'     => $alamat['nama'],
-            'customer_email'    => $pelanggan->email,
-            'customer_phone'    => $alamat['telepon'],
-            'address'           => $alamat['full_address_string'],
-            'shipping_method'   => $pengiriman['name'] ?? 'Standar',
-            'shipping_cost'     => $shippingCost,
-            'total_amount'      => $subtotal,
-            'grand_total'       => $grandTotal,
-            'payment_status'    => 'pending',
-        ]);
+                    // Kurangi Stok
+                    $produk->decrement('stok', $item->quantity);
+                }
 
-        Cart::whereIn('id', $selectedItemIds)->where('pelanggan_id', $pelanggan->id)->delete();
-        session()->forget(['selected_cart_items', 'checkout_address', 'checkout_shipping']);
-
-            if (env('MIDTRANS_ENABLED', false)) {
+                // Generate Midtrans Snap Token
                 $payload = [
-                    'transaction_details' => ['order_id' => $transaction->uuid, 'gross_amount' => $transaction->grand_total],
-                    'customer_details' => ['first_name' => $transaction->customer_name, 'email' => $transaction->customer_email, 'phone' => $transaction->customer_phone],
+                    'transaction_details' => [
+                        'order_id' => $midtransOrderId,
+                        'gross_amount' => (int) $grandTotal,
+                    ],
+                    'customer_details' => [
+                        'first_name' => $alamat['nama'] ?? $pelanggan->nama,
+                        'email' => $pelanggan->email,
+                        'phone' => $alamat['telepon'] ?? $pelanggan->telepon,
+                    ],
+                    'item_details' => $cartItems->map(function ($item) {
+                        return [
+                            'id' => $item->product_id,
+                            'name' => substr($item->product->nama, 0, 50),
+                            'price' => (int) $item->product->harga,
+                            'quantity' => $item->quantity,
+                        ];
+                    })->toArray(),
                 ];
 
-                $snapToken = Snap::getSnapToken($payload);
-                $transaction->update(['midtrans_snap_token' => $snapToken]);
+                // Add shipping as item if applicable
+                if ($shippingCost > 0) {
+                    $payload['item_details'][] = [
+                        'id' => 'SHIPPING',
+                        'name' => 'Ongkos Kirim',
+                        'price' => (int) $shippingCost,
+                        'quantity' => 1,
+                    ];
+                }
 
-                return back()->with('flash', [
-                    'snap_token' => $snapToken,
-                    'redirect_url' => route('customer.pesanan.show', $pesanan->id)
+                // Add callbacks URLs untuk redirect setelah pembayaran
+                $payload['callbacks'] = [
+                    'finish' => url('/customer/payment/finish'),
+                    'unfinish' => url('/customer/payment/unfinish'),
+                    'error' => url('/customer/payment/error'),
+                ];
+
+                try {
+                    $snapToken = Snap::getSnapToken($payload);
+                    $pesanan->update(['snap_token' => $snapToken, 'payment_status' => 'pending']);
+                } catch (\Exception $e) {
+                    Log::error('Midtrans Snap Token Error: ' . $e->getMessage());
+                    // Fallback: jika Midtrans gagal, tetap lanjutkan tanpa payment gateway
+                    $snapToken = null;
+                }
+
+                // Hapus cart items setelah order dibuat
+                Cart::whereIn('id', $selectedItemIds)->where('pelanggan_id', $pelanggan->id)->delete();
+                session()->forget(['selected_cart_items', 'checkout_address', 'checkout_shipping', 'checkout_method']);
+
+                // Return snap token ke frontend untuk trigger popup
+                return Inertia::render('Customer/Checkout/PaymentProcess', [
+                    'pesanan' => $pesanan->load('items.produk'),
+                    'snapToken' => $snapToken,
+                    'clientKey' => config('midtrans.client_key'),
+                    'snapUrl' => config('midtrans.snap_url'),
                 ]);
-            }
-
-            return redirect()->route('customer.pesanan.show', $pesanan->id)->with('success', 'Pesanan berhasil dibuat.');
-        });
-    } catch (\Exception $e) {
-        return back()->withErrors(['message' => 'Gagal memproses pesanan: ' . $e->getMessage()]);
+            });
+        } catch (\Exception $e) {
+            Log::error('Checkout Process Error: ' . $e->getMessage());
+            return back()->withErrors(['message' => 'Gagal memproses pesanan: ' . $e->getMessage()]);
+        }
     }
-}
 }

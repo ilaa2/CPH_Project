@@ -155,5 +155,29 @@ Route::prefix('api/locations')->name('api.locations.')->controller(\App\Http\Con
 });
 
 
+// === MIDTRANS ROUTES ===
+use App\Http\Controllers\MidtransController;
+
+// Midtrans Notification Webhook (No Auth, No CSRF)
+Route::post('/midtrans/notification', [MidtransController::class, 'notification'])
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class])
+    ->name('midtrans.notification');
+
+// Retry Payment Routes (Customer Auth Required)
+Route::middleware(['auth:pelanggan'])->prefix('customer')->group(function () {
+    Route::post('/pesanan/{pesanan}/retry-payment', [MidtransController::class, 'retryPaymentPesanan'])
+        ->name('customer.pesanan.retry-payment');
+    Route::post('/kunjungan/{kunjungan}/retry-payment', [MidtransController::class, 'retryPaymentKunjungan'])
+        ->name('customer.kunjungan.retry-payment');
+});
+
+// Payment Callback Routes (GET - No Auth to allow redirect from Midtrans)
+Route::prefix('customer/payment')->name('customer.payment.')->group(function () {
+    Route::get('/finish', [MidtransController::class, 'paymentFinish'])->name('finish');
+    Route::get('/unfinish', [MidtransController::class, 'paymentUnfinish'])->name('unfinish');
+    Route::get('/error', [MidtransController::class, 'paymentError'])->name('error');
+});
+
+
 require __DIR__.'/auth.php';
 

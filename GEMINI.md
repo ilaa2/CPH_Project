@@ -154,6 +154,51 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 
 ### Riwayat Perubahan
 
+**Senin, 13 Januari 2026**
+*   **Implementasi Midtrans Payment Gateway (Full Integration):**
+    *   **Konfigurasi:** Membuat `config/midtrans.php` untuk menyimpan kredensial server key, client key, dan pengaturan mode sandbox/production.
+    *   **Database Migrations:**
+        *   Menambahkan kolom `payment_status`, `snap_token`, `midtrans_order_id`, `paid_at` pada tabel `pesanan`.
+        *   Menambahkan kolom `payment_status`, `snap_token`, `midtrans_order_id`, `paid_at` pada tabel `kunjungan`.
+    *   **Model Updates:** Memperbarui `Pesanan` dan `Kunjungan` model untuk include kolom payment baru di `$fillable`.
+    *   **Backend Controllers:**
+        *   Membuat `MidtransController.php` baru dengan method:
+            *   `notification()` - Handler webhook dari Midtrans untuk update status pembayaran otomatis.
+            *   `retryPaymentPesanan()` - Generate token baru untuk bayar ulang pesanan.
+            *   `retryPaymentKunjungan()` - Generate token baru untuk bayar ulang kunjungan.
+        *   Update `CheckoutController::process()` untuk generate `snap_token` Midtrans dan render halaman payment.
+        *   Update `KunjunganControllerCust::store()` untuk generate `snap_token` Midtrans dan render halaman payment.
+    *   **Frontend Components:**
+        *   Membuat `Customer/Checkout/PaymentProcess.jsx` - Halaman pembayaran pesanan dengan integrasi Snap popup.
+        *   Membuat `Customer/Kunjungan/PaymentProcess.jsx` - Halaman pembayaran kunjungan dengan integrasi Snap popup.
+        *   Kedua halaman menampilkan status: waiting, success, pending, error, cancelled dengan UI yang informatif.
+    *   **Routes:**
+        *   `POST /midtrans/notification` - Webhook tanpa CSRF untuk Midtrans callback.
+        *   `POST /customer/pesanan/{pesanan}/retry-payment` - Retry payment pesanan.
+        *   `POST /customer/kunjungan/{kunjungan}/retry-payment` - Retry payment kunjungan.
+    *   **Flow Baru:**
+        *   Pesanan: Checkout → Bayar Sekarang → Popup Midtrans → Success/Pending/Failed.
+        *   Kunjungan: Konfirmasi → Submit → Popup Midtrans → Success/Pending/Failed.
+    *   **Catatan:** User perlu mengisi kredensial Midtrans di `.env` (MIDTRANS_SERVER_KEY, MIDTRANS_CLIENT_KEY, MIDTRANS_IS_PRODUCTION) sebelum payment gateway aktif.
+
+*   **Perbaikan Flow Midtrans Payment (Critical Fixes):**
+    *   **Fix Return URL:** Menambahkan `callbacks` (finish, unfinish, error) ke payload Midtrans agar redirect kembali ke aplikasi, bukan ke example.com.
+    *   **Routes GET Payment:** Membuat routes GET `/customer/payment/finish`, `/customer/payment/unfinish`, `/customer/payment/error` untuk handle return dari Midtrans.
+    *   **Handler Methods:** Menambahkan `paymentFinish()`, `paymentUnfinish()`, `paymentError()` di `MidtransController` untuk memproses callback dan update status.
+    *   **Halaman PaymentResult:** Membuat `Customer/Payment/PaymentResult.jsx` untuk menampilkan status pembayaran (Sukses/Pending/Gagal) dengan tombol aksi yang sesuai.
+    *   **Status Logic:** Status pesanan/kunjungan hanya berubah ke "paid" jika `transaction_status` adalah `settlement` atau `capture`. Status `pending` tetap menunggu.
+    *   **Catatan QRIS:** QRIS di Midtrans Sandbox memiliki limitasi - beberapa payment app (GoPay/ShopeePay) mungkin tidak bisa scan QR sandbox. Gunakan Virtual Account untuk testing.
+
+*   **Redesign Halaman Detail Pesanan (Dinamis):**
+    *   **Masalah:** Halaman detail pesanan selalu menampilkan "Pesanan Diterima" meskipun pembayaran belum selesai (status pending).
+    *   **Solusi:** Redesign total `Customer/Pesanan/Show.jsx` dengan status dinamis:
+        *   **PENDING/UNPAID:** Header kuning, judul "Menunggu Pembayaran", tombol "Bayar Sekarang", notice peringatan.
+        *   **PAID:** Header hijau, judul "Pesanan Diterima", badge "LUNAS".
+        *   **FAILED/EXPIRED:** Header merah, judul "Pembayaran Gagal/Kedaluwarsa", tombol "Bayar Ulang".
+    *   **Fitur Baru:** Tombol "Bayar Sekarang" langsung membuka Snap popup menggunakan `snap_token` yang tersimpan.
+    *   **Backend Update:** Menambahkan `client_key` dari config ke response `PesananControllerCust::show()`.
+
+
 **Minggu, 11 Januari 2026**
 *   **Timezone Fix (WIB):**
     *   Mengubah `config/app.php` timezone dari `UTC` ke `Asia/Jakarta`.

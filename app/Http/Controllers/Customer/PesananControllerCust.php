@@ -56,6 +56,9 @@ class PesananControllerCust extends Controller
         // Load necessary relationships
         // Load data relasi yang dibutuhkan (items dan produk di dalamnya)
         $pesanan->load(['items.produk', 'pelanggan']);
+        
+        // Add client_key for Midtrans Snap
+        $pesanan->client_key = config('midtrans.client_key');
 
         // Render the Inertia view
         // Kirim data ke view Inertia

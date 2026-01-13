@@ -98,12 +98,10 @@ class KunjunganControllerCust extends Controller
     }
 
     /**
-     * Menyimpan data kunjungan final ke database.
+     * Menyimpan data kunjungan final ke database dan generate Midtrans token.
      */
     public function store(Request $request)
     {
-        // --- PERUBAHAN DIMULAI DI SINI ---
-        // Validasi ulang data yang dikirim dari halaman konfirmasi
         $validated = $request->validate([
             'nama_lengkap'      => 'required|string|max:255',
             'no_hp'             => 'required|string|max:15',
@@ -117,19 +115,18 @@ class KunjunganControllerCust extends Controller
 
         $tipeKunjungan = TipeKunjungan::find($validated['tipe_kunjungan_id']);
 
-        // Validasi kustom: jika Sewa Tempat, dewasa harus min 1
         if ($tipeKunjungan && $tipeKunjungan->nama_tipe === 'Umum' && $validated['jumlah_dewasa'] < 1) {
-             // Seharusnya ini tidak terjadi jika handleForm benar, tapi sebagai pengaman
             return back()->withInput()->withErrors(['jumlah_dewasa' => 'Sewa Tempat memerlukan minimal 1 orang dewasa.']);
         }
-        // --- PERUBAHAN SELESAI DI SINI ---
 
-
-        // PERHITUNGAN ULANG BIAYA DI BACKEND (PENTING UNTUK KEAMANAN)
         $finalTotalBiaya = $this->calculateTotalCost($tipeKunjungan, $validated);
+        $pelanggan = Auth::guard('pelanggan')->user();
 
-        Kunjungan::create([
-            'pelanggan_id'      => Auth::guard('pelanggan')->id(),
+        // Generate unique order ID untuk Midtrans
+        $midtransOrderId = 'KNJ-' . strtoupper(\Illuminate\Support\Str::random(6)) . '-' . time();
+
+        $kunjungan = Kunjungan::create([
+            'pelanggan_id'      => $pelanggan->id,
             'tipe_id'           => $validated['tipe_kunjungan_id'],
             'tanggal'           => $validated['tanggal_kunjungan'],
             'jam'               => $validated['jam_kunjungan'] . ':00',
@@ -137,14 +134,60 @@ class KunjunganControllerCust extends Controller
             'jumlah_anak'       => $validated['jumlah_anak'],
             'jumlah_balita'     => $validated['jumlah_balita'],
             'total_biaya'       => $finalTotalBiaya,
-            'status'            => 'Dijadwalkan',
+            'status'            => 'Menunggu Pembayaran',
+            'payment_status'    => 'unpaid',
+            'midtrans_order_id' => $midtransOrderId,
         ]);
 
-        // Hapus data dari sesi setelah berhasil disimpan
+        // Generate Midtrans Snap Token
+        try {
+            \Midtrans\Config::$serverKey = config('midtrans.server_key');
+            \Midtrans\Config::$isProduction = config('midtrans.is_production');
+            \Midtrans\Config::$isSanitized = config('midtrans.is_sanitized');
+            \Midtrans\Config::$is3ds = config('midtrans.is_3ds');
+
+            $payload = [
+                'transaction_details' => [
+                    'order_id' => $midtransOrderId,
+                    'gross_amount' => (int) $finalTotalBiaya,
+                ],
+                'customer_details' => [
+                    'first_name' => $validated['nama_lengkap'],
+                    'email' => $pelanggan->email,
+                    'phone' => $validated['no_hp'],
+                ],
+                'item_details' => [
+                    [
+                        'id' => 'KUNJUNGAN-' . $tipeKunjungan->id,
+                        'name' => 'Kunjungan ' . $tipeKunjungan->nama_tipe,
+                        'price' => (int) $finalTotalBiaya,
+                        'quantity' => 1,
+                    ]
+                ],
+                // Callbacks untuk redirect setelah pembayaran
+                'callbacks' => [
+                    'finish' => url('/customer/payment/finish'),
+                    'unfinish' => url('/customer/payment/unfinish'),
+                    'error' => url('/customer/payment/error'),
+                ],
+            ];
+
+            $snapToken = \Midtrans\Snap::getSnapToken($payload);
+            $kunjungan->update(['snap_token' => $snapToken, 'payment_status' => 'pending']);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Midtrans Kunjungan Error: ' . $e->getMessage());
+            $snapToken = null;
+        }
+
         session()->forget('form_data_kunjungan');
 
-        return redirect()->route('kunjungan.index')
-            ->with('success', 'Kunjungan Anda telah berhasil dijadwalkan!');
+        // Redirect ke halaman payment process kunjungan
+        return Inertia::render('Customer/Kunjungan/PaymentProcess', [
+            'kunjungan' => $kunjungan->load('tipe'),
+            'snapToken' => $snapToken,
+            'clientKey' => config('midtrans.client_key'),
+            'snapUrl' => config('midtrans.snap_url'),
+        ]);
     }
 
     /**

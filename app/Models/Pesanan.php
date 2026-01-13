@@ -26,6 +26,11 @@ class Pesanan extends Model
         'ekspedisi',
         'estimasi',
         'tanggal',
+        // Payment columns
+        'payment_status',
+        'snap_token',
+        'midtrans_order_id',
+        'paid_at',
     ];
 
     /**

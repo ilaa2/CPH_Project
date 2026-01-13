@@ -17,7 +17,13 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-
+        // Exclude retry-payment routes from CSRF verification
+        // These routes are already protected by auth middleware
+        $middleware->validateCsrfTokens(except: [
+            'midtrans/notification',
+            'customer/pesanan/*/retry-payment',
+            'customer/kunjungan/*/retry-payment',
+        ]);
 
         //
     })

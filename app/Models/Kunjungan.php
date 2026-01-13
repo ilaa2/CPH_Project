@@ -21,6 +21,11 @@ class Kunjungan extends Model
         'jumlah_anak',
         'jumlah_balita',
         'total_biaya',
+        // Payment columns
+        'payment_status',
+        'snap_token',
+        'midtrans_order_id',
+        'paid_at',
     ];
 
 
