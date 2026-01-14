@@ -136,8 +136,8 @@ function FooterNote({ user }) {
                     <h3 className="font-semibold text-gray-800 mb-4">Kontak</h3>
                     <ul className="space-y-3 text-sm">
                         <li className="flex items-center gap-2 text-gray-600">Duri, Riau</li>
-                        <li className="flex items-center gap-2 text-gray-600">+62 8211 0987 211</li>
-                        <li className="flex items-center gap-2 text-gray-600">info@centralpalantea.com</li>
+                        <li className="flex items-center gap-2 text-gray-600">+62 852-1571-8965</li>
+                        <li className="flex items-center gap-2 text-gray-600">centralpalantea@gmail.com</li>
                     </ul>
                 </div>
             </div>

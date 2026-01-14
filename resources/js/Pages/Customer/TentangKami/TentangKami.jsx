@@ -4,46 +4,6 @@ import { FiFacebook, FiGlobe, FiExternalLink } from 'react-icons/fi';
 import { FaTiktok, FaWhatsapp } from 'react-icons/fa';
 
 export default function TentangKami({ auth, galleryImages }) {
-    // ... (mediaLinks array is unchanged)
-    const mediaLinks = [
-        {
-            name: 'DETAK24COM',
-            url: 'https://detak24.com/central-palantea-edukasi-anak-sekolah-tanam-sayur-mayur-di-kota-duri/',
-            title: 'Central Palantea, Edukasi Anak Sekolah Tanam Sayur Mayur di Kota Duri'
-        },
-        {
-            name: 'classnews.id',
-            url: 'https://classnews.id/agrowisata-perkotaan-central-palantea-edukasi-anak-sekolah-tanam-sayur-mayur-hidroponik/',
-            title: 'Agrowisata Perkotaan Central Palantea Edukasi Anak Sekolah'
-        },
-        {
-            name: 'RIAU24JAM.COM',
-            url: 'https://riau24jam.com/2024/11/10/central-palantea-kota-duri-nikmati-sensasi-alam-dan-edukasi/',
-            title: 'Nikmati Sensasi Alam dan Edukasi di Central Palantea'
-        },
-        {
-            name: 'hariantimes.com',
-            url: 'https://hariantimes.com/read-14173-2024-11-10-kunjungi-central-palantea-central-kota-duri-bagus-santoso-ini-kerja-bagus-dan-menginspirasi.html',
-            title: 'Kunjungi Central Palantea, Bagus Santoso: Ini Kerja Bagus dan Menginspirasi'
-        },
-        
-        {
-            name: 'infoduri',
-            url: 'https://vt.tiktok.com/ZSU6WGYvU/',
-            title: 'Liputan Video di TikTok oleh Infoduri'
-        },
-        {
-            name: 'indoduri.visit',
-            url: 'https://www.instagram.com/p/DOCkUAlE8pt/',
-            title: 'Liputan Kunjungan di Instagram oleh Indoduri Visit'
-        },
-        {
-            name: 'Duri Pos',
-            url: 'https://www.duripos.com/2024/11/10/edukasi-anak-sekolah-tanam-sayur-mayur-kota-duri/',
-            title: 'Edukasi Anak Sekolah Tanam Sayur Mayur Kota Duri'
-        }
-    ];
-
     const WhatsAppButton = () => (
         <a
             href="https://wa.me/6285215718965"
@@ -60,8 +20,8 @@ export default function TentangKami({ auth, galleryImages }) {
         <>
             <Head title="Tentang Kami" />
             <WhatsAppButton />
-            <main className="py-12">
-                <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+            <main className="py-12 bg-gray-50">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
                     {/* All the sections from the original component */}
                     {/* Bagian Profil Perusahaan */}
                     <section className="bg-white p-8 rounded-lg shadow-md">
@@ -69,7 +29,7 @@ export default function TentangKami({ auth, galleryImages }) {
                             {/* Kolom Gambar */}
                             <div className="w-full h-80 rounded-lg overflow-hidden shadow-lg">
                                 <img
-                                    src={galleryImages && galleryImages.length > 0 ? `/${galleryImages[0]}` : 'https://via.placeholder.com/500x320?text=Kebun+Hidroponik'}
+                                    src="/storage/galeri/foto-palantea-1.jpg"
                                     alt="Kebun Central Palantea Hidroponik"
                                     className="w-full h-full object-cover"
                                 />
@@ -159,69 +119,6 @@ export default function TentangKami({ auth, galleryImages }) {
                                     Buka di Google Maps
                                 </span>
                             </a>
-                        </div>
-                    </section>
-
-                    {/* Bagian Liputan Media */}
-                    <section className="bg-white p-8 rounded-lg shadow-md">
-                        <h2 className="text-3xl font-bold text-center text-gray-800 mb-8">Liputan Media</h2>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {mediaLinks.map((link) => {
-                                // ... (mapping logic is unchanged)
-                                const getFallback = (name) => name.charAt(0).toUpperCase();
-                                const getLogoUrl = (url) => {
-                                    if (!url || url === '#') return null;
-                                    try {
-                                        const hostname = new URL(url).hostname;
-                                        return `https://logo.clearbit.com/${hostname}`;
-                                    } catch (error) {
-                                        return null;
-                                    }
-                                };
-                                const logoUrl = getLogoUrl(link.url);
-                                return (
-                                    <div
-                                        key={link.name}
-                                        className="bg-gray-50 border border-gray-200 rounded-lg shadow-sm flex flex-col transition-all duration-300 hover:shadow-lg hover:border-green-300"
-                                    >
-                                        <div className="p-6 flex-grow flex flex-col">
-                                            <div className="flex items-center mb-4">
-                                                {logoUrl ? (
-                                                    <img
-                                                        src={logoUrl}
-                                                        alt={`${link.name} logo`}
-                                                        className="w-10 h-10 object-contain mr-4"
-                                                        onError={(e) => {
-                                                            e.currentTarget.style.display = 'none';
-                                                            const fallback = e.currentTarget.nextElementSibling;
-                                                            if (fallback) fallback.style.display = 'flex';
-                                                        }}
-                                                    />
-                                                ) : null}
-                                                <div
-                                                    style={{ display: logoUrl ? 'none' : 'flex' }}
-                                                    className="w-10 h-10 bg-green-100 text-green-700 font-bold text-xl rounded-full items-center justify-center mr-4"
-                                                >
-                                                    {getFallback(link.name)}
-                                                </div>
-                                                <h3 className="font-bold text-gray-800 text-lg">{link.name}</h3>
-                                            </div>
-                                            <p className="text-gray-600 mb-4 flex-grow">
-                                                {link.title}
-                                            </p>
-                                            <a
-                                                href={link.url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center justify-center px-4 py-2 bg-green-600 text-white font-semibold rounded-lg text-sm hover:bg-green-700 transition-colors duration-300 mt-auto"
-                                            >
-                                                Baca Selengkapnya
-                                                <FiExternalLink className="ml-2" />
-                                            </a>
-                                        </div>
-                                    </div>
-                                );
-                            })}
                         </div>
                     </section>
                 </div>

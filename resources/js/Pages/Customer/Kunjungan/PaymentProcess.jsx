@@ -108,9 +108,15 @@ export default function PaymentProcess({ auth, kunjungan, snapToken, clientKey, 
                                     <div className="flex justify-between">
                                         <span className="text-gray-600">Pengunjung</span>
                                         <span className="font-medium">
-                                            {kunjungan?.jumlah_dewasa} Dewasa, {kunjungan?.jumlah_anak} Anak
+                                            {kunjungan?.tipe?.nama_tipe === 'Outing Class'
+                                                ? `${kunjungan?.jumlah_anak || 0} Anak`
+                                                : `${kunjungan?.jumlah_dewasa || 0} Dewasa, ${kunjungan?.jumlah_anak || 0} Anak`
+                                            }
                                         </span>
                                     </div>
+                                    {kunjungan?.tipe?.nama_tipe === 'Outing Class' && (
+                                        <p className="text-xs text-gray-500 text-right">* Guru/pendamping gratis masuk</p>
+                                    )}
                                     <div className="flex justify-between pt-2 border-t text-lg font-bold text-green-600">
                                         <span>Total Biaya</span>
                                         <span>{formatCurrency(kunjungan?.total_biaya)}</span>

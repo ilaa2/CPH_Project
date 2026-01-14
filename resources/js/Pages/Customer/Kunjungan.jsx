@@ -60,12 +60,30 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     };
 
+    // Fungsi untuk mendapatkan tipe_id berdasarkan query param ?type=umum atau ?type=outing
+    const getInitialTipeId = () => {
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            const typeParam = urlParams.get('type');
+
+            if (typeParam === 'umum') {
+                const umumTipe = tipeKunjungan.find(t => t.nama_tipe.toLowerCase() === 'umum');
+                if (umumTipe) return umumTipe.id;
+            } else if (typeParam === 'outing') {
+                const outingTipe = tipeKunjungan.find(t => t.nama_tipe.toLowerCase().includes('outing'));
+                if (outingTipe) return outingTipe.id;
+            }
+        }
+        // Default: tipe pertama
+        return tipeKunjungan.length > 0 ? tipeKunjungan[0].id : '';
+    };
+
     const { data, setData, post, processing, errors, reset } = useForm({
         nama_lengkap: auth?.pelanggan?.nama || '',
         no_hp: auth?.pelanggan?.telepon || '',
         tanggal_kunjungan: '',
         jam_kunjungan: '',
-        tipe_kunjungan_id: tipeKunjungan.length > 0 ? tipeKunjungan[0].id : '',
+        tipe_kunjungan_id: getInitialTipeId(),
         jumlah_dewasa: 1,
         jumlah_anak: 0,
         jumlah_balita: 0,
@@ -279,6 +297,10 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6">
                                         <div className="md:col-span-1"> {/* Dibuat agar lebarnya sama */}
                                             <InputField id="jumlah_anak" label="Jumlah Anak (>2 thn)" description="Total peserta anak di atas 2 tahun" type="number" value={data.jumlah_anak} onChange={e => setData('jumlah_anak', Math.max(0, Number(e.target.value)))} error={errors.jumlah_anak} icon={<FiUsers />} min="0" required />
+                                            <p className="text-xs text-green-600 mt-2 flex items-center gap-1">
+                                                <span className="text-green-500">✓</span>
+                                                Guru/pendamping gratis masuk (tidak dapat buket sayur)
+                                            </p>
                                         </div>
                                     </div>
                                 )}

@@ -324,7 +324,7 @@ class CheckoutController extends Controller
 
         return Inertia::render('Customer/Checkout/Checkout2', [
             'pelanggan' => Auth::guard('pelanggan')->user(),
-            'savedAddress' => $alamat,
+            'alamat' => $alamat, // Fix prop name mismatch (was savedAddress)
             'cartItems' => $cartItems,
             'shippingOptions' => $shippingOptions,
             'checkoutMethod' => $method,
@@ -340,6 +340,7 @@ class CheckoutController extends Controller
             'pengiriman.name' => 'required|string',
             'pengiriman.price' => 'required|numeric',
             'pengiriman.description' => 'required|string',
+            'pengiriman.extra_packaging' => 'nullable|boolean', // Allow extra packaging flag
         ]);
         session(['checkout_shipping' => $validated['pengiriman']]);
         return redirect()->route('checkout.summary');

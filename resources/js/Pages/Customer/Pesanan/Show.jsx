@@ -312,13 +312,13 @@ export default function Show({ pesanan, auth }) {
             <main className="bg-gray-50 min-h-screen py-8 sm:py-12">
                 <div className="max-w-4xl mx-auto px-4">
 
-                    {/* Back Button */}
+                    {/* Back Button - Modern Style */}
                     <Link
                         href={route('customer.pesanan.index')}
-                        className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 transition"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow transition-all mb-6 group"
                     >
-                        <FiArrowLeft className="mr-2" />
-                        Kembali ke Riwayat Pesanan
+                        <FiArrowLeft className="text-green-600 group-hover:-translate-x-1 transition-transform" />
+                        <span>Kembali ke Riwayat Pesanan</span>
                     </Link>
 
                     <div className="bg-white rounded-2xl shadow-xl overflow-hidden">

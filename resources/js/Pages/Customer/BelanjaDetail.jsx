@@ -1,5 +1,5 @@
 import { Head, Link, router, usePage } from '@inertiajs/react'; // DIUBAH: Tambah usePage
-import { FiShoppingCart } from 'react-icons/fi';
+import { FiShoppingCart, FiArrowLeft } from 'react-icons/fi';
 import React, { useState } from 'react';
 import CustomerLayout from '@/Layouts/CustomerLayout';
 
@@ -112,12 +112,11 @@ export default function BelanjaDetail({ product, reviews = [], reviewStats = { t
                             <div className="flex items-center gap-4">
                                 <Link
                                     href={product.kategori ? `/customer/belanja?category=${product.kategori.id}` : '/customer/belanja'}
-                                    className="flex items-center justify-center w-10 h-10 rounded-full bg-white border border-gray-200 text-gray-500 hover:text-green-600 hover:border-green-300 hover:bg-green-50 transition-all shadow-sm"
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow transition-all group shrink-0"
                                     title="Kembali"
                                 >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                                    </svg>
+                                    <FiArrowLeft className="text-green-600 group-hover:-translate-x-1 transition-transform" />
+                                    <span className="hidden sm:inline">Kembali</span>
                                 </Link>
                                 <div className="flex-1 min-w-0">
                                     {product.kategori && (
@@ -156,6 +155,20 @@ export default function BelanjaDetail({ product, reviews = [], reviewStats = { t
                                                 <span className="w-24 font-semibold text-gray-500">Stok</span>
                                                 <span className="font-semibold text-gray-800">{product.stok} Tersedia</span>
                                             </div>
+
+                                            {/* Weight Info in Detail Section */}
+                                            {(product.kategori?.nama_kategori?.includes('Sayur') || product.nama?.includes('Sayur')) && (
+                                                <div className="flex items-center">
+                                                    <span className="w-24 font-semibold text-gray-500">Berat</span>
+                                                    <span className="font-semibold text-gray-800">250g / pack</span>
+                                                </div>
+                                            )}
+                                            {(product.kategori?.nama_kategori?.includes('Buah') || product.nama?.includes('Buah')) && !product.kategori?.nama_kategori?.includes('Sayur') && (
+                                                <div className="flex items-center">
+                                                    <span className="w-24 font-semibold text-gray-500">Berat</span>
+                                                    <span className="font-semibold text-gray-800">500g / pack</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="border-t pt-4 mt-4">

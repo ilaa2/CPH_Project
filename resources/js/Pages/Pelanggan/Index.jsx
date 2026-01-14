@@ -44,7 +44,7 @@ const PelangganForm = ({ isEditing, model, onSubmit, onCancel }) => {
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">
-        {isEditing ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}
+        {isEditing ? 'Edit Customer' : 'Tambah Customer Baru'}
       </h2>
 
       {/* Nama */}
@@ -147,7 +147,7 @@ export default function PelangganList({ pelanggan, filters }) {
   const handleDelete = (id) => {
     Swal.fire({
       title: 'Yakin ingin menghapus?',
-      text: "Data pelanggan akan dihapus permanen.",
+      text: "Data customer akan dihapus permanen.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
@@ -164,13 +164,13 @@ export default function PelangganList({ pelanggan, filters }) {
   return (
     <Mainbar header={
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">Pelanggan</h2>
+        <h2 className="text-xl font-semibold text-gray-800">Customer</h2>
         <button onClick={() => openModal(false)} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105">
-          + Tambah Pelanggan
+          + Tambah Customer
         </button>
       </div>
     }>
-      <Head title="Daftar Pelanggan" />
+      <Head title="Daftar Customer" />
 
       <div className="p-6 space-y-6">
         <FilterHeader
@@ -179,7 +179,7 @@ export default function PelangganList({ pelanggan, filters }) {
           onTabChange={() => { }}
           searchValue={searchValue}
           onSearchChange={handleSearchChange}
-          searchPlaceholder="Cari nama pelanggan..."
+          searchPlaceholder="Cari nama customer..."
         />
 
         <div className="overflow-x-auto bg-white rounded-xl shadow-md">

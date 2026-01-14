@@ -154,6 +154,96 @@ Alur kerja ini memastikan bahwa setiap pengembangan fitur baru memiliki jejak pe
 
 ### Riwayat Perubahan
 
+**Selasa, 14 Januari 2026**
+*   **Halaman Landing Kunjungan (Baru):**
+    *   **Tujuan:** Membuat halaman pembuka yang menarik sebelum form booking, menjelaskan dua tipe kunjungan dengan visualisasi foto-foto dari galeri.
+    *   **Hero Section:** Background foto galeri, judul "Jelajahi Kebun Hidroponik Kami", deskripsi, dan tombol "Mulai Reservasi".
+    *   **Pilih Tipe Kunjungan:** Dua card modern untuk Kunjungan Umum (keluarga, pasangan, komunitas) dan Outing Class (sekolah). Masing-masing menampilkan foto, deskripsi, fasilitas, dan harga.
+    *   **Info Section:** Lokasi, jam buka, dan spot foto.
+    *   **Galeri Kegiatan:** Grid 4 foto dari folder galeri.
+    *   **CTA Section:** Call-to-action WhatsApp.
+    *   **Routing:** URL `/customer/kunjungan` sekarang menampilkan landing page. Form booking dipindah ke `/customer/kunjungan/form`.
+    *   **Files:** `KunjunganLanding.jsx` (baru), `KunjunganControllerCust.php` (updated), `routes/web.php` (updated).
+
+*   **Redesign Total Halaman Dashboard/Beranda (Modern UI):**
+    *   **Hero Section:** Implementasi hero section baru dengan background image (`SlideA.jpg`), gradient overlay semi-transparan, judul "Rasakan Pengalaman Berwisata di Kebun", dan dual CTA buttons (Jadwalkan Kunjungan + Belanja Sekarang).
+    *   **Services Section:** 3 modern cards dengan icon dan deskripsi untuk layanan utama (Belanja Sayur, Jadwalkan Kunjungan, Pengiriman Fleksibel).
+    *   **Products Section:** Grid produk responsif dengan category filter pills (Semua, Sayur, Buah, Bibit, Nutrisi). Menampilkan best seller dari database dengan Add to Cart functionality.
+    *   **Why Choose Us Section:** 4 stat cards dengan emoji (🌿 100% Fresh, 🛡️ Tanpa Pestisida, 🚀 Pengiriman Cepat, 📚 Kunjungan Edukasi) pada background gradient hijau premium.
+    *   **Testimonials Section:** Swiper carousel dengan ulasan pelanggan, autoplay, dan pagination dots.
+    *   **CTA Banner:** Section "Ingin Lihat Kebun Langsung?" dengan gradient hijau dan tombol ajakan kunjungan.
+    *   **Backend Update:** Memperbarui `WelcomeController.php` untuk menyediakan `bestSellerProducts` dan `testimonials` data dari database dengan caching 30 menit.
+    *   **CSS Enhancement:** Menambahkan custom styles di `app.css` untuk animasi fadeInUp, Swiper pagination styling, card hover effects, dan custom scrollbar.
+    *   **Bug Fix:** Memperbaiki error `FiLeaf` undefined dengan mengganti icon imports yang tidak valid dengan emoji strings.
+    *   **Responsive Design:** Verified responsif di desktop (1920px), tablet (768px), dan mobile (375px).
+
+*   **Fix Kunjungan Payment Booking Error:**
+    *   **Masalah:** Error `SQLSTATE[01000]: Data truncated for column 'status'` saat booking kunjungan dengan pembayaran.
+    *   **Akar Masalah:** Kolom `status` di tabel `kunjungan` hanya memiliki ENUM `['Dijadwalkan', 'Selesai']`, tetapi controller mencoba memasukkan nilai `'Menunggu Pembayaran'`.
+    *   **Solusi:** Membuat migration baru `2026_01_14_160800_add_menunggu_pembayaran_status_to_kunjungan_table.php` untuk menambahkan `'Menunggu Pembayaran'` ke enum status.
+    *   **Data Fix:** Migration juga memperbaiki data existing yang memiliki status tidak valid sebelum mengubah enum.
+
+*   **Perbaikan Tampilan Outing Class (Guru Gratis):**
+    *   **Klarifikasi Bisnis:** Untuk Outing Class, hanya jumlah anak yang dihitung untuk biaya. Guru/pendamping gratis masuk tapi tidak dapat buket sayur.
+    *   **Form Kunjungan:** Form sudah benar - hanya menampilkan input "Jumlah Anak" untuk Outing Class (tanpa dewasa/balita).
+    *   **Detail & Payment:** Memperbaiki tampilan di `Show.jsx` dan `PaymentProcess.jsx` untuk menampilkan info yang sesuai:
+        *   Outing Class: Hanya menampilkan "X Anak" dengan catatan "* Guru/pendamping gratis masuk"
+        *   Umum: Menampilkan rincian Dewasa, Anak, Balita seperti biasa.
+
+*   **Fix 404 Error Saat Refresh Halaman Payment Kunjungan:**
+    *   **Masalah:** Saat user refresh halaman pembayaran kunjungan, muncul error 404 karena URL `/customer/kunjungan/customer` adalah POST route.
+    *   **Solusi:** 
+        *   Menambahkan route GET `/customer/kunjungan/{id}/payment` untuk halaman pembayaran.
+        *   Menambahkan method `showPayment()` di `KunjunganControllerCust` untuk handle GET request.
+        *   Mengubah `store()` untuk redirect ke route GET payment baru, bukan `Inertia::render()`.
+    *   **Hasil:** Halaman pembayaran kunjungan sekarang bisa di-refresh tanpa error 404.
+
+*   **Rename Label UI: Pelanggan → Customer:**
+    *   **Sidebar:** Mengubah menu "Pelanggan" menjadi "Customer" di `Sidebar.jsx`.
+    *   **Halaman Customer (Index.jsx):** Mengubah semua label dan teks:
+        *   Page header: "Pelanggan" → "Customer"
+        *   Browser title: "Daftar Pelanggan" → "Daftar Customer"
+        *   Button: "+ Tambah Pelanggan" → "+ Tambah Customer"
+        *   Form modal: "Edit/Tambah Pelanggan" → "Edit/Tambah Customer"
+        *   Search placeholder: "Cari nama pelanggan..." → "Cari nama customer..."
+        *   Delete confirmation text
+
+*   **Perbaikan UX Form & Halaman Kunjungan Customer:**
+    *   **Form Booking:** Menambahkan catatan "✓ Guru/pendamping gratis masuk (tidak dapat buket sayur)" di bawah input jumlah anak untuk Outing Class di `Kunjungan.jsx`.
+    *   **Redesign Detail Kunjungan:** Total redesign `Show.jsx` dengan:
+        *   Header gradient dengan status badge dan total biaya
+        *   Grid layout modern untuk info (Tanggal, Waktu, Tipe, Pengunjung)
+        *   Tampilan jam kunjungan (sebelumnya tidak ditampilkan)
+        *   Tombol "Bayar Sekarang" untuk status Menunggu Pembayaran
+        *   Review section dengan prompt yang lebih menarik
+    *   **Back Button Styling:** Mengubah link "Kembali ke Riwayat" dari plain text menjadi styled button dengan rounded-full, shadow, dan hover effects.
+    *   **Cart Integration:** Halaman detail kunjungan sekarang menggunakan `CustomerLayout` sehingga cart panel berfungsi dengan baik.
+
+*   **Penyempurnaan Pembayaran & UI (Final Polish):**
+    *   **Payment Gateway Robustness:** Mengimplementasikan regenerasi otomatis `snap_token` pada `KunjunganControllerCust` jika token expired/hilang, mencegah error saat user kembali ke halaman pembayaran lama.
+    *   **Standarisasi Tombol Kembali:** Menyeragamkan desain tombol navigation (Back) di seluruh halaman customer (`Pesanan/Show`, `BelanjaDetail`, `Cart`, `KunjunganKonfirmasi`) menggunakan desain *pill-shaped* dengan ikon, senada dengan halaman detail kunjungan.
+
+*   **Penambahan Informasi Berat Produk:**
+    *   **Logic:** Menambahkan logika tampilan berat otomatis berdasarkan kategori/nama produk.
+    *   **Rule:**
+        *   Sayur / Sayuran Daun: **250g / pack**
+        *   Buah / Sayuran Buah: **500g / pack**
+    *   **Implementasi:** Ditampilkan secara eksklusif pada bagian **Detail** di Halaman Detail Produk (`BelanjaDetail.jsx`), tepat di bawah informasi stok. Tidak ditampilkan pada kartu produk di halaman belanja untuk menjaga tampilan tetap bersih.
+
+*   **Fitur Extra Packaging (Ekspedisi):**
+    *   **Fungsionalitas:** Menambahkan opsi opsional "Plastik + Box + Ice Gel" (+ Rp 10.000) pada langkah pemilihan pengiriman (Checkout).
+    *   **Logic:** Checkbox hanya muncul jika metode pengiriman yang dipilih adalah **Ekspedisi**.
+    *   **Integrasi:** Biaya tambahan otomatis ditambahkan ke total ongkir, dan keterangan "(+ Extra Packaging)" ditambahkan ke nama layanan pengiriman untuk kejelasan pada invoice/Midtrans.
+
+*   **Redesign Dashboard Customer (Shopee Style):**
+    *   **Layout:** Mengubah total tampilan halaman utama (`DashboardCust.jsx`) menjadi gaya E-commerce Marketplace modern.
+    *   **Komponen Baru:**
+        *   **Split Hero:** Slider utama + Banner promo bertumpuk di sisi kanan.
+        *   **Icon Menu:** Grid menu lingkaran untuk akses cepat kategori (Sayur, Buah, Promo, dll).
+        *   **Flash Sale:** Section dengan timer mundur dan scroll horizontal produk diskon (simulasi).
+        *   **Product Feed:** Grid produk "infinite" dengan tab (Rekomendasi, Terlaris, Produk Baru).
+    *   **Backend:** Update `WelcomeController.php` untuk menyediakan data `latestProducts` dan `flashSaleProducts` ke frontend.
+
 **Senin, 13 Januari 2026**
 *   **Implementasi Midtrans Payment Gateway (Full Integration):**
     *   **Konfigurasi:** Membuat `config/midtrans.php` untuk menyimpan kredensial server key, client key, dan pengaturan mode sandbox/production.

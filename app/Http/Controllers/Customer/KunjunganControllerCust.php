@@ -13,6 +13,14 @@ use Illuminate\Validation\Rule; // Tambahkan ini jika belum ada
 class KunjunganControllerCust extends Controller
 {
     /**
+     * Menampilkan halaman landing kunjungan (intro/penjelasan).
+     */
+    public function landing()
+    {
+        return Inertia::render('Customer/KunjunganLanding');
+    }
+
+    /**
      * Menampilkan halaman formulir awal untuk membuat kunjungan.
      */
     public function index()
@@ -181,13 +189,8 @@ class KunjunganControllerCust extends Controller
 
         session()->forget('form_data_kunjungan');
 
-        // Redirect ke halaman payment process kunjungan
-        return Inertia::render('Customer/Kunjungan/PaymentProcess', [
-            'kunjungan' => $kunjungan->load('tipe'),
-            'snapToken' => $snapToken,
-            'clientKey' => config('midtrans.client_key'),
-            'snapUrl' => config('midtrans.snap_url'),
-        ]);
+        // Redirect ke halaman payment GET route (agar bisa di-refresh)
+        return redirect()->route('customer.kunjungan.payment', $kunjungan->id);
     }
 
     /**
@@ -205,6 +208,86 @@ class KunjunganControllerCust extends Controller
 
         return Inertia::render('Customer/Kunjungan/Show', [
             'kunjungan' => $kunjungan,
+        ]);
+    }
+
+    /**
+     * Menampilkan halaman pembayaran kunjungan (GET - untuk handle refresh).
+     */
+    public function showPayment(Kunjungan $kunjungan)
+    {
+        // Pastikan kunjungan ini milik pelanggan yang sedang login
+        if ($kunjungan->pelanggan_id !== Auth::guard('pelanggan')->id()) {
+            abort(403, 'AKSES DITOLAK');
+        }
+
+        // Jika kunjungan sudah dibayar, redirect ke halaman detail
+        if ($kunjungan->payment_status === 'paid') {
+            return redirect()->route('customer.kunjungan.show', $kunjungan->id);
+        }
+
+        // Load relasi
+        $kunjungan->load('tipe');
+        
+        $snapToken = $kunjungan->snap_token;
+        
+        // Jika snap_token tidak ada, generate baru
+        if (!$snapToken) {
+            try {
+                \Midtrans\Config::$serverKey = config('midtrans.server_key');
+                \Midtrans\Config::$isProduction = config('midtrans.is_production');
+                \Midtrans\Config::$isSanitized = config('midtrans.is_sanitized');
+                \Midtrans\Config::$is3ds = config('midtrans.is_3ds');
+
+                // Generate order ID baru jika belum ada
+                if (!$kunjungan->midtrans_order_id) {
+                    $kunjungan->midtrans_order_id = 'KNJ-' . strtoupper(\Illuminate\Support\Str::random(6)) . '-' . time();
+                }
+
+                $pelanggan = Auth::guard('pelanggan')->user();
+                
+                $payload = [
+                    'transaction_details' => [
+                        'order_id' => $kunjungan->midtrans_order_id,
+                        'gross_amount' => (int) $kunjungan->total_biaya,
+                    ],
+                    'customer_details' => [
+                        'first_name' => $pelanggan->nama,
+                        'email' => $pelanggan->email,
+                        'phone' => $pelanggan->telepon ?? '',
+                    ],
+                    'item_details' => [
+                        [
+                            'id' => 'KUNJUNGAN-' . $kunjungan->tipe_id,
+                            'name' => 'Kunjungan ' . ($kunjungan->tipe->nama_tipe ?? 'Edukatif'),
+                            'price' => (int) $kunjungan->total_biaya,
+                            'quantity' => 1,
+                        ]
+                    ],
+                    'callbacks' => [
+                        'finish' => url('/customer/payment/finish'),
+                        'unfinish' => url('/customer/payment/unfinish'),
+                        'error' => url('/customer/payment/error'),
+                    ],
+                ];
+
+                $snapToken = \Midtrans\Snap::getSnapToken($payload);
+                $kunjungan->update([
+                    'snap_token' => $snapToken,
+                    'midtrans_order_id' => $kunjungan->midtrans_order_id,
+                    'payment_status' => 'pending',
+                ]);
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Midtrans Snap Token Generation Error: ' . $e->getMessage());
+                $snapToken = null;
+            }
+        }
+
+        return Inertia::render('Customer/Kunjungan/PaymentProcess', [
+            'kunjungan' => $kunjungan,
+            'snapToken' => $snapToken,
+            'clientKey' => config('midtrans.client_key'),
+            'snapUrl' => config('midtrans.snap_url'),
         ]);
     }
 

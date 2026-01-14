@@ -59,10 +59,11 @@ export default function KunjunganKonfirmasi({ auth, dataKunjungan }) {
                     <div className="flex items-center gap-4">
                         <button
                             onClick={() => window.history.back()}
-                            className="p-2.5 rounded-full bg-white/20 hover:bg-white/30 backdrop-blur-sm transition-all border border-white/20"
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm border border-white/20 rounded-full text-sm font-medium text-white transition-all group"
                             title="Kembali"
                         >
-                            <FiArrowLeft className="w-5 h-5 text-white" />
+                            <FiArrowLeft className="text-white group-hover:-translate-x-1 transition-transform" />
+                            <span>Kembali</span>
                         </button>
                         <div>
                             <h1 className="text-2xl sm:text-3xl font-bold text-white drop-shadow-sm">Konfirmasi & Pembayaran</h1>

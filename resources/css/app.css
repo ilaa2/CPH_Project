@@ -67,3 +67,69 @@ input:-webkit-autofill:active {
 .fc .fc-daygrid-day-frame {
     min-height: 1px !important; /* Force shrink, allows container height to take over */
 }
+
+/* ===================================================================
+ * Dashboard Redesign Custom Styles
+ * =================================================================== */
+
+/* Hero Section Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-animate {
+    animation: fadeInUp 0.8s ease-out forwards;
+}
+
+/* Swiper Pagination Custom Styling */
+.swiper-pagination-bullet {
+    @apply bg-gray-400 opacity-100;
+}
+
+.swiper-pagination-bullet-active {
+    @apply bg-green-600 scale-125;
+}
+
+/* Card Hover Effects */
+.card-lift {
+    @apply transition-all duration-300 ease-out;
+}
+
+.card-lift:hover {
+    @apply -translate-y-2 shadow-xl;
+}
+
+/* Smooth Scroll Behavior */
+html {
+    scroll-behavior: smooth;
+}
+
+/* Better Focus States for Accessibility */
+button:focus-visible,
+a:focus-visible {
+    @apply outline-none ring-2 ring-green-500 ring-offset-2;
+}
+
+/* Custom Scrollbar (Optional - Webkit only) */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+    @apply bg-green-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    @apply bg-green-500;
+}

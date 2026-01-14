@@ -41,8 +41,9 @@ Route::get('/customer/belanja/{product}', [BelanjaController::class, 'show'])->n
 
 // Route Ulasan Global dihapus - Ulasan sekarang diakses dari Riwayat Pesanan dan Detail Produk
 
-// Route Kunjungan (Public - Form Info)
-Route::get('/customer/kunjungan', [KunjunganControllerCust::class, 'index'])->name('kunjungan.index');
+// Route Kunjungan (Public - Landing Page & Form)
+Route::get('/customer/kunjungan', [KunjunganControllerCust::class, 'landing'])->name('kunjungan.landing');
+Route::get('/customer/kunjungan/form', [KunjunganControllerCust::class, 'index'])->name('kunjungan.index');
 
 
 Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(function () {
@@ -58,6 +59,7 @@ Route::middleware(['auth:pelanggan', 'verified'])->prefix('customer')->group(fun
     Route::post('/kunjungan/handle-form', [KunjunganControllerCust::class, 'handleForm'])->name('kunjungan.handle_form');
     Route::get('/kunjungan/konfirmasi', [KunjunganControllerCust::class, 'showKonfirmasi'])->name('kunjungan.konfirmasi');
     Route::post('/kunjungan/customer', [KunjunganControllerCust::class, 'store'])->name('customer.kunjungan.store');
+    Route::get('/kunjungan/{kunjungan}/payment', [KunjunganControllerCust::class, 'showPayment'])->name('customer.kunjungan.payment');
 
     // --- KUMPULAN ROUTE PROFIL ---
     Route::get('/profile', [CustomerProfileController::class, 'edit'])->name('customer.profile.edit');

@@ -68,8 +68,8 @@ export default function Belanja({ auth, products, filters }) {
     return (
         <>
             <Head title="Belanja" />
-            <div className="bg-white">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+            <div className="bg-gray-50 min-h-screen">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <div className="text-center mb-12">
                         <h1 className="text-4xl font-extrabold text-green-800 tracking-tight">Jelajahi Produk Segar Kami</h1>
                         <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-500">
@@ -134,9 +134,13 @@ function ProductCard({ product, onAddToCart }) { // DIUBAH: Hapus auth, tambah o
                 {product.stok === 0 && (
                     <span className="absolute top-3 left-3 bg-slate-700 text-white text-xs font-bold px-3 py-1 rounded-full">Habis</span>
                 )}
-                <span className="absolute bottom-3 right-3 bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
-                    {product.kategori ? product.kategori.nama_kategori : "Tanpa Kategori"}
-                </span>
+
+                <div className="absolute bottom-3 right-3 flex flex-col items-end gap-1">
+                    {/* Category Badge */}
+                    <span className="bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full shadow">
+                        {product.kategori ? product.kategori.nama_kategori : "Tanpa Kategori"}
+                    </span>
+                </div>
             </div>
 
             <div className="p-5 border-t flex flex-col flex-grow">

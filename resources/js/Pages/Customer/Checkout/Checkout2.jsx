@@ -7,9 +7,11 @@ import Swal from 'sweetalert2';
 
 export default function Checkout2({ alamat, auth, shippingOptions = [], shippingError, checkoutMethod, distance }) {
     const [selectedOption, setSelectedOption] = useState(null);
+    const [useExtraPackaging, setUseExtraPackaging] = useState(false); // New State
 
     const { data, setData, post, processing } = useForm({
         pengiriman: null,
+        extra_packaging: false, // Add to form data
     });
 
     const formatCurrency = (number) => {
@@ -24,6 +26,18 @@ export default function Checkout2({ alamat, auth, shippingOptions = [], shipping
             description: `Estimasi ${option.etd}`,
         });
     };
+
+    // Effect to update form data when options change
+    React.useEffect(() => {
+        if (selectedOption) {
+            setData('pengiriman', {
+                name: `${selectedOption.name} - ${selectedOption.service}${useExtraPackaging ? ' (+ Extra Packaging)' : ''}`,
+                price: selectedOption.cost + (useExtraPackaging ? 10000 : 0),
+                description: `Estimasi ${selectedOption.etd}`,
+                extra_packaging: useExtraPackaging
+            });
+        }
+    }, [selectedOption, useExtraPackaging]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -115,6 +129,29 @@ export default function Checkout2({ alamat, auth, shippingOptions = [], shipping
                             )}
 
                             {/* Shipping Options */}
+
+                            {/* Extra Packaging Option for Expedition */}
+                            {checkoutMethod === 'expedition' && !shippingError && shippingOptions.length > 0 && (
+                                <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-3 shadow-sm hover:border-green-300 transition-colors">
+                                    <input
+                                        type="checkbox"
+                                        id="extraPackaging"
+                                        checked={useExtraPackaging}
+                                        onChange={(e) => setUseExtraPackaging(e.target.checked)}
+                                        className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                    />
+                                    <label htmlFor="extraPackaging" className="flex-1 cursor-pointer select-none">
+                                        <div className="font-bold text-gray-800 flex items-center gap-2">
+                                            <FiPackage className="text-orange-500" />
+                                            Extra Packaging <span className="text-xs bg-green-100 text-green-800 px-2 py-0.5 rounded-full">+ Rp 10.000</span>
+                                        </div>
+                                        <p className="text-sm text-gray-500 mt-1">
+                                            Kemasan lebih aman dengan Plastik, Box, dan Ice Gel. <span className='text-orange-600 italic font-semibold text-xs'>(Sangat disarankan untuk produk segar)</span>
+                                        </p>
+                                    </label>
+                                </div>
+                            )}
+
                             {!shippingError && shippingOptions.length > 0 && (
                                 <div className="space-y-3">
                                     {shippingOptions.map((option, index) => {
@@ -217,6 +254,14 @@ export default function Checkout2({ alamat, auth, shippingOptions = [], shipping
                                                 <span className="text-gray-600">Estimasi</span>
                                                 <span className="font-medium text-gray-800">{selectedOption.etd}</span>
                                             </div>
+
+                                            {/* Extra Packaging Cost Summary */}
+                                            {useExtraPackaging && (
+                                                <div className="flex justify-between text-sm text-green-700 bg-green-50 p-2 rounded-lg mt-2">
+                                                    <span>+ Packaging</span>
+                                                    <span className="font-semibold">Rp 10.000</span>
+                                                </div>
+                                            )}
                                         </>
                                     )}
 
@@ -224,7 +269,7 @@ export default function Checkout2({ alamat, auth, shippingOptions = [], shipping
                                         <div className="flex justify-between items-center">
                                             <span className="font-bold text-gray-800">Ongkos Kirim</span>
                                             <span className="text-xl font-extrabold text-green-600">
-                                                {selectedOption ? formatCurrency(selectedOption.cost) : 'Rp -'}
+                                                {selectedOption ? formatCurrency(selectedOption.cost + (useExtraPackaging ? 10000 : 0)) : 'Rp -'}
                                             </span>
                                         </div>
                                     </div>

@@ -84,9 +84,12 @@ export default function Cart({ auth }) {
             <main className="py-10">
                 <div className="max-w-4xl mx-auto sm:px-6 lg:px-8 px-4">
                     <div className="flex items-center mb-6">
-                        <Link href={route('belanja.index')} className="text-green-600 hover:text-green-800 flex items-center">
-                            <FiArrowLeft className="mr-2" />
-                            Kembali Belanja
+                        <Link
+                            href={route('belanja.index')}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow transition-all group"
+                        >
+                            <FiArrowLeft className="text-green-600 group-hover:-translate-x-1 transition-transform" />
+                            <span>Kembali Belanja</span>
                         </Link>
                     </div>
 
