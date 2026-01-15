@@ -171,7 +171,7 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                         stokMenipis.map(p => (
                                             <div key={p.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
                                                 <div className="flex items-center gap-3">
-                                                    <img src={p.foto ? `/storage/${p.foto}` : 'https://via.placeholder.com/150'} alt="" className="w-8 h-8 rounded object-cover bg-gray-200" />
+                                                    <img src={p.gambar ? `/storage/${p.gambar}` : 'https://via.placeholder.com/150'} alt="" className="w-8 h-8 rounded object-cover bg-gray-200" />
                                                     <div>
                                                         <div className="font-medium text-gray-800 text-sm line-clamp-1">{p.nama}</div>
                                                         <div className="text-xs text-red-600 font-medium">Sisa: {p.stok} unit</div>
