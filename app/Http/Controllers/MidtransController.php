@@ -54,7 +54,17 @@ class MidtransController extends Controller
 
                 // Update order status based on payment
                 if ($paymentStatus === 'paid') {
-                    $pesanan->update(['status' => 'Diproses']);
+                    $pesanan->update(['status' => 'processed']);
+                    
+                    // === KURANGI STOK SAAT SETTLEMENT ===
+                    // Stok produk dikurangi hanya setelah pembayaran berhasil
+                    foreach ($pesanan->items as $item) {
+                        $produk = \App\Models\Produk::find($item->produk_id);
+                        if ($produk && $produk->stok >= $item->jumlah) {
+                            $produk->decrement('stok', $item->jumlah);
+                            Log::info("Stock reduced: {$produk->nama} - {$item->jumlah} units");
+                        }
+                    }
                 } elseif (in_array($paymentStatus, ['failed', 'expired'])) {
                     $pesanan->update(['status' => 'pending']); // Keep pending, allow retry
                 }
@@ -253,7 +263,7 @@ class MidtransController extends Controller
             $pesanan->update(['payment_status' => $paymentStatus]);
             
             if ($paymentStatus === 'paid') {
-                $pesanan->update(['status' => 'Diproses', 'paid_at' => now()]);
+                $pesanan->update(['status' => 'processed', 'paid_at' => now()]);
             }
 
             return inertia('Customer/Payment/PaymentResult', [

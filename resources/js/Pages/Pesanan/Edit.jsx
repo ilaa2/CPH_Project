@@ -2,259 +2,271 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import Mainbar from '@/Components/Bar/Mainbar';
 import Swal from 'sweetalert2';
 
-export default function Edit({ pesanan, pelangganList, produkList }) {
-  // Detect initial method based on stored data
-  const detectMethod = () => {
-    if (pesanan.metode_pengiriman === 'Ambil di Toko') return 'pickup';
-    if (pesanan.metode_pengiriman === 'Kurir Lokal') return 'local';
-    return 'shipping';
+export default function Edit({ pesanan }) {
+  // Normalize status for legacy data support
+  const normalizeStatus = (s) => {
+    if (!s) return 'pending';
+    const lower = s.toLowerCase();
+    if (lower === 'menunggu pembayaran') return 'pending';
+    if (lower === 'diproses') return 'processed';
+    if (lower === 'dikirim') return 'shipped';
+    if (lower === 'selesai') return 'completed';
+    return lower;
   };
+
+  const currentStatus = normalizeStatus(pesanan.status);
 
   const { data, setData, put, processing, errors } = useForm({
-    pelanggan_id: pesanan.pelanggan?.id || pesanan.id_pelanggan || '',
-    tanggal: pesanan.tanggal || '',
-    status: pesanan.status || 'Diproses',
-    metode_pengiriman: detectMethod(),
-    alamat_pengiriman: pesanan.alamat_pengiriman || '',
-    ekspedisi: pesanan.ekspedisi || '',
-    estimasi: pesanan.estimasi || '',
-    biaya_pengiriman: pesanan.biaya_pengiriman || 0,
-    items: pesanan.items?.map(i => ({
-      produk_id: i.produk_id,
-      jumlah: i.jumlah,
-    })) || [{ produk_id: '', jumlah: 1 }],
+    status: currentStatus,
+    nomor_resi: pesanan.nomor_resi || '',
   });
-
-  const handleChangeItem = (index, field, value) => {
-    const newItems = [...data.items];
-    newItems[index][field] = field === 'jumlah' ? parseInt(value) || 1 : value;
-    setData('items', newItems);
-  };
-
-  const addItem = () => {
-    setData('items', [...data.items, { produk_id: '', jumlah: 1 }]);
-  };
-
-  const removeItem = (index) => {
-    setData('items', data.items.filter((_, i) => i !== index));
-  };
-
-  const getMaxDays = (est) => {
-    if (!est) return 0;
-    const matches = est.match(/\d+/g);
-    return matches ? Math.max(...matches.map(Number)) : 0;
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log('[DEBUG] Updating order:', { id: pesanan.id, data });
-
-    put(route('pesanan.update', pesanan.id), {
+    put(route('admin.pesanan.update', pesanan.id), {
       onSuccess: () => {
-        Swal.fire({ icon: 'success', title: 'Berhasil', text: 'Pesanan berhasil diperbarui!' });
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil',
+          text: 'Status pesanan berhasil diperbarui!'
+        });
       },
       onError: (errs) => {
-        console.error('[DEBUG] Validation errors:', errs);
-        const msg = errs.message || Object.values(errs).flat().join(', ') || 'Terjadi kesalahan.';
+        const msg = errs.message || Object.values(errs).flat().join(', ') || 'Gagal memperbarui status.';
         Swal.fire({ icon: 'error', title: 'Gagal', text: msg });
       }
     });
   };
 
+  // Format Date (10 Okt 2025)
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('id-ID', {
+      day: 'numeric', month: 'short', year: 'numeric'
+    }).format(date);
+  };
+
+  // Format Currency
+  const formatRp = (num) => 'Rp ' + new Intl.NumberFormat('id-ID').format(num);
+
+  // Status Badge Color
+  const getStatusColor = (s) => {
+    const status = normalizeStatus(s);
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'processed': return 'bg-blue-100 text-blue-800';
+      case 'shipped': return 'bg-purple-100 text-purple-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const isCompleted = currentStatus === 'completed';
+  const showResiInput = ['processed', 'shipped'].includes(data.status);
+
+  // Calculate Subtotal from snapshot items to ensure accuracy
+  const subtotal = pesanan.items?.reduce((acc, item) => acc + (parseFloat(item.subtotal) || 0), 0) || 0;
+
   return (
-    <Mainbar header={<h2 className="text-xl font-semibold text-gray-800">Edit Pesanan</h2>}>
-      <Head title="Edit Pesanan" />
+    <Mainbar header={
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-semibold text-gray-800">Detail & Edit Status Pesanan</h2>
+        <Link
+          href={route('admin.pesanan.index')}
+          className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:text-gray-800 hover:bg-gray-50 font-medium text-sm transition-colors shadow-sm"
+        >
+          &larr; Kembali ke Daftar Pesanan
+        </Link>
+      </div>
+    }>
+      <Head title={`Edit Pesanan #${pesanan.nomor_pesanan}`} />
 
-      <div className="p-6 bg-white rounded-lg shadow">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
 
-          {/* ROW 1: Pelanggan & Tanggal */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">Pelanggan <span className="text-red-500">*</span></label>
-              <select
-                value={data.pelanggan_id}
-                onChange={(e) => setData('pelanggan_id', e.target.value)}
-                className="w-full border-gray-300 rounded"
-              >
-                <option value="">-- Pilih Pelanggan --</option>
-                {pelangganList.map((p) => (
-                  <option key={p.id} value={p.id}>{p.nama}</option>
-                ))}
-              </select>
-              {errors.pelanggan_id && <p className="text-sm text-red-600 mt-1">{errors.pelanggan_id}</p>}
-            </div>
+        {/* LEFT COLUMN: Order Info & Items */}
+        <div className="lg:col-span-2 space-y-6">
 
-            <div>
-              <label className="block text-sm font-medium mb-1">Tanggal Pesanan <span className="text-red-500">*</span></label>
-              <input
-                type="date"
-                value={data.tanggal}
-                onChange={(e) => setData('tanggal', e.target.value)}
-                className="w-full border-gray-300 rounded"
-              />
-              {errors.tanggal && <p className="text-sm text-red-600 mt-1">{errors.tanggal}</p>}
-            </div>
-          </div>
-
-          {/* ROW 2: Status */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Status Pesanan</label>
-            <select
-              value={data.status}
-              onChange={(e) => setData('status', e.target.value)}
-              className="w-full md:w-1/2 border-gray-300 rounded"
-            >
-              <option value="pending">Menunggu Pembayaran</option>
-              <option value="Diproses">Diproses</option>
-              <option value="Selesai">Selesai</option>
-            </select>
-            {errors.status && <p className="text-sm text-red-600 mt-1">{errors.status}</p>}
-          </div>
-
-          {/* ROW 3: Metode Pengiriman */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Metode Pengiriman <span className="text-red-500">*</span></label>
-            <div className="grid grid-cols-3 gap-4">
-              {[
-                { value: 'pickup', label: '🏪 Ambil di Toko', desc: 'Pelanggan ambil langsung' },
-                { value: 'local', label: '🛵 Kurir Lokal', desc: 'Pengiriman area Duri' },
-                { value: 'shipping', label: '📦 Ekspedisi', desc: 'JNE/J&T/Pos dll' },
-              ].map((opt) => (
-                <label
-                  key={opt.value}
-                  className={`p-4 border-2 rounded-lg cursor-pointer transition-all text-center ${data.metode_pengiriman === opt.value
-                      ? 'border-green-500 bg-green-50 ring-2 ring-green-200'
-                      : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                >
-                  <input
-                    type="radio"
-                    name="metode_pengiriman"
-                    value={opt.value}
-                    checked={data.metode_pengiriman === opt.value}
-                    onChange={(e) => setData('metode_pengiriman', e.target.value)}
-                    className="sr-only"
-                  />
-                  <div className="text-lg font-semibold">{opt.label}</div>
-                  <div className="text-xs text-gray-500">{opt.desc}</div>
-                </label>
-              ))}
-            </div>
-            {errors.metode_pengiriman && <p className="text-sm text-red-600 mt-1">{errors.metode_pengiriman}</p>}
-          </div>
-
-          {/* DYNAMIC FIELDS */}
-          {data.metode_pengiriman !== 'pickup' && (
-            <div className="p-4 bg-gray-50 rounded-lg border border-gray-200 space-y-4">
+          {/* Card: Order Info */}
+          <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Informasi Pesanan</h3>
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-1">Alamat Pengiriman <span className="text-red-500">*</span></label>
-                <textarea
-                  rows="2"
-                  value={data.alamat_pengiriman}
-                  onChange={(e) => setData('alamat_pengiriman', e.target.value)}
-                  placeholder={data.metode_pengiriman === 'local' ? 'Contoh: Jl. Sudirman No. 10, Duri' : 'Alamat lengkap'}
-                  className="w-full border-gray-300 rounded"
-                />
-                {errors.alamat_pengiriman && <p className="text-sm text-red-600 mt-1">{errors.alamat_pengiriman}</p>}
+                <label className="text-xs text-gray-500 uppercase font-semibold">Nomor Pesanan</label>
+                <div className="font-mono text-gray-800 font-bold">#{pesanan.nomor_pesanan}</div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 uppercase font-semibold">Tanggal Pesanan</label>
+                <div className="text-gray-800">{formatDate(pesanan.tanggal)}</div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 uppercase font-semibold">Pelanggan</label>
+                <div className="text-gray-800 font-medium">{pesanan.user?.nama || pesanan.user?.name || 'Guest'}</div>
+                <div className="text-sm text-gray-500">{pesanan.user?.email}</div>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 uppercase font-semibold">Status Saat Ini</label>
+                <div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(pesanan.status)}`}>
+                    {pesanan.status.toUpperCase()}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Card: Order Items (Read Only) */}
+          <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Detail Produk</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3">Produk</th>
+                    <th className="px-4 py-3 text-right">Harga</th>
+                    <th className="px-4 py-3 text-center">Qty</th>
+                    <th className="px-4 py-3 text-right">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pesanan.items?.map((item, index) => (
+                    <tr key={index} className="border-b hover:bg-gray-50">
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {item.produk?.nama || 'Produk Dihapus'}
+                      </td>
+                      <td className="px-4 py-3 text-right">{formatRp(item.subtotal / item.jumlah)}</td>
+                      <td className="px-4 py-3 text-center">{item.jumlah}</td>
+                      <td className="px-4 py-3 text-right font-bold text-gray-900">{formatRp(item.subtotal)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Card: Shipping Info (Read Only) */}
+          <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Informasi Pengiriman</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="text-xs text-gray-500 uppercase font-semibold">Metode</label>
+                <div className="font-semibold text-gray-800">{pesanan.metode_pengiriman}</div>
+
+                {pesanan.metode_pengiriman !== 'Ambil di Toko' && (
+                  <div className="mt-3">
+                    <label className="text-xs text-gray-500 uppercase font-semibold">Ekspedisi / Estimasi</label>
+                    <div className="text-gray-800">
+                      {pesanan.ekspedisi || pesanan.metode_pengiriman || '-'}
+                      {pesanan.estimasi && <span className="text-gray-500 text-sm"> ({pesanan.estimasi})</span>}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 uppercase font-semibold">Alamat Tujuan</label>
+                <p className="text-gray-700 bg-gray-50 p-3 rounded mt-1 border text-sm leading-relaxed">
+                  {pesanan.alamat_pengiriman}
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* RIGHT COLUMN: Status Manager & Summary */}
+        <div className="space-y-6">
+
+          {/* Card: Action / Status Manager */}
+          <div className="bg-white p-6 rounded-lg shadow border-2 border-indigo-50">
+            <h3 className="text-lg font-bold text-indigo-900 mb-4">Update Status</h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Status Pesanan</label>
+                <select
+                  value={data.status}
+                  onChange={(e) => setData('status', e.target.value)}
+                  disabled={isCompleted}
+                  className="w-full border-gray-300 rounded font-semibold focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:text-gray-500"
+                >
+                  <option value="pending">Pending (Menunggu Pembayaran)</option>
+                  <option value="processed">Processed (Diproses)</option>
+                  <option value="shipped">Shipped (Dikirim)</option>
+                  <option value="completed">Completed (Selesai)</option>
+                </select>
+                {errors.status && <p className="text-xs text-red-600 mt-1">{errors.status}</p>}
+                {isCompleted && <p className="text-xs text-gray-500 mt-1 italic">Status selesai tidak dapat diubah.</p>}
               </div>
 
-              {data.metode_pengiriman === 'shipping' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Nama Ekspedisi <span className="text-red-500">*</span></label>
-                    <input
-                      type="text"
-                      value={data.ekspedisi}
-                      onChange={(e) => setData('ekspedisi', e.target.value)}
-                      placeholder="JNE REG / J&T Express"
-                      className="w-full border-gray-300 rounded"
-                    />
-                    {errors.ekspedisi && <p className="text-sm text-red-600 mt-1">{errors.ekspedisi}</p>}
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">Estimasi Pengiriman</label>
-                    <input
-                      type="text"
-                      value={data.estimasi}
-                      onChange={(e) => setData('estimasi', e.target.value)}
-                      placeholder="2-3 Hari"
-                      className="w-full border-gray-300 rounded"
-                    />
-                    <p className="text-xs text-gray-500 mt-1">Disarankan maksimal 5 hari.</p>
-                    {getMaxDays(data.estimasi) > 5 && (
-                      <p className="text-xs text-yellow-600 font-bold mt-1">⚠️ Melebihi rekomendasi kesegaran!</p>
-                    )}
-                  </div>
+              {/* Input Resi hanya muncul jika processed/shipped */}
+              {showResiInput && (
+                <div className="animate-fade-in-down">
+                  <label className="block text-sm font-medium mb-1">Nomor Resi / Tracking Info</label>
+                  <input
+                    type="text"
+                    value={data.nomor_resi}
+                    onChange={(e) => setData('nomor_resi', e.target.value)}
+                    placeholder="Input nomor resi..."
+                    disabled={isCompleted}
+                    className="w-full border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
+                  />
+                  {errors.nomor_resi && <p className="text-xs text-red-600 mt-1">{errors.nomor_resi}</p>}
                 </div>
               )}
 
-              <div>
-                <label className="block text-sm font-medium mb-1">Biaya Pengiriman (Rp)</label>
-                <input
-                  type="number"
-                  min="0"
-                  value={data.biaya_pengiriman}
-                  onChange={(e) => setData('biaya_pengiriman', parseInt(e.target.value) || 0)}
-                  className="w-full border-gray-300 rounded"
-                />
+              {!isCompleted && (
+                <div className="pt-4 border-t flex justify-end items-center">
+                  <button
+                    type="submit"
+                    disabled={processing}
+                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                  >
+                    {processing ? 'Menyimpan...' : 'Update Status'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Card: Payment Summary */}
+          <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2">Ringkasan Pembayaran</h3>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between text-gray-600">
+                <span>Subtotal Produk</span>
+                <span>{formatRp(subtotal)}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Biaya Pengiriman</span>
+                <span>{formatRp(pesanan.biaya_pengiriman)}</span>
+              </div>
+              <div className="border-t pt-3 flex justify-between font-bold text-lg text-gray-900 mt-2">
+                <span>Total Bayar</span>
+                <span className="text-indigo-600">{formatRp(pesanan.total)}</span>
               </div>
             </div>
-          )}
-
-          {data.metode_pengiriman === 'pickup' && (
-            <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-blue-800 text-sm"><strong>Info:</strong> Biaya pengiriman otomatis Rp 0.</p>
-            </div>
-          )}
-
-          {/* PRODUK */}
-          <div>
-            <label className="block text-sm font-medium mb-2">Detail Produk <span className="text-red-500">*</span></label>
-            <div className="space-y-2">
-              {data.items.map((item, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <select
-                    value={item.produk_id}
-                    onChange={(e) => handleChangeItem(index, 'produk_id', e.target.value)}
-                    className="flex-1 border-gray-300 rounded"
-                  >
-                    <option value="">-- Pilih Produk --</option>
-                    {produkList.map((p) => (
-                      <option key={p.id} value={p.id}>{p.nama} (Stok: {p.stok})</option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.jumlah}
-                    onChange={(e) => handleChangeItem(index, 'jumlah', e.target.value)}
-                    className="w-20 border-gray-300 rounded"
-                  />
-                  {data.items.length > 1 && (
-                    <button type="button" onClick={() => removeItem(index)} className="text-red-600 hover:text-red-800 font-bold">✕</button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <button type="button" onClick={addItem} className="mt-2 text-green-600 text-sm hover:underline">+ Tambah Produk</button>
           </div>
 
-          {/* SUBMIT */}
-          <div className="flex justify-end gap-3 pt-4 border-t">
-            <Link href={route('pesanan.index')} className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">
-              Batal
-            </Link>
-            <button
-              type="submit"
-              disabled={processing}
-              className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
-            >
-              {processing ? 'Menyimpan...' : 'Simpan Perubahan'}
-            </button>
-          </div>
-        </form>
-      </div>
+          {[
+            'pending',
+            'processed',
+            'shipped',
+            'completed'
+          ].map(s => (
+            data.status === s ? (
+              <div key={s} className={`p-4 rounded-lg text-sm border font-medium ${getStatusColor(s).replace('text-', 'border-').replace('100', '200')}`}>
+                ℹ️ Info: {
+                  s === 'pending' ? 'Pesanan menunggu pembayaran. Item tidak dapat diubah.' :
+                    s === 'processed' ? 'Pesanan sedang disiapkan. Silakan input resi jika tersedia.' :
+                      s === 'shipped' ? 'Pesanan dikirim. Pastikan resi valid.' :
+                        'Pesanan selesai. Data terkunci permanen.'
+                }
+              </div>
+            ) : null
+          ))}
+
+        </div>
+      </form>
     </Mainbar>
   );
 }

@@ -80,17 +80,38 @@ export default function Checkout3({ cartItems, subtotal, alamat, pengiriman, aut
                         {/* Left Column - Order Details */}
                         <div className="lg:col-span-2 space-y-4">
                             {/* Preparation Notice for Pickup */}
-                            {isPickup && (
-                                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-                                    <FiClock className="text-amber-600 text-xl flex-shrink-0 mt-0.5" />
-                                    <div>
-                                        <p className="font-semibold text-amber-800">Estimasi Waktu Penyiapan</p>
-                                        <p className="text-sm text-amber-700">
-                                            Pesanan akan siap diambil dalam waktu <strong>15–30 menit</strong> setelah konfirmasi pembayaran.
-                                        </p>
+                            {isPickup && (() => {
+                                // Operating hours: 07:30 - 18:00
+                                const now = new Date();
+                                const hour = now.getHours();
+                                const minute = now.getMinutes();
+                                const currentTimeInMinutes = hour * 60 + minute;
+                                const openTime = 7 * 60 + 30; // 07:30
+                                const closeTime = 18 * 60; // 18:00
+
+                                const isWithinOperatingHours = currentTimeInMinutes >= openTime && currentTimeInMinutes < closeTime;
+
+                                let pickupMessage;
+                                if (isWithinOperatingHours) {
+                                    pickupMessage = (
+                                        <>Pesanan akan siap diambil dalam waktu <strong>15–30 menit</strong> setelah konfirmasi pembayaran.</>
+                                    );
+                                } else {
+                                    pickupMessage = (
+                                        <>Pesanan akan siap diambil <strong>besok mulai pukul 07:30 WIB</strong> (toko tutup pukul 18:00).</>
+                                    );
+                                }
+
+                                return (
+                                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                                        <FiClock className="text-amber-600 text-xl flex-shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold text-amber-800">Estimasi Waktu Penyiapan</p>
+                                            <p className="text-sm text-amber-700">{pickupMessage}</p>
+                                        </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
 
                             {/* Order Items */}
                             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">

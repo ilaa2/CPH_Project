@@ -6,6 +6,7 @@ use App\Models\Ulasan;
 use App\Models\UlasanFoto;
 use App\Models\Kunjungan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class UlasanController extends Controller
@@ -15,7 +16,7 @@ class UlasanController extends Controller
         $filter = $request->input('filter'); // 'produk' atau 'kunjungan'
 
         $ulasanQuery = Ulasan::with([
-            'pelanggan:id,nama,foto_profil',
+            'user:id,name,avatar',
             'pesanan',
             'produk', // Load produk relationship
             'kunjungan.tipe', // Memuat relasi 'tipe' dari 'kunjungan'
@@ -30,8 +31,8 @@ class UlasanController extends Controller
             ->when($request->input('kunjungan_id'), function ($query, $id) {
                 $query->where('kunjungan_id', $id);
             })
-            ->when($request->input('pelanggan_id'), function ($query, $id) {
-                $query->where('pelanggan_id', $id);
+            ->when($request->input('user_id'), function ($query, $id) {
+                $query->where('user_id', $id);
             })
             ->orderBy('tanggal', 'desc');
 
@@ -53,8 +54,8 @@ class UlasanController extends Controller
 
             return [
                 'id' => $item->id,
-                'nama' => $item->pelanggan->nama,
-                'foto_profil' => $item->pelanggan->foto_profil ? asset('storage/' . $item->pelanggan->foto_profil) : null,
+                'nama' => $item->user->name,
+                'foto_profil' => $item->user->avatar ? asset('storage/' . $item->user->avatar) : null,
                 'komentar' => $item->komentar,
                 'rating' => $item->rating,
                 'tanggal' => $item->tanggal,
@@ -63,6 +64,8 @@ class UlasanController extends Controller
                 })->toArray(),
                 'type' => $type,
                 'subject' => $subject,
+                'balasan' => $item->balasan,
+                'tanggal_balasan' => $item->tanggal_balasan,
             ];
         });
 
@@ -74,14 +77,14 @@ class UlasanController extends Controller
 
     public function welcome()
     {
-        $testimonials = Ulasan::with('pelanggan:id,nama')
+        $testimonials = Ulasan::with('user:id,name')
             ->orderBy('tanggal', 'desc')
             ->take(10) // ambil maksimal 10 terbaru
             ->get()
             ->map(function ($item) {
                 return [
                     'text' => $item->komentar,
-                    'name' => $item->pelanggan->nama,
+                    'name' => $item->user->name,
                     'rating' => $item->rating,
                     'role' => 'Pelanggan'
                 ];
@@ -100,7 +103,7 @@ class UlasanController extends Controller
 
     public function indexCust()
     {
-        $ulasanQuery = Ulasan::with('pelanggan:id,nama,foto_profil', 'fotos', 'pesanan', 'kunjungan.tipe')
+        $ulasanQuery = Ulasan::with('user:id,name,avatar', 'fotos', 'pesanan', 'kunjungan.tipe')
             ->orderBy('tanggal', 'desc');
 
         $semuaUlasan = $ulasanQuery->get();
@@ -119,8 +122,8 @@ class UlasanController extends Controller
 
             return [
                 'id' => $item->id,
-                'nama' => $item->pelanggan->nama,
-                'foto_profil' => $item->pelanggan->foto_profil ? asset('storage/' . $item->pelanggan->foto_profil) : null,
+                'nama' => $item->user->name,
+                'foto_profil' => $item->user->avatar ? asset('storage/' . $item->user->avatar) : null,
                 'komentar' => $item->komentar,
                 'rating' => $item->rating,
                 'tanggal' => $item->tanggal,
@@ -178,13 +181,10 @@ class UlasanController extends Controller
         ]);
 
         foreach ($request->reviews as $reviewData) {
-            // Skip if rating is 0 or null (optional, depends on UX)
-            // But we requested rating required so it should be there.
-            
             $ulasan = Ulasan::create([
                 'pesanan_id' => $request->pesanan_id,
                 'produk_id' => $reviewData['produk_id'],
-                'pelanggan_id' => auth('pelanggan')->id(),
+                'user_id' => Auth::id(),
                 'rating' => $reviewData['rating'],
                 'komentar' => $reviewData['komentar'] ?? '',
                 'tanggal' => now(),
@@ -208,8 +208,8 @@ class UlasanController extends Controller
 
     public function createForKunjungan(Kunjungan $kunjungan)
     {
-        // Pastikan hanya pelanggan yang bersangkutan yang bisa memberi ulasan
-        if ($kunjungan->pelanggan_id !== auth('pelanggan')->id()) {
+        // Pastikan hanya user yang bersangkutan yang bisa memberi ulasan
+        if ($kunjungan->user_id !== Auth::id()) {
             abort(403);
         }
 
@@ -228,15 +228,15 @@ class UlasanController extends Controller
             'foto_ulasan.*' => 'image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        // Cek apakah kunjungan ini milik pelanggan yang sedang login
+        // Cek apakah kunjungan ini milik user yang sedang login
         $kunjungan = Kunjungan::findOrFail($request->kunjungan_id);
-        if ($kunjungan->pelanggan_id !== auth('pelanggan')->id()) {
+        if ($kunjungan->user_id !== Auth::id()) {
             abort(403);
         }
 
         $ulasan = Ulasan::create([
             'kunjungan_id' => $request->kunjungan_id,
-            'pelanggan_id' => auth('pelanggan')->id(),
+            'user_id' => Auth::id(),
             'rating' => $request->rating,
             'komentar' => $request->komentar,
             'tanggal' => now(),
@@ -254,6 +254,7 @@ class UlasanController extends Controller
 
         return redirect()->route('customer.pesanan.index')->with('success', 'Ulasan untuk kunjungan berhasil dikirim.');
     }
+
     public function reply(Request $request, $id)
     {
         $request->validate([

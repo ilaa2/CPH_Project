@@ -21,7 +21,7 @@ export default function Edit({ auth, kunjungan }) {
 
     const submit = (e) => {
         e.preventDefault();
-        put(route('kunjungan.update', kunjungan.id));
+        put(route('admin.kunjungan.update', kunjungan.id));
     };
 
     return (
@@ -160,7 +160,7 @@ export default function Edit({ auth, kunjungan }) {
 
 
                                 <div className="flex items-center justify-end mt-8">
-                                    <Link href={route('kunjungan.jadwal')}>
+                                    <Link href={route('admin.kunjungan.jadwal')}>
                                         <SecondaryButton className="ms-4" disabled={processing}>
                                             Batal
                                         </SecondaryButton>

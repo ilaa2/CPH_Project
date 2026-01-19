@@ -12,7 +12,7 @@ class Kunjungan extends Model
     protected $table = 'kunjungan';
 
     protected $fillable = [
-        'pelanggan_id',
+        'user_id',
         'tanggal',
         'jam',
         'status',
@@ -30,12 +30,20 @@ class Kunjungan extends Model
 
 
     /**
-     * Relasi ke Pelanggan.
-     * Dibuat eksplisit menunjuk ke foreign key 'pelanggan_id'.
+     * Relasi ke User.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Alias for backward compatibility
+     * @deprecated Use user() instead
      */
     public function pelanggan()
     {
-        return $this->belongsTo(Pelanggan::class, 'pelanggan_id');
+        return $this->user();
     }
 
     /**

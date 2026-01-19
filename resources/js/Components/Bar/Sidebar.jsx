@@ -39,12 +39,12 @@ export default function Sidebar({ children }) {
             {/* MENU */}
             <SidebarContext.Provider value={{ expanded }}>
               <ul className="px-3 space-y-1">
-                <SidebarItem icon={<FiHome size={20} />} text="Dashboard" href="/dashboard" active={route().current('dashboard')} />
-                <SidebarItem icon={<BsBoxSeam size={20} />} text="Produk" href="/produk" active={route().current('produk.index')} />
-                <SidebarItem icon={<FiShoppingBag size={20} />} text="Pesanan" href="/pesanan" active={route().current('pesanan.index')} />
-                <SidebarItem icon={<FiFileText size={20} />} text="Laporan" href="/laporan" active={route().current('laporan.index')} />
-                <SidebarItem icon={<BsPeople size={20} />} text="Customer" href="/pelanggan" active={route().current('pelanggan.index')} />
-                <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/kunjungan" active={route().current('kunjunganAdmin.index')} />
+                <SidebarItem icon={<FiHome size={20} />} text="Dashboard" href="/admin" active={route().current('admin.dashboard')} />
+                <SidebarItem icon={<BsBoxSeam size={20} />} text="Produk" href="/admin/produk" active={route().current('admin.produk.index')} />
+                <SidebarItem icon={<FiShoppingBag size={20} />} text="Pesanan" href="/admin/pesanan" active={route().current('admin.pesanan.index')} />
+                <SidebarItem icon={<FiFileText size={20} />} text="Laporan" href="/admin/laporan" active={route().current('admin.laporan.index')} />
+                <SidebarItem icon={<BsPeople size={20} />} text="Customer" href="/admin/pelanggan" active={route().current('admin.pelanggan.index')} />
+                <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/admin/kunjungan" active={route().current('admin.kunjungan.index')} />
 
                 {/* Gabungan Setelan & Bantuan - Hidden for demo */}
                 {/* <SidebarItem icon={<FiSettings size={20} />} text="Setelan & Bantuan" href="/setelan" active={route().current('setelan.index') || route().current('bantuan.index')} /> */}

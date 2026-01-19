@@ -31,7 +31,7 @@ const PelangganForm = ({ isEditing, model, onSubmit, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const url = isEditing ? route('pelanggan.update', model.id) : route('pelanggan.store');
+    const url = isEditing ? route('admin.pelanggan.update', model.id) : route('admin.pelanggan.store');
     post(url, {
       onSuccess: () => {
         reset();
@@ -124,7 +124,7 @@ export default function PelangganList({ pelanggan, filters }) {
 
   const debouncedSearch = useCallback(
     debounce((nextValue) => {
-      router.get(route('pelanggan.index'), { search: nextValue }, {
+      router.get(route('admin.pelanggan.index'), { search: nextValue }, {
         preserveState: true,
         replace: true,
       });
@@ -156,7 +156,7 @@ export default function PelangganList({ pelanggan, filters }) {
       cancelButtonText: 'Batal'
     }).then((result) => {
       if (result.isConfirmed) {
-        router.delete(route('pelanggan.destroy', id));
+        router.delete(route('admin.pelanggan.destroy', id));
       }
     });
   };

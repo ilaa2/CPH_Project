@@ -102,28 +102,28 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                     value={stats?.totalProduk || 0}
                     icon={<FiBox />}
                     color="bg-blue-100 text-blue-600"
-                    link={route('produk.index')}
+                    link={route('admin.produk.index')}
                 />
                 <StatCard
                     title="Pelanggan"
                     value={stats?.totalPelanggan || 0}
                     icon={<FiUsers />}
                     color="bg-purple-100 text-purple-600"
-                    link={route('pelanggan.index')}
+                    link={route('admin.pelanggan.index')}
                 />
                 <StatCard
                     title="Pesanan Selesai"
                     value={stats?.totalPesananSelesai || 0}
                     icon={<FiShoppingCart />}
                     color="bg-green-100 text-green-600"
-                    link={route('pesanan.index')}
+                    link={route('admin.pesanan.index')}
                 />
                 <StatCard
                     title="Total Kunjungan"
                     value={stats?.totalKunjungan || 0}
                     icon={<FiCalendar />}
                     color="bg-orange-100 text-orange-600"
-                    link={route('kunjunganAdmin.index')}
+                    link={route('admin.kunjungan.index')}
                 />
             </div>
 
@@ -152,7 +152,7 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                                     <div className="font-medium text-gray-800">#{p.kode_pesanan}</div>
                                                     <div className="text-xs text-gray-500">{p.nama_pelanggan} • {formatCurrency(p.total)}</div>
                                                 </div>
-                                                <Link href={route('pesanan.edit', p.id)} className="px-3 py-1 bg-white text-yellow-700 text-xs font-medium rounded border border-yellow-200 shadow-sm hover:bg-yellow-50">
+                                                <Link href={route('admin.pesanan.edit', p.id)} className="px-3 py-1 bg-white text-yellow-700 text-xs font-medium rounded border border-yellow-200 shadow-sm hover:bg-yellow-50">
                                                     Proses
                                                 </Link>
                                             </div>
@@ -177,7 +177,7 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                                         <div className="text-xs text-red-600 font-medium">Sisa: {p.stok} unit</div>
                                                     </div>
                                                 </div>
-                                                <Link href={route('produk.index')} className="text-gray-400 hover:text-gray-600">
+                                                <Link href={route('admin.produk.index')} className="text-gray-400 hover:text-gray-600">
                                                     <FiShoppingCart />
                                                 </Link>
                                             </div>
@@ -241,7 +241,7 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                         </div>
                                     ))}
                                     <div className="p-3 bg-gray-50 text-center">
-                                        <Link href={route('kunjungan.jadwal')} className="text-sm text-green-600 font-medium hover:underline">Lihat Semua Jadwal →</Link>
+                                        <Link href={route('admin.kunjungan.jadwal')} className="text-sm text-green-600 font-medium hover:underline">Lihat Semua Jadwal →</Link>
                                     </div>
                                 </div>
                             ) : (
@@ -281,7 +281,7 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                 </div>
                             ))}
                             <div className="p-3 bg-gray-50 text-center rounded-b-xl">
-                                <Link href={route('pesanan.index')} className="text-sm text-blue-600 font-medium hover:underline">Lihat Semua Pesanan →</Link>
+                                <Link href={route('admin.pesanan.index')} className="text-sm text-blue-600 font-medium hover:underline">Lihat Semua Pesanan →</Link>
                             </div>
                         </div>
                     </div>

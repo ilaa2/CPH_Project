@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Pelanggan;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,6 +27,7 @@ class RegisteredUserController extends Controller
 
     /**
      * Handle an incoming registration request.
+     * Register new customers (role = 'customer')
      *
      * @throws \Illuminate\Validation\ValidationException
      */
@@ -35,18 +35,19 @@ class RegisteredUserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.Pelanggan::class,
+            'email' => 'required|string|lowercase|email|max:255|unique:users,email',
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
         try {
-            $pelanggan = Pelanggan::create([
-                'nama' => $request->name,
+            $user = User::create([
+                'name' => $request->name,
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
+                'role' => 'customer', // New customers are always 'customer' role
             ]);
 
-            event(new Registered($pelanggan));
+            event(new Registered($user));
 
             return redirect()->route('login')->with('success', 'Pendaftaran berhasil, silakan login.');
 

@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Models\Produk;
-use App\Models\Pelanggan;
+use App\Models\User;
 use App\Models\Pesanan;
 use App\Models\Kunjungan;
 
@@ -15,7 +15,7 @@ class DashboardController extends Controller
     {
         // 1. Ambil Statistik Utama
         $totalProduk = Produk::count();
-        $totalPelanggan = Pelanggan::count();
+        $totalPelanggan = User::where('role', 'customer')->count();
         
         // Statistik Pesanan (Hanya Selesai)
         $totalPesananSelesai = Pesanan::where('status', 'Selesai')->count();
@@ -25,20 +25,20 @@ class DashboardController extends Controller
 
         // 2. Data Widget Tambahan
         $stokMenipis = Produk::where('stok', '<', 5)->take(5)->get();
-        $pesananPerluDiproses = Pesanan::with('pelanggan')
+        $pesananPerluDiproses = Pesanan::with('user')
             ->whereIn('status', ['Diproses', 'pending'])
             ->orderBy('created_at', 'asc') // Urutkan dari yang terlama agar segera diproses
             ->take(5)
             ->get();
 
         // 3. Ambil Kunjungan Hari Ini (Prioritas)
-        $kunjunganHariIni = Kunjungan::with(['pelanggan', 'tipe'])
+        $kunjunganHariIni = Kunjungan::with(['user', 'tipe'])
             ->whereDate('tanggal', now()->today())
             ->where('status', 'Dijadwalkan')
             ->orderBy('jam', 'asc')
             ->get()
             ->map(function ($k) {
-                $k->nama_pelanggan = $k->pelanggan ? ($k->pelanggan->name ?? $k->pelanggan->nama ?? 'Guest') : 'Guest';
+                $k->nama_pelanggan = $k->user ? ($k->user->name ?? 'Guest') : 'Guest';
                 return $k;
             });
 
@@ -51,23 +51,24 @@ class DashboardController extends Controller
             ->get();
 
         // 5. Ambil Aktivitas Terbaru
-        $pesananTerbaru = Pesanan::with('pelanggan')
+        $pesananTerbaru = Pesanan::with('user')
             ->where('status', '!=', 'Dibatalkan')
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get()
             ->map(function ($p) {
-                $p->nama_pelanggan = $p->pelanggan ? ($p->pelanggan->name ?? $p->pelanggan->nama ?? 'Guest') : 'Guest';
+                $p->nama_pelanggan = $p->user ? ($p->user->name ?? 'Guest') : 'Guest';
                 return $p;
             });
 
-        $pelangganTerbaru = Pelanggan::orderBy('created_at', 'desc')
+        $pelangganTerbaru = User::where('role', 'customer')
+            ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
 
         // Transform Pesanan Perlu Diproses
         $pesananPerluDiproses->transform(function ($p) {
-            $p->nama_pelanggan = $p->pelanggan ? ($p->pelanggan->name ?? $p->pelanggan->nama ?? 'Guest') : 'Guest';
+            $p->nama_pelanggan = $p->user ? ($p->user->name ?? 'Guest') : 'Guest';
             return $p;
         });
 

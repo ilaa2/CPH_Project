@@ -22,10 +22,10 @@ class CartController extends Controller
             'product_id' => 'required|exists:products,id',
         ]);
 
-        $pelangganId = Auth::guard('pelanggan')->id();
+        $userId = Auth::id();
         $productId = $request->product_id;
 
-        $cartItem = Cart::where('pelanggan_id', $pelangganId)
+        $cartItem = Cart::where('user_id', $userId)
                           ->where('product_id', $productId)
                           ->first();
 
@@ -33,7 +33,7 @@ class CartController extends Controller
             $cartItem->increment('quantity');
         } else {
             Cart::create([
-                'pelanggan_id' => $pelangganId,
+                'user_id' => $userId,
                 'product_id' => $productId,
                 'quantity' => 1,
             ]);
@@ -75,7 +75,7 @@ class CartController extends Controller
         $request->validate([
             'items' => 'required|array',
             'items.*' => ['integer', function ($attribute, $value, $fail) {
-                if (!Cart::where('id', $value)->where('pelanggan_id', Auth::guard('pelanggan')->id())->exists()) {
+                if (!Cart::where('id', $value)->where('user_id', Auth::id())->exists()) {
                     $fail("Item dengan ID {$value} tidak valid.");
                 }
             }],

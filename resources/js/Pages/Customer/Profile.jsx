@@ -55,7 +55,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                 });
             }
             if (status === 'password-updated') {
-                 Swal.fire({
+                Swal.fire({
                     toast: true,
                     position: 'top-end',
                     icon: 'success',

@@ -19,7 +19,7 @@ export default function RiwayatKunjungan() {
 
   const debouncedFilter = useCallback(
     debounce((search, tipe) => {
-      router.get(route('kunjungan.riwayat'), {
+      router.get(route('admin.kunjungan.riwayat'), {
         search: search || undefined,
         tipe: tipe !== 'Semua' ? tipe : undefined
       }, {
@@ -61,7 +61,7 @@ export default function RiwayatKunjungan() {
 
   const handleFilterTipe = (tipe) => {
     setTipeFilter(tipe);
-    router.get(route('kunjungan.riwayat'), { tipe: tipe !== 'Semua' ? tipe : undefined }, {
+    router.get(route('admin.kunjungan.riwayat'), { tipe: tipe !== 'Semua' ? tipe : undefined }, {
       preserveState: true,
       replace: true
     });

@@ -35,7 +35,7 @@ export default function EditModal({ item, onClose }) {
     const handleSubmit = (e) => {
         e.preventDefault();
 
-        put(route('kunjungan.update', item.id), {
+        put(route('admin.kunjungan.update', item.id), {
             onSuccess: () => {
                 Swal.fire({
                     icon: 'success',

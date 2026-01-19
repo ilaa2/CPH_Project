@@ -32,30 +32,33 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = Auth::user();
+        
         return array_merge(parent::share($request), [
             'auth' => [
-                'user' => Auth::guard('web')->user(),
-                'pelanggan' => Auth::guard('pelanggan')->user(),
+                'user' => $user,
+                // Backward compatibility: provide pelanggan alias if user is customer
+                'pelanggan' => $user && $user->role === 'customer' ? $user : null,
             ],
 
-            'cart' => function () {
+            'cart' => function () use ($user) {
                 try {
-                    $pelanggan = Auth::guard('pelanggan')->user();
-                    if ($pelanggan) {
-                        // 1. Ambil semua item dalam satu query yang efisien
+                    // Cart is only for customers
+                    if ($user && $user->role === 'customer') {
+                        // Ambil semua item dalam satu query yang efisien
                         $cartItems = Cart::with('product')
-                                         ->where('pelanggan_id', $pelanggan->id)
+                                         ->where('user_id', $user->id)
                                          ->latest()
                                          ->get();
 
-                        // 2. Hitung subtotal dari koleksi yang sudah ada
+                        // Hitung subtotal dari koleksi yang sudah ada
                         $subtotal = $cartItems->reduce(function ($carry, $item) {
                             return $carry + ($item->product->harga * $item->quantity);
                         }, 0);
 
                         return [
                             'items' => $cartItems,
-                            'count' => $cartItems->count(), // 3. Hitung jumlah dari koleksi
+                            'count' => $cartItems->count(),
                             'subtotal' => $subtotal,
                         ];
                     }
@@ -63,7 +66,7 @@ class HandleInertiaRequests extends Middleware
                     Log::error('Gagal mengambil data keranjang: ' . $e->getMessage());
                 }
 
-                // Jika tidak ada pelanggan atau terjadi error
+                // Jika tidak ada user atau bukan customer atau terjadi error
                 return ['items' => [], 'count' => 0, 'subtotal' => 0];
             },
 

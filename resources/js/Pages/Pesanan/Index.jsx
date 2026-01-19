@@ -133,7 +133,7 @@ const PesananForm = ({ isEditing, model, pelangganList, produkList, onSubmit, on
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const url = isEditing ? route('pesanan.update', model.id) : route('pesanan.store');
+    const url = isEditing ? route('admin.pesanan.update', model.id) : route('admin.pesanan.store');
     post(url, { onSuccess: () => { reset(); onSubmit(); } });
   };
 
@@ -218,7 +218,7 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
   // Handler Filter Status
   const handleStatusChange = (status) => {
     setStatusFilter(status);
-    router.get(route('pesanan.index'), { status: status !== 'Semua' ? status : undefined, search: searchValue }, {
+    router.get(route('admin.pesanan.index'), { status: status !== 'Semua' ? status : undefined, search: searchValue }, {
       preserveState: true,
       replace: true,
       onStart: () => setIsLoading(true),
@@ -230,7 +230,7 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
   const closeModal = () => setModalState({ type: null, model: null });
 
   const debouncedSearch = useCallback(debounce((value) => {
-    router.get(route('pesanan.index'), { search: value, status: statusFilter !== 'Semua' ? statusFilter : undefined }, {
+    router.get(route('admin.pesanan.index'), { search: value, status: statusFilter !== 'Semua' ? statusFilter : undefined }, {
       preserveState: true,
       replace: true,
       onStart: () => setIsLoading(true),
@@ -257,18 +257,8 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
     if (flash.error) Swal.fire({ icon: 'error', title: 'Gagal!', text: flash.error });
   }, [flash]);
 
-  const handleDelete = (id) => {
-    Swal.fire({
-      title: 'Yakin ingin menghapus?',
-      text: "Data pesanan akan dihapus permanen.",
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      confirmButtonText: 'Ya, hapus!',
-    }).then((result) => {
-      if (result.isConfirmed) router.delete(route('pesanan.destroy', id));
-    });
-  };
+  // handleDelete dihapus - Pesanan tidak boleh dihapus
+  // Pesanan adalah histori transaksi yang harus tetap ada
 
   const tabs = ['Semua', 'Diproses', 'Selesai']; // Tab yang tersedia
 
@@ -276,7 +266,7 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
     <Mainbar header={
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">Pesanan</h2>
-        <Link href={route('pesanan.create')} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105">
+        <Link href={route('admin.pesanan.create')} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105">
           + Tambah Pesanan
         </Link>
       </div>
@@ -321,8 +311,7 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
                     <td className="px-4 py-2">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full" title="Lihat Detail">👁️</button>
-                        <Link href={route('pesanan.edit', item.id)} className="p-2 bg-blue-100 hover:bg-blue-200 rounded-full inline-flex items-center justify-center" title="Edit">✏️</Link>
-                        <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-100 hover:bg-red-200 rounded-full" title="Hapus">🗑️</button>
+                        <Link href={route('admin.pesanan.edit', item.id)} className="p-2 bg-blue-100 hover:bg-blue-200 rounded-full inline-flex items-center justify-center" title="Edit">✏️</Link>
                         {item.status === 'Selesai' && item.ulasan && (
                           <button
                             onClick={() => openModal('ulasan', item)}

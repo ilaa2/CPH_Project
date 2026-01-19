@@ -28,7 +28,7 @@ export default function JadwalKunjungan({ kunjungan, filters }) {
 
   const debouncedFilter = useCallback(
     debounce((search, tipe) => {
-      router.get(route('kunjungan.jadwal'), {
+      router.get(route('admin.kunjungan.jadwal'), {
         search: search || undefined,
         tipe: tipe !== 'Semua' ? tipe : undefined
       }, {
@@ -68,7 +68,7 @@ export default function JadwalKunjungan({ kunjungan, filters }) {
       confirmButtonText: 'Ya, hapus!',
     }).then((result) => {
       if (result.isConfirmed) {
-        router.delete(route('kunjungan.destroy', id), {
+        router.delete(route('admin.kunjungan.destroy', id), {
           onSuccess: () => {
             Swal.fire('Terhapus!', 'Data kunjungan berhasil dihapus.', 'success');
           }

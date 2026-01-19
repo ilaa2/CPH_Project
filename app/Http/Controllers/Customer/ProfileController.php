@@ -1,6 +1,5 @@
 <?php
 
-// VERSI FINAL YANG SUDAH BENAR
 namespace App\Http\Controllers\Customer;
 
 use App\Http\Controllers\Controller;
@@ -32,9 +31,9 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $validated = $request->validate([
-            'nama' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:pelanggans,email,' . $user->id,
-            'telepon' => 'nullable|string|max:15',
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'phone' => 'nullable|string|max:15',
             'alamat' => 'nullable|string',
         ]);
 
@@ -56,7 +55,7 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $validated = $request->validate([
-            'current_password' => ['required', 'current_password:pelanggan'],
+            'current_password' => ['required', 'current_password'],
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
         $user->update([
@@ -71,10 +70,10 @@ class ProfileController extends Controller
     public function destroy(Request $request): RedirectResponse
     {
         $request->validate([
-            'password' => ['required', 'current_password:pelanggan'],
+            'password' => ['required', 'current_password'],
         ]);
         $user = $request->user();
-        Auth::guard('pelanggan')->logout();
+        Auth::logout();
         $user->delete();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
@@ -84,14 +83,14 @@ class ProfileController extends Controller
     public function updatePhoto(Request $request): RedirectResponse
     {
         $request->validate([
-            'foto_profil' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         $user = $request->user();
 
-        if ($request->hasFile('foto_profil')) {
-            $path = $request->file('foto_profil')->store('profile-photos', 'public');
-            $user->update(['foto_profil' => $path]);
+        if ($request->hasFile('avatar')) {
+            $path = $request->file('avatar')->store('profile-photos', 'public');
+            $user->update(['avatar' => $path]);
         }
 
         return back()->with('status', 'photo-updated');

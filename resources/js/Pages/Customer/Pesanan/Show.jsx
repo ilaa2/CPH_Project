@@ -473,8 +473,8 @@ export default function Show({ pesanan, auth }) {
                                         <FiUser className="mr-2 text-green-500" />
                                         Info Pelanggan
                                     </h3>
-                                    <p className="text-gray-600">{pesanan.pelanggan?.nama || '-'}</p>
-                                    <p className="text-sm text-gray-500">{pesanan.pelanggan?.email || '-'}</p>
+                                    <p className="text-gray-600">{pesanan.user?.name || '-'}</p>
+                                    <p className="text-sm text-gray-500">{pesanan.user?.email || '-'}</p>
                                 </div>
                                 <div className="bg-gray-50 rounded-xl p-4">
                                     <h3 className="font-semibold text-gray-800 flex items-center mb-3">
@@ -486,18 +486,69 @@ export default function Show({ pesanan, auth }) {
                                 </div>
                             </div>
 
-                            {/* Pickup Notice */}
-                            {pesanan.metode_pengiriman === 'Ambil Sendiri' && pesanan.payment_status === 'paid' && (
-                                <div className="bg-blue-50 border border-blue-200 p-4 rounded-xl mb-6">
-                                    <div className="flex items-start gap-3">
-                                        <FiClock className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-                                        <div className="text-sm text-blue-800">
-                                            <p className="font-semibold">Informasi Penjemputan</p>
-                                            <p className="mt-1">Pesanan Anda akan siap diambil dalam waktu <span className="font-bold">15–30 menit</span>.</p>
+                            {/* Shipping/Processing Notice - for ALL methods */}
+                            {pesanan.payment_status === 'paid' && (() => {
+                                // Operating hours: 07:30 - 18:00
+                                const now = new Date();
+                                const hour = now.getHours();
+                                const minute = now.getMinutes();
+                                const currentTimeInMinutes = hour * 60 + minute;
+                                const openTime = 7 * 60 + 30; // 07:30
+                                const closeTime = 18 * 60; // 18:00
+
+                                const isWithinOperatingHours = currentTimeInMinutes >= openTime && currentTimeInMinutes < closeTime;
+                                const isPickup = pesanan.metode_pengiriman === 'Ambil Sendiri' || pesanan.metode_pengiriman === 'Ambil di Toko';
+
+                                let noticeTitle, noticeMessage, bgColor, borderColor, textColor, iconColor;
+
+                                if (isPickup) {
+                                    // Pickup mode
+                                    noticeTitle = 'Informasi Penjemputan';
+                                    bgColor = 'bg-blue-50';
+                                    borderColor = 'border-blue-200';
+                                    textColor = 'text-blue-800';
+                                    iconColor = 'text-blue-600';
+
+                                    if (isWithinOperatingHours) {
+                                        noticeMessage = (
+                                            <>Pesanan Anda akan siap diambil dalam waktu <span className="font-bold">15–30 menit</span>.</>
+                                        );
+                                    } else {
+                                        noticeMessage = (
+                                            <>Pesanan Anda akan siap diambil <span className="font-bold">besok mulai pukul 07:30 WIB</span>.</>
+                                        );
+                                    }
+                                } else {
+                                    // Kurir Lokal / Ekspedisi
+                                    noticeTitle = 'Informasi Pengiriman';
+                                    bgColor = 'bg-green-50';
+                                    borderColor = 'border-green-200';
+                                    textColor = 'text-green-800';
+                                    iconColor = 'text-green-600';
+
+                                    if (isWithinOperatingHours) {
+                                        noticeMessage = (
+                                            <>Pesanan Anda sedang diproses dan akan segera dikirim <span className="font-bold">hari ini</span>.</>
+                                        );
+                                    } else {
+                                        noticeMessage = (
+                                            <>Pesanan Anda akan diproses dan dikirim <span className="font-bold">besok mulai pukul 07:30 WIB</span> (toko tutup pukul 18:00).</>
+                                        );
+                                    }
+                                }
+
+                                return (
+                                    <div className={`${bgColor} border ${borderColor} p-4 rounded-xl mb-6`}>
+                                        <div className="flex items-start gap-3">
+                                            <FiClock className={`w-5 h-5 ${iconColor} flex-shrink-0 mt-0.5`} />
+                                            <div className={`text-sm ${textColor}`}>
+                                                <p className="font-semibold">{noticeTitle}</p>
+                                                <p className="mt-1">{noticeMessage}</p>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                );
+                            })()}
 
                             {/* Product Details */}
                             <h3 className="font-semibold text-lg text-gray-800 flex items-center mb-4">

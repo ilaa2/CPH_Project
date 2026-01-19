@@ -8,7 +8,7 @@ use App\Models\TipeKunjungan;
 use App\Models\Kunjungan;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
-use Illuminate\Validation\Rule; // Tambahkan ini jika belum ada
+use Illuminate\Validation\Rule;
 
 class KunjunganControllerCust extends Controller
 {
@@ -41,7 +41,6 @@ class KunjunganControllerCust extends Controller
      */
     public function handleForm(Request $request)
     {
-        // --- PERUBAHAN DIMULAI DI SINI ---
         $validated = $request->validate([
             'nama_lengkap'      => 'required|string|max:255',
             'no_hp'             => 'required|string|max:15',
@@ -58,8 +57,6 @@ class KunjunganControllerCust extends Controller
         if ($tipe && $tipe->nama_tipe === 'Umum' && $validated['jumlah_dewasa'] < 1) {
             return back()->withInput()->withErrors(['jumlah_dewasa' => 'Sewa Tempat memerlukan minimal 1 orang dewasa.']);
         }
-        // --- PERUBAHAN SELESAI DI SINI ---
-
 
         // Simpan data yang valid ke dalam session untuk dibawa ke halaman konfirmasi
         session()->put('form_data_kunjungan', $validated);
@@ -128,13 +125,13 @@ class KunjunganControllerCust extends Controller
         }
 
         $finalTotalBiaya = $this->calculateTotalCost($tipeKunjungan, $validated);
-        $pelanggan = Auth::guard('pelanggan')->user();
+        $user = Auth::user();
 
         // Generate unique order ID untuk Midtrans
         $midtransOrderId = 'KNJ-' . strtoupper(\Illuminate\Support\Str::random(6)) . '-' . time();
 
         $kunjungan = Kunjungan::create([
-            'pelanggan_id'      => $pelanggan->id,
+            'user_id'           => $user->id,
             'tipe_id'           => $validated['tipe_kunjungan_id'],
             'tanggal'           => $validated['tanggal_kunjungan'],
             'jam'               => $validated['jam_kunjungan'] . ':00',
@@ -161,7 +158,7 @@ class KunjunganControllerCust extends Controller
                 ],
                 'customer_details' => [
                     'first_name' => $validated['nama_lengkap'],
-                    'email' => $pelanggan->email,
+                    'email' => $user->email,
                     'phone' => $validated['no_hp'],
                 ],
                 'item_details' => [
@@ -198,8 +195,8 @@ class KunjunganControllerCust extends Controller
      */
     public function show(Kunjungan $kunjungan)
     {
-        // Pastikan kunjungan ini milik pelanggan yang sedang login
-        if ($kunjungan->pelanggan_id !== Auth::guard('pelanggan')->id()) {
+        // Pastikan kunjungan ini milik user yang sedang login
+        if ($kunjungan->user_id !== Auth::id()) {
             abort(403, 'AKSES DITOLAK');
         }
 
@@ -216,8 +213,8 @@ class KunjunganControllerCust extends Controller
      */
     public function showPayment(Kunjungan $kunjungan)
     {
-        // Pastikan kunjungan ini milik pelanggan yang sedang login
-        if ($kunjungan->pelanggan_id !== Auth::guard('pelanggan')->id()) {
+        // Pastikan kunjungan ini milik user yang sedang login
+        if ($kunjungan->user_id !== Auth::id()) {
             abort(403, 'AKSES DITOLAK');
         }
 
@@ -244,7 +241,7 @@ class KunjunganControllerCust extends Controller
                     $kunjungan->midtrans_order_id = 'KNJ-' . strtoupper(\Illuminate\Support\Str::random(6)) . '-' . time();
                 }
 
-                $pelanggan = Auth::guard('pelanggan')->user();
+                $user = Auth::user();
                 
                 $payload = [
                     'transaction_details' => [
@@ -252,9 +249,9 @@ class KunjunganControllerCust extends Controller
                         'gross_amount' => (int) $kunjungan->total_biaya,
                     ],
                     'customer_details' => [
-                        'first_name' => $pelanggan->nama,
-                        'email' => $pelanggan->email,
-                        'phone' => $pelanggan->telepon ?? '',
+                        'first_name' => $user->name,
+                        'email' => $user->email,
+                        'phone' => $user->phone ?? '',
                     ],
                     'item_details' => [
                         [

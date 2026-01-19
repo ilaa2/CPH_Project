@@ -13,13 +13,13 @@ class Pesanan extends Model
 
     /**
      * Daftarkan SEMUA kolom di sini agar bisa disimpan dari CheckoutController.
-     * Ini adalah bagian terpenting yang harus diperbaiki.
      */
     protected $fillable = [
-        'id_pelanggan',
+        'user_id',
         'nomor_pesanan',
         'total',
         'status',
+        'nomor_resi',
         'alamat_pengiriman',
         'metode_pengiriman',
         'biaya_pengiriman',
@@ -34,11 +34,20 @@ class Pesanan extends Model
     ];
 
     /**
-     * Relasi ke model Pelanggan.
+     * Relasi ke model User.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Alias for backward compatibility
+     * @deprecated Use user() instead
      */
     public function pelanggan()
     {
-        return $this->belongsTo(Pelanggan::class, 'id_pelanggan');
+        return $this->user();
     }
 
     /**

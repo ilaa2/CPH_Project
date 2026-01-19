@@ -40,17 +40,9 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-
-        'pelanggan' => [
-            'driver' => 'session',
-            'provider' => 'pelanggans',
-        ],
+        // Guard 'pelanggan' dihapus - sekarang menggunakan satu guard 'web' dengan role
     ],
-    // config/auth.php
 
-
-
-// ... (Array 'providers' Anda sudah benar, tidak perlu diubah) ...
     /*
     |--------------------------------------------------------------------------
     | User Providers
@@ -73,16 +65,7 @@ return [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
         ],
-
-        'pelanggans' => [
-            'driver' => 'eloquent',
-            'model' => App\Models\Pelanggan::class,
-        ],
-
-        // 'users' => [
-        //     'driver' => 'database',
-        //     'table' => 'users',
-        // ],
+        // Provider 'pelanggans' dihapus - semua user sekarang di tabel users
     ],
 
     /*

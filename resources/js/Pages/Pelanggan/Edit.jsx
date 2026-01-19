@@ -11,7 +11,7 @@ export default function Edit({ pelanggan }) {
 
   function handleSubmit(e) {
     e.preventDefault();
-    put(route('pelanggan.update', pelanggan.id));
+    put(route('admin.pelanggan.update', pelanggan.id));
   }
 
   return (
@@ -66,7 +66,7 @@ export default function Edit({ pelanggan }) {
           {/* Tombol Update dan Batal */}
           <div className="flex justify-end gap-2">
             <Link
-              href={route('pelanggan.index')}
+              href={route('admin.pelanggan.index')}
               className="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700"
             >
               Batal

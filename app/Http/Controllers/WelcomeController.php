@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Produk;
-use App\Models\Pelanggan;
+use App\Models\User;
 use App\Models\Kunjungan;
 use App\Models\Pesanan;
 use App\Models\Ulasan;
@@ -21,7 +21,7 @@ class WelcomeController extends Controller
             return [
                 'produkCount' => Produk::count(),
                 'kunjunganCount' => Kunjungan::count(),
-                'pelangganCount' => Pelanggan::count(),
+                'pelangganCount' => User::where('role', 'customer')->count(),
                 'orderCount' => Pesanan::count(),
             ];
         });
@@ -63,14 +63,14 @@ class WelcomeController extends Controller
         // Get testimonials
         $testimonials = Cache::remember('home_testimonials', 30 * 60, function () {
             return Ulasan::where('rating', '>=', 4)
-                ->with('pelanggan:id,nama')
+                ->with('user:id,name')
                 ->latest()
                 ->take(6)
                 ->get()
                 ->map(function ($ulasan) {
                     return [
                         'id' => $ulasan->id,
-                        'nama' => $ulasan->pelanggan->nama ?? 'Pelanggan',
+                        'nama' => $ulasan->user->name ?? 'Pelanggan',
                         'komentar' => $ulasan->komentar,
                         'rating' => $ulasan->rating,
                     ];

@@ -10,7 +10,7 @@ class Ulasan extends Model
     protected $table = 'ulasan';
 
     protected $fillable = [
-        'pelanggan_id',
+        'user_id',
         'kunjungan_id',
         'pesanan_id',
         'produk_id',
@@ -21,9 +21,21 @@ class Ulasan extends Model
         'tanggal_balasan',
     ];
 
+    /**
+     * Relasi ke User.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Alias for backward compatibility
+     * @deprecated Use user() instead
+     */
     public function pelanggan()
     {
-        return $this->belongsTo(Pelanggan::class);
+        return $this->user();
     }
 
     public function kunjungan()

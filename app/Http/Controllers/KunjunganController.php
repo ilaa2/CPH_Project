@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kunjungan;
-use App\Models\Pelanggan;
+use App\Models\User;
 use App\Models\TipeKunjungan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -19,8 +19,8 @@ class KunjunganController extends Controller
     public function jadwal()
     {
         $query = Kunjungan::query()
-            ->with(['pelanggan', 'tipe'])
-            ->join('pelanggans', 'kunjungan.pelanggan_id', '=', 'pelanggans.id')
+            ->with(['user', 'tipe'])
+            ->join('users', 'kunjungan.user_id', '=', 'users.id')
             ->join('tipe_kunjungan', 'kunjungan.tipe_id', '=', 'tipe_kunjungan.id')
             ->where('kunjungan.status', '!=', 'Dibatalkan')
             ->select('kunjungan.*');
@@ -28,7 +28,7 @@ class KunjunganController extends Controller
         // Filter pencarian nama
         if (request()->has('search')) {
             $search = request()->input('search');
-            $query->where('pelanggans.nama', 'LIKE', "%{$search}%");
+            $query->where('users.name', 'LIKE', "%{$search}%");
         }
 
         // Filter tipe kunjungan
@@ -46,19 +46,19 @@ class KunjunganController extends Controller
 
     public function kalender()
     {
-    $kunjungan = Kunjungan::with(['pelanggan', 'tipe', 'ulasan'])
-        ->where('status', '!=', 'Dibatalkan')
-        ->get();
+        $kunjungan = Kunjungan::with(['user', 'tipe', 'ulasan'])
+            ->where('status', '!=', 'Dibatalkan')
+            ->get();
 
-    return Inertia::render('Kunjungan/Kalender', [
-        'kunjungan' => $kunjungan
-    ]);
+        return Inertia::render('Kunjungan/Kalender', [
+            'kunjungan' => $kunjungan
+        ]);
     }
 
 
     public function riwayat()
     {
-        $query = Kunjungan::with(['pelanggan', 'tipe', 'ulasan.fotos'])->where('status', 'Selesai');
+        $query = Kunjungan::with(['user', 'tipe', 'ulasan.fotos'])->where('status', 'Selesai');
 
         // Filter tipe kunjungan
         $query->when(request('tipe') && request('tipe') !== 'Semua', function ($q) {
@@ -77,7 +77,7 @@ class KunjunganController extends Controller
 
     public function create()
     {
-        $pelanggan = Pelanggan::all();
+        $pelanggan = User::where('role', 'customer')->get();
         $tipe = TipeKunjungan::all();
 
         return Inertia::render('Kunjungan/Create', [
@@ -89,7 +89,7 @@ class KunjunganController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'pelanggan_id' => 'required|exists:pelanggans,id',
+            'pelanggan_id' => 'required|exists:users,id',
             'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
             'tanggal' => 'required|date',
             'jam' => 'required',
@@ -106,13 +106,9 @@ class KunjunganController extends Controller
         if ($validated['jumlah_dewasa'] + $validated['jumlah_anak'] + $validated['jumlah_balita'] == 0) {
             return back()->withErrors(['jumlah_dewasa' => 'Jumlah pengunjung tidak boleh nol.'])->withInput();
         }
-        
-        // Di admin, kita memercayai total_biaya yang diinputkan (untuk override),
-        // namun kita tetap bisa melakukan kalkulasi ulang untuk verifikasi jika perlu.
-        // Untuk saat ini, kita langsung gunakan dari request.
 
         Kunjungan::create([
-            'pelanggan_id' => $validated['pelanggan_id'],
+            'user_id' => $validated['pelanggan_id'],
             'tipe_id' => $validated['tipe_kunjungan_id'],
             'tanggal' => $validated['tanggal'],
             'jam' => $validated['jam'],
@@ -128,7 +124,6 @@ class KunjunganController extends Controller
 
     /**
      * Helper function untuk menghitung total biaya.
-     * Logika ini harus sama persis dengan yang ada di frontend.
      */
     private function calculateTotalCost(TipeKunjungan $tipe, array $data): float
     {
@@ -146,7 +141,6 @@ class KunjunganController extends Controller
                 $biaya = $jumlah_anak * 10000;
             }
         } else {
-            // Fallback ke logika default jika ada tipe lain
             $totalPengunjung = $jumlah_dewasa + $jumlah_anak + ($data['jumlah_balita'] ?? 0);
             $biaya = $totalPengunjung * ($tipe->biaya ?? 0);
         }
@@ -164,8 +158,8 @@ class KunjunganController extends Controller
 
     public function edit($id)
     {
-        $kunjungan = Kunjungan::with(['pelanggan', 'tipe'])->findOrFail($id);
-        $pelanggan = Pelanggan::all();
+        $kunjungan = Kunjungan::with(['user', 'tipe'])->findOrFail($id);
+        $pelanggan = User::where('role', 'customer')->get();
         $tipe = TipeKunjungan::all();
 
         return Inertia::render('Kunjungan/Edit', [
@@ -178,7 +172,7 @@ class KunjunganController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'pelanggan_id' => 'sometimes|required|exists:pelanggans,id',
+            'pelanggan_id' => 'sometimes|required|exists:users,id',
             'tipe_id' => 'sometimes|required|exists:tipe_kunjungan,id',
             'tanggal' => 'sometimes|required|date',
             'jam' => 'sometimes|required',
@@ -190,7 +184,15 @@ class KunjunganController extends Controller
         ]);
 
         $kunjungan = Kunjungan::findOrFail($id);
-        $kunjungan->update($request->all());
+        
+        // Map pelanggan_id to user_id if present
+        $data = $request->all();
+        if (isset($data['pelanggan_id'])) {
+            $data['user_id'] = $data['pelanggan_id'];
+            unset($data['pelanggan_id']);
+        }
+        
+        $kunjungan->update($data);
 
         return redirect()->route('kunjungan.jadwal')->with('success', 'Data kunjungan berhasil diperbarui.');
     }
@@ -207,16 +209,16 @@ class KunjunganController extends Controller
             'jumlah_balita' => 'required|integer|min:0',
         ]);
 
-        $pelanggan = Auth::guard('pelanggan')->user();
-        if (!$pelanggan) {
-            return redirect()->route('customer.login')->with('error', 'Anda harus login untuk membuat jadwal kunjungan.');
+        $user = Auth::user();
+        if (!$user || $user->role !== 'customer') {
+            return redirect()->route('login')->with('error', 'Anda harus login untuk membuat jadwal kunjungan.');
         }
 
-        // Update info kontak pelanggan jika ada perubahan
-        if ($pelanggan->nama !== $validated['nama_lengkap'] || $pelanggan->telepon !== $validated['no_hp']) {
-            $pelanggan->nama = $validated['nama_lengkap'];
-            $pelanggan->telepon = $validated['no_hp'];
-            $pelanggan->save();
+        // Update info kontak user jika ada perubahan
+        if ($user->name !== $validated['nama_lengkap'] || $user->phone !== $validated['no_hp']) {
+            $user->name = $validated['nama_lengkap'];
+            $user->phone = $validated['no_hp'];
+            $user->save();
         }
 
         $tipeKunjungan = TipeKunjungan::findOrFail($validated['tipe_kunjungan_id']);
@@ -230,7 +232,7 @@ class KunjunganController extends Controller
             return back()->withErrors(['jumlah_dewasa' => 'Jumlah pengunjung minimal 1 orang.'])->withInput();
         }
 
-        // Logika perhitungan biaya (disamakan dengan frontend)
+        // Logika perhitungan biaya
         if ($tipeKunjungan->nama_tipe === 'Umum') {
             $totalOrangBayar = $dewasa + $anak;
             $totalBiaya = $totalOrangBayar * 10000;
@@ -245,10 +247,10 @@ class KunjunganController extends Controller
         }
 
         Kunjungan::create([
-            'pelanggan_id' => $pelanggan->id,
+            'user_id' => $user->id,
             'tipe_id' => $validated['tipe_kunjungan_id'],
             'tanggal' => $validated['tanggal_kunjungan'],
-            'jam' => '09:00:00', // Jam default, bisa disesuaikan
+            'jam' => '09:00:00',
             'jumlah_pengunjung' => $jumlahPengunjung,
             'jumlah_dewasa' => $dewasa,
             'jumlah_anak' => $anak,

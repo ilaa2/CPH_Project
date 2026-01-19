@@ -17,6 +17,12 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        // Register middleware aliases for role-based access
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'customer' => \App\Http\Middleware\EnsureUserIsCustomer::class,
+        ]);
+
         // Exclude retry-payment routes from CSRF verification
         // These routes are already protected by auth middleware
         $middleware->validateCsrfTokens(except: [

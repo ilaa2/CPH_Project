@@ -33,10 +33,10 @@ class CheckoutController extends Controller
         if ($request->has('items')) {
             $items = $request->input('items');
             if (is_array($items)) {
-                 $pelangganId = Auth::guard('pelanggan')->id();
+                 $userId = Auth::id();
                  // Validate that these items belong to the user
                  $validItemIds = Cart::whereIn('id', $items)
-                                     ->where('pelanggan_id', $pelangganId)
+                                     ->where('user_id', $userId)
                                      ->pluck('id')
                                      ->toArray();
                  
@@ -88,11 +88,11 @@ class CheckoutController extends Controller
             return redirect()->route('checkout.index'); 
         }
 
-        $pelanggan = Auth::guard('pelanggan')->user();
+        $user = Auth::user();
         $savedAddress = session('checkout_address');
 
         return Inertia::render('Customer/Checkout/Checkout1', [
-            'pelanggan' => $pelanggan,
+            'user' => $user,
             'savedAddress' => $savedAddress,
             'checkoutMethod' => $method, // Pass method to frontend
         ]);
@@ -167,8 +167,8 @@ class CheckoutController extends Controller
 
         $selectedItemIds = session('selected_cart_items', []);
         
-        $pelangganId = Auth::guard('pelanggan')->id();
-        $cartItems = Cart::with('product')->whereIn('id', $selectedItemIds)->where('pelanggan_id', $pelangganId)->get();
+        $userId = Auth::id();
+        $cartItems = Cart::with('product')->whereIn('id', $selectedItemIds)->where('user_id', $userId)->get();
 
         if ($cartItems->isEmpty()) {
             // Fallback if session invalid or direct access
@@ -323,7 +323,7 @@ class CheckoutController extends Controller
         }
 
         return Inertia::render('Customer/Checkout/Checkout2', [
-            'pelanggan' => Auth::guard('pelanggan')->user(),
+            'user' => Auth::user(),
             'alamat' => $alamat, // Fix prop name mismatch (was savedAddress)
             'cartItems' => $cartItems,
             'shippingOptions' => $shippingOptions,
@@ -353,12 +353,12 @@ class CheckoutController extends Controller
             'quantity' => 'required|integer|min:1',
         ]);
 
-        $pelangganId = Auth::guard('pelanggan')->id();
+        $userId = Auth::id();
 
         // Buat item keranjang sementara atau update yang sudah ada
         $cartItem = Cart::updateOrCreate(
             [
-                'pelanggan_id' => $pelangganId,
+                'user_id' => $userId,
                 'product_id' => $validated['product_id'],
             ],
             [
@@ -386,6 +386,7 @@ class CheckoutController extends Controller
         // Setup defaults for View
         $alamat = null;
         $pengiriman = null;
+        $user = Auth::user();
 
         if ($method === 'pickup') {
             // For pickup, use store address
@@ -397,8 +398,8 @@ class CheckoutController extends Controller
             ];
             $alamat = [
                 'full_address_string' => 'Jl. Melayu, Babussalam, Mandau, Kab. Bengkalis, Riau 28784',
-                'nama' => Auth::guard('pelanggan')->user()->nama,
-                'telepon' => Auth::guard('pelanggan')->user()->telepon,
+                'nama' => $user->name,
+                'telepon' => $user->phone,
             ];
         } else {
             $alamat = session('checkout_address');
@@ -409,11 +410,11 @@ class CheckoutController extends Controller
             }
         }
         
-        $pelangganId = Auth::guard('pelanggan')->id();
+        $userId = Auth::id();
 
         $cartItems = Cart::with('product')
                          ->whereIn('id', $selectedItemIds)
-                         ->where('pelanggan_id', $pelangganId)
+                         ->where('user_id', $userId)
                          ->get();
 
         if ($cartItems->isEmpty()) {
@@ -434,11 +435,11 @@ class CheckoutController extends Controller
     {
         try {
             return DB::transaction(function () {
-                $pelanggan = Auth::guard('pelanggan')->user();
+                $user = Auth::user();
                 $selectedItemIds = session('selected_cart_items', []);
                 $method = session('checkout_method');
 
-                if (!$pelanggan || empty($selectedItemIds)) {
+                if (!$user || empty($selectedItemIds)) {
                     return back()->withErrors(['message' => 'Sesi Anda telah berakhir.']);
                 }
 
@@ -448,8 +449,8 @@ class CheckoutController extends Controller
                 if ($method === 'pickup') {
                     $alamat = [
                         'full_address_string' => 'AMBIL DI TOKO',
-                        'nama' => $pelanggan->nama,
-                        'telepon' => $pelanggan->telepon,
+                        'nama' => $user->name,
+                        'telepon' => $user->phone,
                     ];
                     $pengiriman = [
                         'name' => 'Ambil Sendiri',
@@ -464,7 +465,7 @@ class CheckoutController extends Controller
                     }
                 }
 
-                $cartItems = Cart::with('product')->whereIn('id', $selectedItemIds)->where('pelanggan_id', $pelanggan->id)->get();
+                $cartItems = Cart::with('product')->whereIn('id', $selectedItemIds)->where('user_id', $user->id)->get();
                 if ($cartItems->isEmpty()) {
                     return back()->withErrors(['message' => 'Produk di keranjang tidak ditemukan.']);
                 }
@@ -477,7 +478,7 @@ class CheckoutController extends Controller
                 $midtransOrderId = 'ORD-' . strtoupper(Str::random(8)) . '-' . time();
 
                 $pesanan = Pesanan::create([
-                    'id_pelanggan'      => $pelanggan->id,
+                    'user_id'           => $user->id,
                     'total'             => $grandTotal,
                     'nomor_pesanan'     => $midtransOrderId,
                     'status'            => 'pending',
@@ -515,9 +516,9 @@ class CheckoutController extends Controller
                         'gross_amount' => (int) $grandTotal,
                     ],
                     'customer_details' => [
-                        'first_name' => $alamat['nama'] ?? $pelanggan->nama,
-                        'email' => $pelanggan->email,
-                        'phone' => $alamat['telepon'] ?? $pelanggan->telepon,
+                        'first_name' => $alamat['nama'] ?? $user->name,
+                        'email' => $user->email,
+                        'phone' => $alamat['telepon'] ?? $user->phone,
                     ],
                     'item_details' => $cartItems->map(function ($item) {
                         return [
@@ -556,7 +557,7 @@ class CheckoutController extends Controller
                 }
 
                 // Hapus cart items setelah order dibuat
-                Cart::whereIn('id', $selectedItemIds)->where('pelanggan_id', $pelanggan->id)->delete();
+                Cart::whereIn('id', $selectedItemIds)->where('user_id', $user->id)->delete();
                 session()->forget(['selected_cart_items', 'checkout_address', 'checkout_shipping', 'checkout_method']);
 
                 // Return snap token ke frontend untuk trigger popup
