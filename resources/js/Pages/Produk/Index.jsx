@@ -155,15 +155,15 @@ const ProdukForm = ({ isEditing, model, kategori, onSubmit, onCancel }) => {
               <div>
                 <label className="block font-semibold text-sm text-gray-700 mb-2">Status</label>
                 <div className="flex gap-4">
-                  <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-2 border rounded-lg transition ${data.status === 'Aktif' ? 'bg-green-50 border-green-500 text-green-700 ring-1 ring-green-500 ring-opacity-50' : 'border-gray-200 hover:bg-gray-50'}`}>
-                    <input type="radio" value="Aktif" checked={data.status === 'Aktif'} onChange={e => setData('status', e.target.value)} className="hidden" />
-                    <span className="w-3 h-3 rounded-full bg-green-500 shrink-0 block"></span>
-                    <span className="text-sm font-medium select-none">Aktif</span>
+                  <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-2 border rounded-lg transition select-none ${data.status === 'Aktif' ? 'bg-green-50 border-green-500 text-green-700 ring-1 ring-green-500 ring-opacity-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input type="radio" value="Aktif" checked={data.status === 'Aktif'} onChange={e => setData('status', e.target.value)} className="sr-only" />
+                    <span className="w-3 h-3 min-w-[12px] min-h-[12px] rounded-full bg-green-500 shrink-0 block ring-2 ring-white"></span>
+                    <span className="text-sm font-medium">Aktif</span>
                   </label>
-                  <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-2 border rounded-lg transition ${data.status === 'Nonaktif' ? 'bg-red-50 border-red-500 text-red-700 ring-1 ring-red-500 ring-opacity-50' : 'border-gray-200 hover:bg-gray-50'}`}>
-                    <input type="radio" value="Nonaktif" checked={data.status === 'Nonaktif'} onChange={e => setData('status', e.target.value)} className="hidden" />
-                    <span className="w-3 h-3 rounded-full bg-red-500 shrink-0 block"></span>
-                    <span className="text-sm font-medium select-none">Nonaktif</span>
+                  <label className={`flex-1 flex items-center justify-center gap-2 cursor-pointer p-2 border rounded-lg transition select-none ${data.status === 'Nonaktif' ? 'bg-red-50 border-red-500 text-red-700 ring-1 ring-red-500 ring-opacity-50' : 'border-gray-200 hover:bg-gray-50'}`}>
+                    <input type="radio" value="Nonaktif" checked={data.status === 'Nonaktif'} onChange={e => setData('status', e.target.value)} className="sr-only" />
+                    <span className="w-3 h-3 min-w-[12px] min-h-[12px] rounded-full bg-red-500 shrink-0 block ring-2 ring-white"></span>
+                    <span className="text-sm font-medium">Nonaktif</span>
                   </label>
                 </div>
               </div>

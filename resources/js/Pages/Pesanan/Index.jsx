@@ -31,9 +31,9 @@ const DetailModal = ({ model, onClose }) => (
       <div className="grid grid-cols-2 gap-8 text-sm text-gray-700 mb-8 border-t border-b border-gray-100 py-6">
         <div>
           <p className="text-gray-500 text-xs uppercase font-semibold mb-2">DITAGIHkan KEPADA</p>
-          <p className="font-bold text-gray-900 text-base">{model.pelanggan?.nama}</p>
-          <p className="text-gray-600 mt-1">{model.pelanggan?.alamat || 'Alamat tidak tersedia'}</p>
-          <p className="text-gray-600">{model.pelanggan?.telepon}</p>
+          <p className="font-bold text-gray-900 text-base">{model.user?.name || '-'}</p>
+          <p className="text-gray-600 mt-1">{model.user?.alamat || 'Alamat tidak tersedia'}</p>
+          <p className="text-gray-600">{model.user?.phone || '-'}</p>
         </div>
         <div className="text-right">
           <div className="mb-3">
@@ -42,9 +42,30 @@ const DetailModal = ({ model, onClose }) => (
           </div>
           <div>
             <p className="text-gray-500 text-xs uppercase font-semibold mb-1">STATUS</p>
-            <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${model.status === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
-              {model.status}
-            </span>
+            {(() => {
+              const s = model.status?.toLowerCase();
+              let label = model.status;
+              let color = 'bg-gray-100 text-gray-800';
+
+              if (s === 'completed' || s === 'selesai') {
+                label = 'Selesai';
+                color = 'bg-green-100 text-green-800';
+              } else if (s === 'processed' || s === 'diproses') {
+                label = 'Diproses';
+                color = 'bg-blue-100 text-blue-800';
+              } else if (s === 'shipped' || s === 'dikirim') {
+                label = 'Dikirim';
+                color = 'bg-purple-100 text-purple-800';
+              } else if (s === 'pending' || s === 'menunggu pembayaran') {
+                label = 'Menunggu';
+                color = 'bg-yellow-100 text-yellow-800';
+              } else if (s === 'dibatalkan' || s === 'cancelled') {
+                label = 'Dibatalkan';
+                color = 'bg-red-100 text-red-800';
+              }
+
+              return <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${color}`}>{label}</span>;
+            })()}
           </div>
         </div>
       </div>
@@ -260,7 +281,7 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
   // handleDelete dihapus - Pesanan tidak boleh dihapus
   // Pesanan adalah histori transaksi yang harus tetap ada
 
-  const tabs = ['Semua', 'Diproses', 'Selesai']; // Tab yang tersedia
+  const tabs = ['Semua', 'Menunggu', 'Diproses', 'Dikirim', 'Selesai']; // Tab yang tersedia
 
   return (
     <Mainbar header={
@@ -304,10 +325,35 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
                 data.map((item, index) => (
                   <tr key={item.id} className="border-b hover:bg-gray-50">
                     <td className="px-4 py-2">{from + index}</td>
-                    <td className="px-4 py-2 font-medium">{item.pelanggan?.nama || '-'}</td>
+                    <td className="px-4 py-2 font-medium">{item.user?.name || '-'}</td>
                     <td className="px-4 py-2">{item.tanggal}</td>
                     <td className="px-4 py-2">Rp {item.total.toLocaleString('id-ID')}</td>
-                    <td className="px-4 py-2"><span className={`px-2 py-1 rounded-full text-xs ${item.status === 'Selesai' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>{item.status}</span></td>
+                    <td className="px-4 py-2">
+                      {(() => {
+                        const s = item.status?.toLowerCase();
+                        let label = item.status;
+                        let color = 'bg-gray-100 text-gray-800';
+
+                        if (s === 'completed' || s === 'selesai') {
+                          label = 'Selesai';
+                          color = 'bg-green-100 text-green-800';
+                        } else if (s === 'processed' || s === 'diproses') {
+                          label = 'Diproses';
+                          color = 'bg-blue-100 text-blue-800';
+                        } else if (s === 'shipped' || s === 'dikirim') {
+                          label = 'Dikirim';
+                          color = 'bg-purple-100 text-purple-800';
+                        } else if (s === 'pending' || s === 'menunggu pembayaran') {
+                          label = 'Menunggu';
+                          color = 'bg-yellow-100 text-yellow-800';
+                        } else if (s === 'dibatalkan' || s === 'cancelled') {
+                          label = 'Dibatalkan';
+                          color = 'bg-red-100 text-red-800';
+                        }
+
+                        return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${color}`}>{label}</span>;
+                      })()}
+                    </td>
                     <td className="px-4 py-2">
                       <div className="flex items-center justify-center gap-2">
                         <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full" title="Lihat Detail">👁️</button>
@@ -353,7 +399,7 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
 
               <UlasanPreview
                 ulasan={modalState.model?.ulasan}
-                pelanggan={modalState.model?.pelanggan}
+                pelanggan={modalState.model?.user}
                 tipe="Pembelian Produk"
                 isAdmin={true}
               />

@@ -28,7 +28,23 @@ class OrderController extends Controller
         }
 
         if ($request->has('status') && $request->status !== 'Semua') {
-            $query->where('status', $request->status);
+            $statusInput = strtolower($request->status);
+            
+            // Map frontend tabs (Indonesian/English) to database status
+            $statusMap = [
+                'menunggu' => ['pending', 'menunggu pembayaran'],
+                'diproses' => ['processed', 'diproses'],
+                'dikirim'  => ['shipped', 'dikirim'],
+                'selesai'  => ['completed', 'selesai'],
+            ];
+
+            // If found in map, search for both new and legacy values
+            if (isset($statusMap[$statusInput])) {
+                $query->whereIn('status', $statusMap[$statusInput]);
+            } else {
+                // Fallback for direct match
+                $query->where('status', $request->status);
+            }
         }
 
         $pesanan = $query->paginate(10)->withQueryString();
@@ -153,6 +169,11 @@ class OrderController extends Controller
             'nomor_resi' => 'nullable|string|max:50',
         ]);
 
+        // Validasi tambahan: Resi wajib jika status Shipped
+        if ($request->status === 'shipped' && empty($request->nomor_resi)) {
+            return back()->withErrors(['nomor_resi' => 'Nomor resi wajib diisi jika status Dikirim.']);
+        }
+
         DB::beginTransaction();
         try {
             $pesanan = Pesanan::findOrFail($id);
@@ -160,19 +181,39 @@ class OrderController extends Controller
             $newStatus = $request->status;
 
             // === VALIDASI STATUS FLOW ===
+            // Normalisasi status lama (Indonesian) ke English lowercase untuk validasi
+            $statusMap = [
+                'menunggu pembayaran' => 'pending',
+                'pending' => 'pending',
+                
+                'diproses' => 'processed',
+                'processed' => 'processed',
+                
+                'dikirim' => 'shipped',
+                'shipped' => 'shipped',
+                
+                'selesai' => 'completed',
+                'completed' => 'completed',
+            ];
+
+            $normalizedCurrentStatus = $statusMap[strtolower($currentStatus)] ?? $currentStatus;
+
             $allowedTransitions = [
                 'pending'   => ['processed'],
-                'processed' => ['shipped', 'completed'], // completed untuk pickup
+                'processed' => ['shipped', 'completed'], // completed untuk pickup/direct
                 'shipped'   => ['completed'],
                 'completed' => [], // Final state
             ];
 
             // Jika status berubah, validasi transisi
             if ($currentStatus !== $newStatus) {
-                $allowed = $allowedTransitions[$currentStatus] ?? [];
+                // Gunakan normalized status untuk cek rule transisi
+                $allowed = $allowedTransitions[$normalizedCurrentStatus] ?? [];
                 
-                // Allow "processed" -> "processed" (untuk update resi)
-                if ($currentStatus !== $newStatus && !in_array($newStatus, $allowed)) {
+                // Allow transition if newStatus is in allowed list
+                if (!in_array($newStatus, $allowed)) {
+                     // Fallback: Jika tidak ada di allowed, cek apakah statusnya sama (idempotent)
+                     // tapi karena logic $currentStatus !== $newStatus sudah filter ini, maka ini murni error
                     throw new \Exception("Status tidak bisa diubah dari '{$currentStatus}' ke '{$newStatus}'. Transisi yang diizinkan: " . implode(', ', $allowed));
                 }
             }

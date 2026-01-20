@@ -44,9 +44,16 @@
 - **Harga**: Input rupiah dengan prefix currency.
 - **Stok**: Warning visual "Stok menipis!" jika < 5.
 - **Foto**: Preview gambar & custom upload button.
-- **Status**: Radio button (Aktif/Nonaktif) yang lebih jelas.
+- **Status**: Radio button (Aktif/Nonaktif) dengan visual indicator bulat yang robust (fix size, no glitch).
 - **Validasi**: Min length 3 char & visual feedback.
 - **Redesign Compact**: Layout 2 kolom (Grid), sticky footer, dan header summary. Modal diperlebar (max-w-5xl).
+- **Fix Duplicate Deletion**:
+  - Update `ProductController`: Hapus `withTrashed()` dari `index` dan `edit`.
+  - Produk yang dihapus sekarang **hilang dari list** (sesuai ekspektasi), bukan tetap muncul sebagai soft-deleted.
+- **Fix Invoice & Order List**:
+  - Update `Pesanan/Index.jsx` untuk menggunakan relasi `user` (bukan `pelanggan` legacy).
+  - Field: `user.name`, `user.phone`, `user.alamat`.
+  - Mengembalikan tampilan Nama Pelanggan di tabel dan Detail Invoice.
 
 ### Dynamic Pickup Time Estimation
 - **Files Modified**: 

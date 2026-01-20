@@ -53,7 +53,7 @@ export default function LaporanIndex({ initialSummary, filters }) {
     setLoading(true);
     try {
       // 1. Update Summary
-      const res = await axios.get('/laporan', {
+      const res = await axios.get('/admin/laporan', {
         params: { start_date: dateRange.start, end_date: dateRange.end },
         headers: { 'Accept': 'application/json' }
       });
@@ -64,7 +64,7 @@ export default function LaporanIndex({ initialSummary, filters }) {
         await fetchPreview(previewType);
       }
 
-      router.replace('/laporan', {
+      router.replace('/admin/laporan', {
         start_date: dateRange.start,
         end_date: dateRange.end
       }, { preserveState: true, preserveScroll: true, replace: true });
@@ -81,7 +81,7 @@ export default function LaporanIndex({ initialSummary, filters }) {
     setPreviewLoading(true);
     setPreviewType(type);
     try {
-      const res = await axios.get(`/laporan/${type}/json`, {
+      const res = await axios.get(`/admin/laporan/${type}/json`, {
         params: { start_date: dateRange.start, end_date: dateRange.end }
       });
       setPreviewData(res.data);
@@ -90,13 +90,16 @@ export default function LaporanIndex({ initialSummary, filters }) {
         document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     } catch (error) {
+      console.error('Preview fetch error:', error);
       Swal.fire('Oops', 'Gagal memuat preview data.', 'error');
     } finally {
       setPreviewLoading(false);
     }
   };
 
-  const setPreset = (type) => {
+  const [activePreset, setActivePreset] = useState(null);
+
+  const setPreset = async (type) => {
     const today = new Date();
     let start, end;
 
@@ -104,11 +107,12 @@ export default function LaporanIndex({ initialSummary, filters }) {
 
     switch (type) {
       case 'today':
-        start = end = formatDate(today);
+        start = end = formatDate(new Date());
         break;
       case 'week':
-        const firstDay = new Date(today.setDate(today.getDate() - today.getDay())); // Sunday
-        start = formatDate(firstDay);
+        const firstDayOfWeek = new Date();
+        firstDayOfWeek.setDate(today.getDate() - today.getDay());
+        start = formatDate(firstDayOfWeek);
         end = formatDate(new Date());
         break;
       case 'month':
@@ -121,7 +125,31 @@ export default function LaporanIndex({ initialSummary, filters }) {
         break;
       default: return;
     }
+
+    setActivePreset(type);
     setDateRange({ start, end });
+
+    // Auto-apply filter immediately
+    setLoading(true);
+    try {
+      const res = await axios.get('/admin/laporan', {
+        params: { start_date: start, end_date: end },
+        headers: { 'Accept': 'application/json' }
+      });
+      setSummary(res.data.summary);
+
+      // Refresh preview if open
+      if (previewType) {
+        const previewRes = await axios.get(`/admin/laporan/${previewType}/json`, {
+          params: { start_date: start, end_date: end }
+        });
+        setPreviewData(previewRes.data);
+      }
+    } catch (error) {
+      console.error("Quick filter error:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // --- RENDER HELPERS ---
@@ -169,14 +197,14 @@ export default function LaporanIndex({ initialSummary, filters }) {
           {openDropdown === type && (
             <div className="absolute right-0 mt-2 w-40 bg-white border border-gray-200 rounded-lg shadow-xl z-20 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
               <a
-                href={`/laporan/${type}/pdf?start_date=${dateRange.start}&end_date=${dateRange.end}`}
+                href={`/admin/laporan/${type}/pdf?start_date=${dateRange.start}&end_date=${dateRange.end}`}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600"
                 onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }}
               >
                 <FaFilePdf className="text-red-500" /> PDF Document
               </a>
               <a
-                href={`/laporan/${type}/excel?start_date=${dateRange.start}&end_date=${dateRange.end}`}
+                href={`/admin/laporan/${type}/excel?start_date=${dateRange.start}&end_date=${dateRange.end}`}
                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600"
                 onClick={(e) => { e.stopPropagation(); setOpenDropdown(null); }}
               >
@@ -200,18 +228,28 @@ export default function LaporanIndex({ initialSummary, filters }) {
 
       <div className="p-6 space-y-8 max-w-7xl mx-auto">
 
-        {/* 1. FILTER BAR */}
+        {/* 1. FILTER BAR - Fixed Layout */}
         <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
-          <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
-              <span className="text-sm font-semibold text-gray-500 whitespace-nowrap mr-2">Quick Filter:</span>
-              {['Hari Ini', 'Minggu Ini', 'Bulan Ini', 'Tahun Ini'].map((label, idx) => {
-                const keys = ['today', 'week', 'month', 'year'];
+          <div className="flex flex-col md:flex-row gap-4 items-center justify-between min-h-[48px]">
+            {/* Quick Filter Buttons */}
+            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+              <span className="text-sm font-semibold text-gray-500 whitespace-nowrap mr-1">Filter:</span>
+              {[
+                { key: 'today', label: 'Hari Ini' },
+                { key: 'week', label: 'Minggu Ini' },
+                { key: 'month', label: 'Bulan Ini' },
+                { key: 'year', label: 'Tahun Ini' }
+              ].map(({ key, label }) => {
+                const isActive = activePreset === key;
                 return (
                   <button
-                    key={keys[idx]}
-                    onClick={() => setPreset(keys[idx])}
-                    className="px-3 py-1.5 text-xs font-medium bg-gray-100 hover:bg-green-100 text-gray-600 hover:text-green-700 rounded-full transition whitespace-nowrap"
+                    key={key}
+                    onClick={() => setPreset(key)}
+                    disabled={loading}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all whitespace-nowrap min-w-[80px] ${isActive
+                      ? 'bg-green-600 text-white shadow-md ring-2 ring-green-200'
+                      : 'bg-gray-100 hover:bg-green-50 text-gray-600 hover:text-green-700'
+                      } disabled:opacity-60 disabled:cursor-wait`}
                   >
                     {label}
                   </button>
@@ -219,26 +257,43 @@ export default function LaporanIndex({ initialSummary, filters }) {
               })}
             </div>
 
+            {/* Date Range + Apply Button */}
             <div className="flex items-center gap-2 w-full md:w-auto bg-gray-50 p-1.5 rounded-lg border border-gray-200">
               <input
                 type="date"
                 value={dateRange.start}
-                onChange={e => setDateRange({ ...dateRange, start: e.target.value })}
-                className="bg-transparent border-0 text-sm focus:ring-0 p-1"
+                onChange={e => {
+                  setActivePreset(null);
+                  setDateRange({ ...dateRange, start: e.target.value });
+                }}
+                className="bg-transparent border-0 text-sm focus:ring-0 p-1 w-[130px]"
               />
               <span className="text-gray-400">-</span>
               <input
                 type="date"
                 value={dateRange.end}
-                onChange={e => setDateRange({ ...dateRange, end: e.target.value })}
-                className="bg-transparent border-0 text-sm focus:ring-0 p-1"
+                onChange={e => {
+                  setActivePreset(null);
+                  setDateRange({ ...dateRange, end: e.target.value });
+                }}
+                className="bg-transparent border-0 text-sm focus:ring-0 p-1 w-[130px]"
               />
               <button
                 onClick={handleApplyFilter}
                 disabled={loading}
-                className="ml-2 bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-medium shadow-sm transition flex items-center gap-2"
+                className="ml-2 bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-medium shadow-sm transition flex items-center justify-center gap-2 min-w-[100px] disabled:opacity-70"
               >
-                {loading ? <LoadingSpinner size="xs" /> : <FiFilter />} Terapkan
+                {loading ? (
+                  <>
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    <span>Memuat</span>
+                  </>
+                ) : (
+                  <>
+                    <FiFilter className="text-sm" />
+                    <span>Terapkan</span>
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -272,25 +327,19 @@ export default function LaporanIndex({ initialSummary, filters }) {
           />
         </section>
 
-        {/* 3. REPORT CATALOG */}
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* 3. REPORT CATALOG - 2 Main Reports */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <ReportCard
             title="Laporan Penjualan"
-            desc="Analisis tren penjualan dan detail transaksi harian."
+            desc="Analisis tren penjualan, detail transaksi, dan produk terlaris."
             icon={<FiBarChart2 />}
             type="penjualan"
           />
           <ReportCard
             title="Laporan Kunjungan"
-            desc="Rekapitulasi pengunjung dan reservasi agrowisata."
+            desc="Rekapitulasi pengunjung, reservasi, dan tipe kunjungan."
             icon={<FiCalendar />}
             type="kunjungan"
-          />
-          <ReportCard
-            title="Produk Terlaris"
-            desc="Peringkat produk berdasarkan kuantitas penjualan."
-            icon={<FiTrendingUp />}
-            type="produk-terlaris"
           />
         </section>
 

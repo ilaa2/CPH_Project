@@ -13,8 +13,9 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        // Termasuk produk yang soft deleted untuk ditampilkan di admin
-        $query = Produk::withTrashed()
+        // Hanya tampilkan produk aktif (tapa soft deleted)
+        // Agar fitur delete terlihat berfungsi (item hilang dari list)
+        $query = Produk::query()
             ->select('products.*', 'product_categories.nama_kategori as kategori')
             ->leftJoin('product_categories', 'products.id_kategori', '=', 'product_categories.id');
 
@@ -79,8 +80,8 @@ class ProductController extends Controller
 
     public function edit($id)
     {
-        // Termasuk produk yang soft deleted
-        $produk = Produk::withTrashed()->findOrFail($id);
+        // Hanya edit produk yang exist (tidak trash)
+        $produk = Produk::findOrFail($id);
         $kategori = ProductCategory::all();
 
         return Inertia::render('Produk/Edit', [

@@ -39,12 +39,15 @@ class ReportController extends Controller
 
     private function getSummaryStats($startDate, $endDate)
     {
+        // Support both legacy (Indonesian) and new (English) status values
+        $completedStatuses = ['Selesai', 'completed'];
+        
         // Hitung Total Pendapatan dari Pesanan Selesai
-        $totalPendapatan = Pesanan::where('status', 'Selesai')
+        $totalPendapatan = Pesanan::whereIn('status', $completedStatuses)
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->sum('total');
 
-        $totalTransaksi = Pesanan::where('status', 'Selesai')
+        $totalTransaksi = Pesanan::whereIn('status', $completedStatuses)
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->count();
 
@@ -56,7 +59,7 @@ class ReportController extends Controller
         $topProduct = DB::table('pesanan_items')
             ->join('pesanan', 'pesanan_items.pesanan_id', '=', 'pesanan.id')
             ->join('products', 'pesanan_items.produk_id', '=', 'products.id')
-            ->where('pesanan.status', 'Selesai')
+            ->whereIn('pesanan.status', $completedStatuses)
             ->whereBetween('pesanan.tanggal', [$startDate, $endDate])
             ->select('products.nama', DB::raw('SUM(pesanan_items.jumlah) as total_qty'))
             ->groupBy('products.nama')
@@ -91,8 +94,10 @@ class ReportController extends Controller
 
     private function getPreviewPenjualan($startDate, $endDate)
     {
+        $completedStatuses = ['Selesai', 'completed'];
+        
         // Data Grafik: Pendapatan per hari
-        $chartData = Pesanan::where('status', 'Selesai')
+        $chartData = Pesanan::whereIn('status', $completedStatuses)
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->selectRaw('DATE(tanggal) as date, SUM(total) as total')
             ->groupBy('date')
@@ -104,17 +109,26 @@ class ReportController extends Controller
 
         // Data Tabel: 10 Transaksi Terakhir
         $tableData = Pesanan::with('user')
-            ->where('status', 'Selesai')
+            ->whereIn('status', $completedStatuses)
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderByDesc('tanggal')
             ->limit(10)
             ->get()
             ->map(function ($p) {
+                // Normalize status to Indonesian display
+                $statusMap = [
+                    'pending' => 'Menunggu',
+                    'processed' => 'Diproses',
+                    'shipped' => 'Dikirim',
+                    'completed' => 'Selesai',
+                ];
+                $displayStatus = $statusMap[strtolower($p->status)] ?? $p->status;
+                
                 return [
                     'col1' => $p->tanggal,
                     'col2' => $p->user->name ?? 'Guest',
                     'col3' => 'Rp ' . number_format($p->total, 0, ',', '.'),
-                    'col4' => $p->status,
+                    'col4' => $displayStatus,
                 ];
             });
 
@@ -151,7 +165,7 @@ class ReportController extends Controller
             });
 
         // Data Tabel: 10 Kunjungan Terakhir
-        $tableData = Kunjungan::with('user')
+        $tableData = Kunjungan::with(['user', 'tipe'])
             ->where('status', '!=', 'Dibatalkan')
             ->whereBetween('tanggal', [$startDate, $endDate])
             ->orderByDesc('tanggal')
@@ -161,9 +175,9 @@ class ReportController extends Controller
                 $totalVisitor = $k->jumlah_dewasa + $k->jumlah_anak + $k->jumlah_balita;
                 return [
                     'col1' => $k->tanggal,
-                    'col2' => $k->user->name ?? 'Umum',
-                    'col3' => $totalVisitor . ' Orang',
-                    'col4' => $k->status,
+                    'col2' => $k->tipe->nama_tipe ?? '-',
+                    'col3' => $k->user->name ?? 'Umum',
+                    'col4' => $totalVisitor . ' Orang',
                 ];
             });
 
@@ -180,7 +194,7 @@ class ReportController extends Controller
                 ]
             ],
             'table' => [
-                'headers' => ['Tanggal', 'Pelanggan', 'Pengunjung', 'Status'],
+                'headers' => ['Tanggal', 'Tipe Kunjungan', 'Pelanggan', 'Pengunjung'],
                 'rows' => $tableData
             ]
         ]);
@@ -188,11 +202,13 @@ class ReportController extends Controller
 
     private function getPreviewProdukTerlaris($startDate, $endDate)
     {
+        $completedStatuses = ['Selesai', 'completed'];
+        
         // Data Grafik & Tabel sama untuk produk terlaris (Top 10)
         $data = DB::table('pesanan_items')
             ->join('pesanan', 'pesanan_items.pesanan_id', '=', 'pesanan.id')
             ->join('products', 'pesanan_items.produk_id', '=', 'products.id')
-            ->where('pesanan.status', 'Selesai')
+            ->whereIn('pesanan.status', $completedStatuses)
             ->whereBetween('pesanan.tanggal', [$startDate, $endDate])
             ->select('products.nama', DB::raw('SUM(pesanan_items.jumlah) as total_qty'))
             ->groupBy('products.nama')
@@ -228,9 +244,10 @@ class ReportController extends Controller
     {
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
+        $completedStatuses = ['Selesai', 'completed'];
 
         $pesanan = Pesanan::with(['user', 'items.produk'])
-            ->where('status', '!=', 'Dibatalkan')
+            ->whereIn('status', $completedStatuses)
             ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('tanggal', [$startDate, $endDate]);
             })
@@ -238,7 +255,6 @@ class ReportController extends Controller
             ->get();
 
         $data = $pesanan->map(function ($p) {
-            // Gabungkan produk dalam format: Produk A (jumlah), Produk B (jumlah)
             $produkList = $p->items->map(function($item) {
                 return ($item->produk->nama ?? 'Produk Terhapus') . " ({$item->jumlah})";
             })->implode(', ');
@@ -247,15 +263,37 @@ class ReportController extends Controller
                 'ID'               => $p->id,
                 'Tanggal'          => $p->tanggal,
                 'Nama Pelanggan'   => $p->user->name ?? 'Guest',
-                'Alamat'           => $p->user->alamat ?? '-',
-                'Telepon'          => "'" . ($p->user->phone ?? '-') . "'",
                 'Produk (Qty)'     => $produkList,
                 'Total Transaksi'  => $p->total,
                 'Status'           => $p->status,
             ];
         })->toArray();
 
-        return $this->handleExport($format, $data, 'laporan_penjualan');
+        // Get Top 5 Products for the period
+        $topProducts = DB::table('pesanan_items')
+            ->join('pesanan', 'pesanan_items.pesanan_id', '=', 'pesanan.id')
+            ->join('products', 'pesanan_items.produk_id', '=', 'products.id')
+            ->whereIn('pesanan.status', $completedStatuses)
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('pesanan.tanggal', [$startDate, $endDate]);
+            })
+            ->select(
+                'products.nama',
+                DB::raw('SUM(pesanan_items.jumlah) as total_qty'),
+                DB::raw('SUM(pesanan_items.jumlah * products.harga) as total_omzet')
+            )
+            ->groupBy('products.nama')
+            ->orderByDesc('total_qty')
+            ->limit(5)
+            ->get()
+            ->map(fn($p) => [
+                'nama' => $p->nama,
+                'total_qty' => $p->total_qty,
+                'total_omzet' => $p->total_omzet
+            ])
+            ->toArray();
+
+        return $this->handleExport($format, $data, 'laporan_penjualan', ['topProducts' => $topProducts]);
     }
 
     // === Laporan Kunjungan
@@ -264,7 +302,7 @@ class ReportController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        $kunjungans = Kunjungan::with('user')
+        $kunjungans = Kunjungan::with(['user', 'tipe'])
             ->where('status', '!=', 'Dibatalkan')
             ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
                 $query->whereBetween('tanggal', [$startDate, $endDate]);
@@ -278,16 +316,40 @@ class ReportController extends Controller
                 'ID Kunjungan'       => $k->id,
                 'Tanggal'            => $k->tanggal,
                 'Jam'                => $k->jam,
+                'Tipe Kunjungan'     => $k->tipe->nama_tipe ?? '-',
                 'Nama Pelanggan'     => $k->user->name ?? 'Tidak Ada',
-                'Alamat'             => $k->user->alamat ?? '-',
-                'Telepon'            => $k->user->phone ?? '-',
-                'Status'             => $k->status ?? '-',
                 'Jumlah Pengunjung'  => $totalPengunjung ?: '-',
                 'Total Biaya'        => $k->total_biaya ?? 0,
+                'Status'             => $k->status ?? '-',
             ];
         })->toArray();
 
-        return $this->handleExport($format, $data, 'laporan_kunjungan');
+        // Get Top Visit Types for the period
+        $topVisitTypes = DB::table('kunjungan')
+            ->join('tipe_kunjungan', 'kunjungan.tipe_id', '=', 'tipe_kunjungan.id')
+            ->where('kunjungan.status', '!=', 'Dibatalkan')
+            ->when($startDate && $endDate, function ($query) use ($startDate, $endDate) {
+                $query->whereBetween('kunjungan.tanggal', [$startDate, $endDate]);
+            })
+            ->select(
+                'tipe_kunjungan.nama_tipe',
+                DB::raw('COUNT(*) as total_kunjungan'),
+                DB::raw('SUM(kunjungan.jumlah_dewasa + kunjungan.jumlah_anak + kunjungan.jumlah_balita) as total_pengunjung'),
+                DB::raw('SUM(kunjungan.total_biaya) as total_pendapatan')
+            )
+            ->groupBy('tipe_kunjungan.nama_tipe')
+            ->orderByDesc('total_kunjungan')
+            ->limit(5)
+            ->get()
+            ->map(fn($t) => [
+                'nama_tipe' => $t->nama_tipe,
+                'total_kunjungan' => $t->total_kunjungan,
+                'total_pengunjung' => $t->total_pengunjung ?? 0,
+                'total_pendapatan' => $t->total_pendapatan ?? 0
+            ])
+            ->toArray();
+
+        return $this->handleExport($format, $data, 'laporan_kunjungan', ['topVisitTypes' => $topVisitTypes]);
     }
 
     // === Laporan Produk Terlaris
@@ -331,7 +393,7 @@ class ReportController extends Controller
     }
 
     // === Handler Export Semua Format (FILE-BASED STRATEGY + DEBUG)
-    private function handleExport($format, array $data, string $filename)
+    private function handleExport($format, array $data, string $filename, array $extraData = [])
     {
         Log::info("EXPORT_DEBUG: handleExport called", [
             'format' => $format,
@@ -419,12 +481,12 @@ class ReportController extends Controller
                 $safeData = empty($data) ? [] : $data;
                 $safeHeaders = empty($data) ? [] : array_keys($data[0]);
 
-                $pdfData = [
+                $pdfData = array_merge([
                     'title'   => $title,
                     'period'  => $period,
                     'headers' => $safeHeaders,
                     'data'    => $safeData,
-                ];
+                ], $extraData);
 
                 Pdf::loadView('laporan.pdf', $pdfData)
                     ->setPaper('a4', 'landscape')

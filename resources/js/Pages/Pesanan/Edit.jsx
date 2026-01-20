@@ -1,4 +1,4 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import Mainbar from '@/Components/Bar/Mainbar';
 import Swal from 'sweetalert2';
 
@@ -38,6 +38,51 @@ export default function Edit({ pesanan }) {
     });
   };
 
+  // Special handler for Quick Ship action (avoids state race conditions)
+  const handleQuickShip = (resi) => {
+    router.put(route('admin.pesanan.update', pesanan.id), {
+      ...data,
+      status: 'shipped',
+      nomor_resi: resi
+    }, {
+      onSuccess: () => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil Dikirim!',
+          text: `Status diubah menjadi Dikirim. Resi: ${resi}`,
+          timer: 2000,
+          showConfirmButton: false
+        });
+      },
+      onError: (errs) => {
+        const msg = errs.message || Object.values(errs).flat().join(', ') || 'Gagal memperbarui status.';
+        Swal.fire({ icon: 'error', title: 'Gagal', text: msg });
+      }
+    });
+  };
+
+  // Atomic status update handler
+  const updateStatus = (newStatus) => {
+    router.put(route('admin.pesanan.update', pesanan.id), {
+      ...data,
+      status: newStatus
+    }, {
+      onSuccess: () => {
+        Swal.fire({
+          icon: 'success',
+          title: 'Berhasil',
+          text: 'Status pesanan berhasil diperbarui!',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      },
+      onError: (errs) => {
+        const msg = errs.message || Object.values(errs).flat().join(', ') || 'Gagal memperbarui status.';
+        Swal.fire({ icon: 'error', title: 'Gagal', text: msg });
+      }
+    });
+  };
+
   // Format Date (10 Okt 2025)
   const formatDate = (dateString) => {
     if (!dateString) return '-';
@@ -63,7 +108,7 @@ export default function Edit({ pesanan }) {
   };
 
   const isCompleted = currentStatus === 'completed';
-  const showResiInput = ['processed', 'shipped'].includes(data.status);
+  const showResiInput = ['shipped', 'completed'].includes(data.status);
 
   // Calculate Subtotal from snapshot items to ensure accuracy
   const subtotal = pesanan.items?.reduce((acc, item) => acc + (parseFloat(item.subtotal) || 0), 0) || 0;
@@ -108,7 +153,16 @@ export default function Edit({ pesanan }) {
                 <label className="text-xs text-gray-500 uppercase font-semibold">Status Saat Ini</label>
                 <div>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${getStatusColor(pesanan.status)}`}>
-                    {pesanan.status.toUpperCase()}
+                    {(() => {
+                      const s = normalizeStatus(pesanan.status);
+                      const labels = {
+                        pending: 'Menunggu Pembayaran',
+                        processed: 'Diproses',
+                        shipped: 'Dikirim',
+                        completed: 'Selesai'
+                      };
+                      return labels[s] || pesanan.status;
+                    })()}
                   </span>
                 </div>
               </div>
@@ -158,7 +212,46 @@ export default function Edit({ pesanan }) {
                     <div className="text-gray-800">
                       {pesanan.ekspedisi || pesanan.metode_pengiriman || '-'}
                       {pesanan.estimasi && <span className="text-gray-500 text-sm"> ({pesanan.estimasi})</span>}
+
+                      {/* Estimasi Tanggal Sampai */}
+                      {(() => {
+                        if (!pesanan.estimasi || !pesanan.tanggal) return null;
+
+                        // Parse "2-3 Hari" or "1 Hari"
+                        const matches = pesanan.estimasi.match(/(\d+)(?:-(\d+))?/);
+                        if (!matches) return null;
+
+                        const minDays = parseInt(matches[1]);
+                        const maxDays = matches[2] ? parseInt(matches[2]) : minDays;
+
+                        const orderDate = new Date(pesanan.tanggal);
+
+                        // Add days to order date
+                        const minDate = new Date(orderDate);
+                        minDate.setDate(orderDate.getDate() + minDays);
+
+                        const maxDate = new Date(orderDate);
+                        maxDate.setDate(orderDate.getDate() + maxDays);
+
+                        const options = { weekday: 'long', day: 'numeric', month: 'short' };
+                        const minStr = new Intl.DateTimeFormat('id-ID', options).format(minDate);
+                        const maxStr = new Intl.DateTimeFormat('id-ID', options).format(maxDate);
+
+                        return (
+                          <div className="text-xs text-green-600 font-medium mt-1">
+                            <span role="img" aria-label="calendar">📅</span> Sampai: {minStr} {minDays !== maxDays && `- ${maxStr}`}
+                          </div>
+                        );
+                      })()}
                     </div>
+                    {pesanan.nomor_resi && (
+                      <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
+                        <label className="text-xs text-gray-500 uppercase font-bold">No. Resi</label>
+                        <div className="font-mono font-bold text-indigo-600 bg-indigo-50 inline-block px-2 py-1 rounded text-sm mt-1">
+                          {pesanan.nomor_resi}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -178,54 +271,88 @@ export default function Edit({ pesanan }) {
 
           {/* Card: Action / Status Manager */}
           <div className="bg-white p-6 rounded-lg shadow border-2 border-indigo-50">
-            <h3 className="text-lg font-bold text-indigo-900 mb-4">Update Status</h3>
+            <h3 className="text-lg font-bold text-indigo-900 mb-4">
+              {isCompleted ? 'Status Pesanan' : 'Update Status'}
+            </h3>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1">Status Pesanan</label>
-                <select
-                  value={data.status}
-                  onChange={(e) => setData('status', e.target.value)}
-                  disabled={isCompleted}
-                  className="w-full border-gray-300 rounded font-semibold focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100 disabled:text-gray-500"
-                >
-                  <option value="pending">Pending (Menunggu Pembayaran)</option>
-                  <option value="processed">Processed (Diproses)</option>
-                  <option value="shipped">Shipped (Dikirim)</option>
-                  <option value="completed">Completed (Selesai)</option>
-                </select>
-                {errors.status && <p className="text-xs text-red-600 mt-1">{errors.status}</p>}
-                {isCompleted && <p className="text-xs text-gray-500 mt-1 italic">Status selesai tidak dapat diubah.</p>}
-              </div>
+            {/* Quick Actions (Aksi Cepat) */}
+            {!isCompleted ? (
+              <div className="mb-6">
 
-              {/* Input Resi hanya muncul jika processed/shipped */}
-              {showResiInput && (
-                <div className="animate-fade-in-down">
-                  <label className="block text-sm font-medium mb-1">Nomor Resi / Tracking Info</label>
-                  <input
-                    type="text"
-                    value={data.nomor_resi}
-                    onChange={(e) => setData('nomor_resi', e.target.value)}
-                    placeholder="Input nomor resi..."
-                    disabled={isCompleted}
-                    className="w-full border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-100"
-                  />
-                  {errors.nomor_resi && <p className="text-xs text-red-600 mt-1">{errors.nomor_resi}</p>}
-                </div>
-              )}
 
-              {!isCompleted && (
-                <div className="pt-4 border-t flex justify-end items-center">
+                {data.status === 'pending' && (
                   <button
-                    type="submit"
+                    type="button"
+                    onClick={() => updateStatus('processed')}
                     disabled={processing}
-                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-indigo-700 transition-colors disabled:opacity-50"
+                    className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
                   >
-                    {processing ? 'Menyimpan...' : 'Update Status'}
+                    <span>✅</span> Konfirmasi Pembayaran
                   </button>
+                )}
+
+                {data.status === 'processed' && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      Swal.fire({
+                        title: 'Input Nomor Resi',
+                        input: 'text',
+                        inputLabel: 'Masukkan nomor resi pengiriman:',
+                        inputPlaceholder: 'Contoh: JNE12345678',
+                        showCancelButton: true,
+                        confirmButtonText: 'Kirim Pesanan',
+                        cancelButtonText: 'Batal',
+                        inputValidator: (value) => {
+                          if (!value) {
+                            return 'Nomor resi wajib diisi!';
+                          }
+                        }
+                      }).then((result) => {
+                        if (result.isConfirmed) {
+                          setData(data => ({ ...data, status: 'shipped', nomor_resi: result.value }));
+                          // Small delay to ensure state update before submit implies race condition, 
+                          // better to call submit directly with manual data but Inertia useForm is reactive.
+                          // We will trigger manual submit in useEffect or just use helper command.
+                          // Alternative: Since setData is async-like in batching, we cannot immediately submit.
+                          // We will use a dedicated handler for this action.
+                          handleQuickShip(result.value);
+                        }
+                      });
+                    }}
+                    disabled={processing}
+                    className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
+                  >
+                    <span>🚚</span> Kirim Pesanan
+                  </button>
+                )}
+
+                {data.status === 'shipped' && (
+                  <button
+                    type="button"
+                    onClick={() => updateStatus('completed')}
+                    disabled={processing}
+                    className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
+                  >
+                    <span>🏁</span> Selesaikan Pesanan
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6 animate-fade-in">
+                <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
                 </div>
-              )}
-            </div>
+                <h4 className="text-lg font-bold text-gray-800">Pesanan Selesai</h4>
+                <p className="text-sm text-gray-500 mt-1">
+                  Transaksi ini telah selesai diproses.<br />Data sudah terkunci dan tersimpan di arsip.
+                </p>
+              </div>
+            )}
+
+            {/* Manual Update section removed to enforce linear flow via Quick Actions */}
           </div>
 
           {/* Card: Payment Summary */}

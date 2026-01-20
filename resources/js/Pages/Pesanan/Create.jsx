@@ -71,7 +71,7 @@ export default function CreatePesanan({ pelangganList, produkList }) {
               >
                 <option value="">-- Pilih Pelanggan --</option>
                 {pelangganList.map((p) => (
-                  <option key={p.id} value={p.id}>{p.nama}</option>
+                  <option key={p.id} value={p.id}>{p.name}</option>
                 ))}
               </select>
               {errors.pelanggan_id && <p className="text-sm text-red-600 mt-1">{errors.pelanggan_id}</p>}
