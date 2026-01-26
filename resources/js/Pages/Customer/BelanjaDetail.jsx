@@ -6,11 +6,14 @@ import CustomerLayout from '@/Layouts/CustomerLayout';
 import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
-export default function BelanjaDetail({ product, reviews = [], reviewStats = { total: 0, average: 0, counts: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } } }) {
+export default function BelanjaDetail({ product, reviews = [], reviewStats = { total: 0, average: 0, counts: { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 } }, cartQty = 0 }) {
     const { auth } = usePage().props; // DIUBAH: Ambil auth dari usePage
     const [quantity, setQuantity] = useState(1);
 
-    const increment = () => setQuantity(prev => (prev < product.stok ? prev + 1 : prev));
+    // Stok tersedia = stok total - qty yang sudah di keranjang
+    const availableStock = product.stok - cartQty;
+
+    const increment = () => setQuantity(prev => (prev < availableStock ? prev + 1 : prev));
     const decrement = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
 
     const handleQuantityChange = (e) => {
@@ -21,14 +24,16 @@ export default function BelanjaDetail({ product, reviews = [], reviewStats = { t
         }
         const num = parseInt(value, 10);
         if (!isNaN(num)) {
-            if (num > product.stok) {
-                setQuantity(product.stok);
+            if (num > availableStock) {
+                setQuantity(availableStock > 0 ? availableStock : 1);
                 Swal.fire({
                     icon: 'warning',
                     title: 'Stok Tidak Cukup',
-                    text: `Jumlah melebihi stok yang tersedia (${product.stok}).`,
+                    text: cartQty > 0
+                        ? `Anda sudah punya ${cartQty} di keranjang. Sisa stok: ${availableStock}.`
+                        : `Jumlah melebihi stok yang tersedia (${product.stok}).`,
                     showConfirmButton: false,
-                    timer: 1500
+                    timer: 2000
                 });
             } else if (num < 1) {
                 setQuantity(1);
@@ -41,6 +46,9 @@ export default function BelanjaDetail({ product, reviews = [], reviewStats = { t
     const handleBlur = () => {
         if (quantity === '' || quantity < 1) {
             setQuantity(1);
+        }
+        if (quantity > availableStock) {
+            setQuantity(availableStock > 0 ? availableStock : 1);
         }
     };
 
@@ -81,6 +89,7 @@ export default function BelanjaDetail({ product, reviews = [], reviewStats = { t
                     showConfirmButton: false,
                     timer: 2000
                 });
+                setQuantity(1); // Reset quantity setelah sukses
             },
             preserveScroll: true,
         });

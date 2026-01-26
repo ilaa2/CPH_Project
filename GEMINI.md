@@ -90,6 +90,24 @@
 
 ## 18 Januari 2026
 
+### Database Optimization (Remove Timestamps) - REVERTED
+> **SOLUTION:** Dibuat migration baru `2026_01_26_100000_restore_missing_timestamps.php` untuk mengembalikan kolom timestamps pada tabel yang terdampak (`users`, `tipe_kunjungan`, `ulasan_fotos`, `pesanan_items`, `carts`).
+### Fix: Login Redirect di Belanja.jsx (26 Jan 2026)
+- **Masalah**: Tombol "Login Sekarang" pada popup "Akses Terbatas" tidak redirect ke halaman login.
+- **Penyebab**: Penggunaan `router.visit(route('login'))` di dalam callback Swal yang dapat gagal.
+- **Solusi**: Mengubah ke `router.visit('/login')` (direct path) untuk konsistensi dengan file lain (`BelanjaDetail.jsx`, `Kunjungan.jsx`).
+
+### Fix: Quantity Keranjang dari Detail Produk (26 Jan 2026)
+- **Masalah**: Menambahkan produk ke keranjang dari halaman detail selalu quantity 1, meskipun user memilih jumlah berbeda.
+- **Penyebab**: `CartController::store()` mengabaikan parameter `quantity` dari request dan hard-code `quantity => 1`.
+- **Solusi**: 
+  - Menambahkan validasi `quantity` (nullable, min:1).
+  - Menggunakan `$request->input('quantity', 1)` dengan fallback default 1.
+  - Membatasi quantity sesuai stok produk (`min($qty, $product->stok)`).
+
+### Database Optimization (Remove Timestamps) - REVERTED
+> **SOLUTION:** Dibuat migration baru `2026_01_26_100000_restore_missing_timestamps.php` untuk mengembalikan kolom timestamps pada tabel yang terdampak (`users`, `tipe_kunjungan`, `ulasan_fotos`, `pesanan_items`, `carts`).
+
 ### Konsolidasi Tabel Users dan Pelanggans
 - **Database Migrations**:
   - `2026_01_18_220000_add_role_and_customer_fields_to_users_table.php` - Menambahkan kolom `role`, `phone`, `avatar`, `alamat` ke tabel `users`
@@ -101,8 +119,6 @@
 - **Controllers**: Updated 10+ controllers untuk menggunakan `Auth::id()` dan `Auth::user()` alih-alih `Auth::guard('pelanggan')`
 - **Config**: Simplified `auth.php` ke satu guard 'web' dengan role-based middleware
 - **Routes**: Updated `web.php` dari `auth:pelanggan` ke `auth` + `customer`/`admin` middleware
-
-
 
 ### ERD Design: Revisi Final untuk Sistem CPH
 - **File**: `C:\Users\M S I\.gemini\antigravity\brain\dd0f256b-08a9-4954-9837-00a51ad8bc52\ERD_Design.md`

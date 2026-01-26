@@ -33,7 +33,7 @@ export default function Belanja({ auth, products, filters }) {
                 cancelButtonText: 'Nanti Saja'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    router.visit(route('login'));
+                    router.visit('/login');
                 }
             });
             return;

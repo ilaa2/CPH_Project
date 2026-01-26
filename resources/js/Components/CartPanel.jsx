@@ -2,25 +2,48 @@ import { Fragment, useState, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon, TrashIcon, PlusIcon, MinusIcon } from '@heroicons/react/24/outline';
 import { Link, router } from '@inertiajs/react';
+import Swal from 'sweetalert2';
 
 // Komponen untuk mengatur jumlah (quantity)
 function QuantityInput({ item }) {
     const updateQuantity = (newQuantity) => {
-        if (newQuantity < 1) return;
         router.put(route('cart.update', item.id),
             { quantity: newQuantity },
             { preserveScroll: true }
         );
     };
 
+    const handleDecrement = () => {
+        if (item.quantity === 1) {
+            // Konfirmasi hapus jika qty = 1
+            Swal.fire({
+                title: 'Hapus Produk?',
+                text: `"${item.product.nama}" akan dihapus dari keranjang.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#6b7280',
+                confirmButtonText: 'Ya, Hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    router.delete(route('cart.destroy', item.id), { preserveScroll: true });
+                }
+            });
+        } else {
+            updateQuantity(item.quantity - 1);
+        }
+    };
+
     return (
         <div className="flex items-center border border-gray-200 rounded">
-            <button onClick={() => updateQuantity(item.quantity - 1)} className="px-2 py-1 text-gray-600 hover:bg-gray-100">-</button>
+            <button onClick={handleDecrement} className="px-2 py-1 text-gray-600 hover:bg-gray-100">-</button>
             <span className="px-3 text-sm">{item.quantity}</span>
             <button onClick={() => updateQuantity(item.quantity + 1)} className="px-2 py-1 text-gray-600 hover:bg-gray-100">+</button>
         </div>
     );
 }
+
 
 export default function CartPanel({ open, setOpen, cartItems = [] }) {
     const [selectedItems, setSelectedItems] = useState([]);

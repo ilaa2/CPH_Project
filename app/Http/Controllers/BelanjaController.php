@@ -57,6 +57,15 @@ class BelanjaController extends Controller
             1 => $reviews->where('rating', 1)->count(),
         ];
 
+        // Cek qty produk ini di keranjang user (jika login)
+        $cartQty = 0;
+        if (auth()->check()) {
+            $cartItem = \App\Models\Cart::where('user_id', auth()->id())
+                ->where('product_id', $id)
+                ->first();
+            $cartQty = $cartItem ? $cartItem->quantity : 0;
+        }
+
         return Inertia::render('Customer/BelanjaDetail', [
             'product' => $product,
             'reviews' => $reviews,
@@ -64,7 +73,8 @@ class BelanjaController extends Controller
                 'total' => $totalUlasan,
                 'average' => round($averageRating, 1),
                 'counts' => $ratingCounts
-            ]
+            ],
+            'cartQty' => $cartQty, // Qty yang sudah ada di keranjang
         ]);
     }
 

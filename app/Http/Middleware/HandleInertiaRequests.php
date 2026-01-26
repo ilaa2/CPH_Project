@@ -48,7 +48,7 @@ class HandleInertiaRequests extends Middleware
                         // Ambil semua item dalam satu query yang efisien
                         $cartItems = Cart::with('product')
                                          ->where('user_id', $user->id)
-                                         ->latest()
+                                         ->latest('updated_at') // Sort by most recently updated
                                          ->get();
 
                         // Hitung subtotal dari koleksi yang sudah ada

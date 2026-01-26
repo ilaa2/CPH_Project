@@ -3,22 +3,18 @@
 namespace App\Policies;
 
 use App\Models\Cart;
-// GANTI 'User' DENGAN MODEL PELANGGAN ANDA
-use App\Models\Pelanggan; // <-- Pastikan path dan nama model ini benar
+use App\Models\User;
 use Illuminate\Auth\Access\Response;
 
-// app/Policies/CartPolicy.php
 class CartPolicy
 {
-    public function update(Pelanggan $pelanggan, Cart $cart): bool
+    public function update(User $user, Cart $cart): bool
     {
-        // Ganti $cart->user_id menjadi $cart->pelanggan_id
-        return $pelanggan->id === $cart->pelanggan_id;
+        return $user->id === $cart->user_id;
     }
 
-    public function delete(Pelanggan $pelanggan, Cart $cart): bool
+    public function delete(User $user, Cart $cart): bool
     {
-        // Ganti $cart->user_id menjadi $cart->pelanggan_id
-        return $pelanggan->id === $cart->pelanggan_id;
+        return $user->id === $cart->user_id;
     }
 }

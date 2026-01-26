@@ -20,25 +20,57 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
+            'quantity' => 'nullable|integer|min:1',
         ]);
 
         $userId = Auth::id();
         $productId = $request->product_id;
+        $requestedQty = $request->input('quantity', 1); // Default 1 jika tidak dikirim
+
+        // Ambil stok produk untuk validasi
+        $product = \App\Models\Produk::find($productId);
+        if (!$product) {
+            return redirect()->back()->with('error', 'Produk tidak ditemukan.');
+        }
 
         $cartItem = Cart::where('user_id', $userId)
                           ->where('product_id', $productId)
                           ->first();
 
+        $currentCartQty = $cartItem ? $cartItem->quantity : 0;
+        $totalQtyAfterAdd = $currentCartQty + $requestedQty;
+
+        // Validasi: cek apakah total melebihi stok
+        if ($currentCartQty >= $product->stok) {
+            return redirect()->back()->with('error', "Stok {$product->nama} sudah maksimal di keranjang ({$product->stok} item).");
+        }
+
+        if ($totalQtyAfterAdd > $product->stok) {
+            // Hitung sisa yang bisa ditambahkan
+            $canAdd = $product->stok - $currentCartQty;
+            if ($canAdd <= 0) {
+                return redirect()->back()->with('error', "Stok {$product->nama} sudah maksimal di keranjang.");
+            }
+            // Tambahkan sebanyak yang bisa
+            $requestedQty = $canAdd;
+            $totalQtyAfterAdd = $product->stok;
+        }
+
         if ($cartItem) {
-            $cartItem->increment('quantity');
+            $cartItem->update(['quantity' => $totalQtyAfterAdd]);
         } else {
             Cart::create([
                 'user_id' => $userId,
                 'product_id' => $productId,
-                'quantity' => 1,
+                'quantity' => $requestedQty,
             ]);
         }
-        return redirect()->back()->with('success', 'Produk berhasil ditambahkan ke keranjang!');
+
+        $message = $requestedQty < $request->input('quantity', 1)
+            ? "Ditambahkan {$requestedQty} item (stok terbatas)."
+            : 'Produk berhasil ditambahkan ke keranjang!';
+
+        return redirect()->back()->with('success', $message);
     }
 
     /**
