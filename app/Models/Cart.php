@@ -7,22 +7,31 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-// app/Models/Cart.php
 class Cart extends Model
 {
     use HasFactory;
 
-    // Ganti 'user_id' menjadi 'pelanggan_id'
     protected $fillable = [
-        'pelanggan_id',
+        'user_id',
         'product_id',
         'quantity',
     ];
 
-    // Ganti relasi user() menjadi pelanggan()
+    /**
+     * Relasi ke User.
+     */
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Alias for backward compatibility
+     * @deprecated Use user() instead
+     */
     public function pelanggan()
     {
-        return $this->belongsTo(Pelanggan::class);
+        return $this->user();
     }
 
     public function product()

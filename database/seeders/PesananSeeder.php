@@ -30,14 +30,6 @@ class PesananSeeder extends Seeder
                 'created_at' => Carbon::now()->subDays(2),
                 'updated_at' => Carbon::now()->subDays(2),
             ],
-            [
-                'id_pelanggan' => 3,
-                'tanggal' => Carbon::now()->format('Y-m-d'),
-                'total' => 120000,
-                'status' => 'dibatalkan',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ],
         ]);
     }
 }

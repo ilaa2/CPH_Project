@@ -26,6 +26,7 @@ class AuthenticatedSessionController extends Controller
 
     /**
      * Handle an incoming authentication request.
+     * Unified auth - single users table with role-based redirect
      */
     public function store(Request $request): RedirectResponse
     {
@@ -34,19 +35,20 @@ class AuthenticatedSessionController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // Kode baru yang sudah benar
-        if (Auth::guard('pelanggan')->attempt($credentials, $request->boolean('remember'))) {
+        // Attempt to login with unified 'web' guard
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
             $request->session()->regenerate();
-            return redirect()->intended('/'); // Arahkan ke dashboard customer
+            
+            // Redirect based on user role
+            $user = Auth::user();
+            if ($user->role === 'admin') {
+                return redirect()->intended('/dashboard');
+            } else {
+                return redirect()->intended('/');
+            }
         }
 
-        // Anda bisa menambahkan pengecekan untuk admin jika perlu
-        if (Auth::guard('web')->attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
-            return redirect()->intended('/dashboard'); // Arahkan ke dashboard admin
-        }
-
-        // 🔹 Kalau keduanya gagal
+        // Authentication failed
         throw ValidationException::withMessages([
             'email' => __('Email atau password salah.'),
         ]);
@@ -57,24 +59,16 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
-        // Logout dari guard 'web' (admin) jika sedang login
-        if (Auth::guard('web')->check()) {
-            Auth::guard('web')->logout();
-        }
+        // Logout from unified guard
+        Auth::logout();
 
-        // Logout dari guard 'pelanggan' jika sedang login
-        if (Auth::guard('pelanggan')->check()) {
-            Auth::guard('pelanggan')->logout();
-        }
-
-        // Hancurkan semua data session untuk memastikan bersih total
+        // Destroy all session data
         $request->session()->invalidate();
 
-        // Buat ulang token CSRF untuk keamanan
+        // Regenerate CSRF token
         $request->session()->regenerateToken();
 
-        // Arahkan ke halaman utama
+        // Redirect to home
         return redirect('/');
     }
-
 }

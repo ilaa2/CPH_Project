@@ -96,18 +96,6 @@ class KunjunganSeeder extends Seeder
                 'created_at' => Carbon::now()->subDays(1),
                 'updated_at' => Carbon::now()->subDays(1),
             ],
-            // Kunjungan untuk Pelanggan ID 7
-            [
-                'pelanggan_id' => 7,
-                'tipe_id' => 2, // Umum
-                'tanggal' => Carbon::now()->addDays(5)->format('Y-m-d'),
-                'jam' => '15:00:00',
-                'jumlah_pengunjung' => 1,
-                'total_biaya' => 0, // Dibiarkan 0 karena dibatalkan
-                'status' => 'Dibatalkan',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
-            ],
             // Kunjungan untuk Pelanggan ID 8
             [
                 'pelanggan_id' => 8,

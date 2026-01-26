@@ -5,6 +5,7 @@ import InputError from '@/Components/InputError';
 import { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { debounce } from 'lodash';
+import FilterHeader from '@/Components/FilterHeader';
 
 // Komponen Form Pelanggan (untuk Tambah dan Edit)
 const PelangganForm = ({ isEditing, model, onSubmit, onCancel }) => {
@@ -30,7 +31,7 @@ const PelangganForm = ({ isEditing, model, onSubmit, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const url = isEditing ? route('pelanggan.update', model.id) : route('pelanggan.store');
+    const url = isEditing ? route('admin.pelanggan.update', model.id) : route('admin.pelanggan.store');
     post(url, {
       onSuccess: () => {
         reset();
@@ -43,9 +44,9 @@ const PelangganForm = ({ isEditing, model, onSubmit, onCancel }) => {
   return (
     <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
       <h2 className="text-2xl font-bold text-gray-800 mb-4">
-        {isEditing ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}
+        {isEditing ? 'Edit Customer' : 'Tambah Customer Baru'}
       </h2>
-      
+
       {/* Nama */}
       <div>
         <label className="block font-medium text-sm text-gray-700">Nama</label>
@@ -93,19 +94,18 @@ const PelangganForm = ({ isEditing, model, onSubmit, onCancel }) => {
 
 // Komponen Pagination
 const Pagination = ({ links }) => (
-    <div className="flex flex-wrap justify-center mt-4">
-      {links.map((link, index) => (
-        <Link
-          key={index}
-          href={link.url || '#'}
-          dangerouslySetInnerHTML={{ __html: link.label }}
-          className={`px-4 py-2 mx-1 my-1 rounded-md text-sm ${
-            link.active ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'
+  <div className="flex flex-wrap justify-center mt-4">
+    {links.map((link, index) => (
+      <Link
+        key={index}
+        href={link.url || '#'}
+        dangerouslySetInnerHTML={{ __html: link.label }}
+        className={`px-4 py-2 mx-1 my-1 rounded-md text-sm ${link.active ? 'bg-green-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100'
           } ${!link.url ? 'text-gray-400 cursor-not-allowed' : ''}`}
-          disabled={!link.url}
-        />
-      ))}
-    </div>
+        disabled={!link.url}
+      />
+    ))}
+  </div>
 );
 
 export default function PelangganList({ pelanggan, filters }) {
@@ -124,7 +124,7 @@ export default function PelangganList({ pelanggan, filters }) {
 
   const debouncedSearch = useCallback(
     debounce((nextValue) => {
-      router.get(route('pelanggan.index'), { search: nextValue }, {
+      router.get(route('admin.pelanggan.index'), { search: nextValue }, {
         preserveState: true,
         replace: true,
       });
@@ -147,7 +147,7 @@ export default function PelangganList({ pelanggan, filters }) {
   const handleDelete = (id) => {
     Swal.fire({
       title: 'Yakin ingin menghapus?',
-      text: "Data pelanggan akan dihapus permanen.",
+      text: "Data customer akan dihapus permanen.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
@@ -156,7 +156,7 @@ export default function PelangganList({ pelanggan, filters }) {
       cancelButtonText: 'Batal'
     }).then((result) => {
       if (result.isConfirmed) {
-        router.delete(route('pelanggan.destroy', id));
+        router.delete(route('admin.pelanggan.destroy', id));
       }
     });
   };
@@ -164,27 +164,23 @@ export default function PelangganList({ pelanggan, filters }) {
   return (
     <Mainbar header={
       <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-800">Pelanggan</h2>
+        <h2 className="text-xl font-semibold text-gray-800">Customer</h2>
         <button onClick={() => openModal(false)} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105">
-          + Tambah Pelanggan
+          + Tambah Customer
         </button>
       </div>
     }>
-      <Head title="Daftar Pelanggan" />
+      <Head title="Daftar Customer" />
 
       <div className="p-6 space-y-6">
-        <div className="bg-white p-4 rounded-xl shadow-md">
-          <div className="relative">
-            <input
-              type="text"
-              value={searchValue}
-              onChange={handleSearchChange}
-              placeholder="Cari nama pelanggan..."
-              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-full focus:ring-green-500 focus:border-green-500"
-            />
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-          </div>
-        </div>
+        <FilterHeader
+          tabs={['Semua']}
+          activeTab="Semua"
+          onTabChange={() => { }}
+          searchValue={searchValue}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Cari nama customer..."
+        />
 
         <div className="overflow-x-auto bg-white rounded-xl shadow-md">
           <table className="min-w-full text-sm text-left text-gray-700">
@@ -196,6 +192,8 @@ export default function PelangganList({ pelanggan, filters }) {
                 <th className="px-4 py-3">Email</th>
                 <th className="px-4 py-3">Telepon</th>
                 <th className="px-4 py-3">Alamat</th>
+                <th className="px-4 py-3 text-center">Jml Pesanan</th>
+                <th className="px-4 py-3 text-right">Total Belanja</th>
                 <th className="px-4 py-3 text-center">Aksi</th>
               </tr>
             </thead>
@@ -214,6 +212,10 @@ export default function PelangganList({ pelanggan, filters }) {
                   <td className="px-4 py-2">{item.email || '-'}</td>
                   <td className="px-4 py-2">{item.telepon || '-'}</td>
                   <td className="px-4 py-2 truncate max-w-xs">{item.alamat || '-'}</td>
+                  <td className="px-4 py-2 text-center">{item.pesanan_count || 0}</td>
+                  <td className="px-4 py-2 text-right">
+                    {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.total_belanja || 0)}
+                  </td>
                   <td className="px-4 py-2">
                     <div className="flex items-center justify-center gap-2">
                       <button onClick={() => openModal(true, item)} className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-full transition" title="Edit">

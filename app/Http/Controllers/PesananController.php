@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Pesanan;
-use App\Models\Pelanggan;
+use App\Models\User;
 use App\Models\Produk;
 use App\Models\PesananItem;
 use Illuminate\Http\Request;
@@ -14,22 +14,27 @@ class PesananController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Pesanan::with(['pelanggan', 'items.produk'])
+        $query = Pesanan::with(['user', 'items.produk', 'ulasan.fotos', 'ulasan.user'])
+            ->where('status', '!=', 'Dibatalkan')
             ->orderByDesc('tanggal');
 
         if ($request->has('search')) {
             $search = $request->input('search');
-            $query->whereHas('pelanggan', function ($q) use ($search) {
-                $q->where('nama', 'LIKE', "%{$search}%");
+            $query->whereHas('user', function ($q) use ($search) {
+                $q->where('name', 'LIKE', "%{$search}%");
             });
+        }
+
+        if ($request->has('status') && $request->status !== 'Semua') {
+            $query->where('status', $request->status);
         }
 
         $pesanan = $query->paginate(10)->withQueryString();
 
         return Inertia::render('Pesanan/Index', [
             'pesanan' => $pesanan,
-            'filters' => $request->only(['search']),
-            'pelangganList' => Pelanggan::all(),
+            'filters' => $request->only(['search', 'status']),
+            'pelangganList' => User::where('role', 'customer')->get(),
             'produkList' => Produk::where('stok', '>', 0)->get(),
         ]);
     }
@@ -37,55 +42,81 @@ class PesananController extends Controller
     public function create()
     {
         return Inertia::render('Pesanan/Create', [
-            'pelangganList' => Pelanggan::all(),
+            'pelangganList' => User::where('role', 'customer')->get(),
             'produkList' => Produk::all()
         ]);
     }
 
     public function store(Request $request)
     {
+        \Illuminate\Support\Facades\Log::info('STORE PESANAN REQUEST', $request->all());
+
         $request->validate([
-            'pelanggan_id' => 'required|exists:pelanggans,id',
+            'pelanggan_id' => 'required|exists:users,id',
             'tanggal' => 'required|date',
+            'status' => 'sometimes|in:pending,Diproses,Selesai,Dibatalkan',
             'items' => 'required|array|min:1',
             'items.*.produk_id' => 'required|exists:products,id',
             'items.*.jumlah' => 'required|integer|min:1',
+            'metode_pengiriman' => 'required|in:pickup,local,shipping',
+            'alamat_pengiriman' => 'required_if:metode_pengiriman,local,shipping',
+            'ekspedisi' => 'required_if:metode_pengiriman,shipping',
+            'estimasi'  => 'nullable|string',
+            'biaya_pengiriman' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
         try {
-            $total = 0;
+            $subtotal = 0;
+            $biaya = $request->biaya_pengiriman ?? 0;
+            $namaMetode = 'Ambil di Toko';
+            $ekspedisi = null;
+            $estimasi = null;
+            $alamat = 'Ambil di Toko';
 
-            // 🔁 Cek stok sebelum buat pesanan
+            if ($request->metode_pengiriman === 'pickup') {
+                $biaya = 0;
+            } elseif ($request->metode_pengiriman === 'local') {
+                $namaMetode = 'Kurir Lokal';
+                $ekspedisi = 'Kurir Lokal';
+                $alamat = $request->alamat_pengiriman;
+            } elseif ($request->metode_pengiriman === 'shipping') {
+                $namaMetode = $request->ekspedisi ?? 'Ekspedisi';
+                $ekspedisi = $request->ekspedisi;
+                $estimasi = $request->estimasi;
+                $alamat = $request->alamat_pengiriman;
+            }
+
             foreach ($request->items as $item) {
                 $produk = Produk::findOrFail($item['produk_id']);
                 if ($produk->stok < $item['jumlah']) {
                     throw new \Exception("Stok produk '{$produk->nama}' tidak mencukupi. Tersedia: {$produk->stok}");
                 }
-                $total += $produk->harga * $item['jumlah'];
+                $subtotal += $produk->harga * $item['jumlah'];
             }
+            $grandTotal = $subtotal + $biaya;
 
-            // Simpan pesanan
             $pesanan = Pesanan::create([
-                'id_pelanggan' => $request->pelanggan_id,
+                'user_id' => $request->pelanggan_id,
                 'tanggal' => $request->tanggal,
-                'total' => $total,
-                'status' => 'Diproses',
+                'biaya_pengiriman' => $biaya,
+                'total' => $grandTotal,
+                'status' => $request->status ?? 'Diproses',
+                'metode_pengiriman' => $namaMetode,
+                'alamat_pengiriman' => $alamat,
+                'ekspedisi' => $ekspedisi,
+                'estimasi' => $estimasi,
             ]);
 
-            // Simpan item & kurangi stok
             foreach ($request->items as $item) {
                 $produk = Produk::findOrFail($item['produk_id']);
-
                 PesananItem::create([
                     'pesanan_id' => $pesanan->id,
                     'produk_id' => $produk->id,
                     'jumlah' => $item['jumlah'],
                     'subtotal' => $produk->harga * $item['jumlah'],
                 ]);
-
-                $produk->stok -= $item['jumlah'];
-                $produk->save();
+                $produk->decrement('stok', $item['jumlah']);
             }
 
             DB::commit();
@@ -99,6 +130,13 @@ class PesananController extends Controller
     public function destroy($id)
     {
         $pesanan = Pesanan::findOrFail($id);
+        foreach ($pesanan->items as $item) {
+            $produk = Produk::find($item->produk_id);
+            if ($produk) {
+                $produk->increment('stok', $item->jumlah);
+            }
+        }
+        
         $pesanan->items()->delete();
         $pesanan->delete();
 
@@ -107,73 +145,106 @@ class PesananController extends Controller
 
     public function edit($id)
     {
-        $pesanan = Pesanan::with('items.produk', 'pelanggan')->findOrFail($id);
+        $pesanan = Pesanan::with('items.produk', 'user')->findOrFail($id);
         $produkList = Produk::all();
-        $pelangganList = Pelanggan::all();
+        $pelangganList = User::where('role', 'customer')->get();
 
         return Inertia::render('Pesanan/Edit', compact('pesanan', 'produkList', 'pelangganList'));
     }
 
     public function update(Request $request, $id)
     {
+        \Illuminate\Support\Facades\Log::info('UPDATE PESANAN', $request->all());
+
         $request->validate([
-            'pelanggan_id' => 'required|exists:pelanggans,id',
+            'pelanggan_id' => 'required|exists:users,id',
             'tanggal' => 'required|date',
-            'status' => 'required|in:Diproses,Selesai,Dibatalkan',
+            'status' => 'required|in:pending,Diproses,Selesai,Dibatalkan',
             'items' => 'required|array|min:1',
             'items.*.produk_id' => 'required|exists:products,id',
             'items.*.jumlah' => 'required|integer|min:1',
+            'metode_pengiriman' => 'required|in:pickup,local,shipping',
+            'alamat_pengiriman' => 'required_if:metode_pengiriman,local,shipping',
+            'ekspedisi' => 'required_if:metode_pengiriman,shipping,local',
+            'estimasi'  => 'nullable|string',
+            'biaya_pengiriman' => 'nullable|numeric|min:0',
         ]);
 
         DB::beginTransaction();
         try {
             $pesanan = Pesanan::with('items')->findOrFail($id);
 
-            // 🔁 Kembalikan stok lama
+            // Revert old stock
             foreach ($pesanan->items as $item) {
-                $produk = Produk::findOrFail($item->produk_id);
-                $produk->stok += $item->jumlah;
-                $produk->save();
+                $produk = Produk::find($item->produk_id);
+                if ($produk) {
+                    $produk->increment('stok', $item->jumlah);
+                }
             }
 
             $pesanan->items()->delete();
 
-            $total = 0;
+            $subtotal = 0;
+            $biaya = $request->biaya_pengiriman ?? 0;
+            $namaMetode = 'Ambil di Toko';
+            $ekspedisi = null;
+            $estimasi = null;
+            $alamat = 'Ambil di Toko';
 
-            // 🔁 Validasi stok baru
-            foreach ($request->items as $item) {
-                $produk = Produk::findOrFail($item['produk_id']);
-                if ($produk->stok < $item['jumlah']) {
-                    throw new \Exception("Stok produk '{$produk->nama}' tidak mencukupi. Tersedia: {$produk->stok}");
-                }
-                $total += $produk->harga * $item['jumlah'];
+            if ($request->metode_pengiriman === 'pickup') {
+                $biaya = 0;
+            } elseif ($request->metode_pengiriman === 'local') {
+                $namaMetode = 'Kurir Lokal';
+                $ekspedisi = 'Kurir Lokal';
+                $alamat = $request->alamat_pengiriman;
+            } elseif ($request->metode_pengiriman === 'shipping') {
+                $namaMetode = $request->ekspedisi ?? 'Ekspedisi';
+                $ekspedisi = $request->ekspedisi;
+                $estimasi = $request->estimasi;
+                $alamat = $request->alamat_pengiriman;
             }
 
             $pesanan->update([
-                'id_pelanggan' => $request->pelanggan_id,
+                'user_id' => $request->pelanggan_id,
                 'tanggal' => $request->tanggal,
-                'total' => $total,
+                'biaya_pengiriman' => $biaya,
                 'status' => $request->status,
+                'metode_pengiriman' => $namaMetode,
+                'alamat_pengiriman' => $alamat,
+                'ekspedisi' => $ekspedisi,
+                'estimasi' => $estimasi,
             ]);
 
             foreach ($request->items as $item) {
                 $produk = Produk::findOrFail($item['produk_id']);
+                
+                if ($request->status !== 'Dibatalkan') {
+                    if ($produk->stok < $item['jumlah']) {
+                        throw new \Exception("Stok produk '{$produk->nama}' tidak mencukupi. Tersedia: {$produk->stok}");
+                    }
+                    $produk->decrement('stok', $item['jumlah']);
+                }
+                
+                $lineTotal = $produk->harga * $item['jumlah'];
+                $subtotal += $lineTotal;
 
                 PesananItem::create([
                     'pesanan_id' => $pesanan->id,
                     'produk_id' => $produk->id,
                     'jumlah' => $item['jumlah'],
-                    'subtotal' => $produk->harga * $item['jumlah'],
+                    'subtotal' => $lineTotal,
                 ]);
-
-                $produk->stok -= $item['jumlah'];
-                $produk->save();
             }
+
+            $grandTotal = $subtotal + $biaya;
+            $pesanan->update(['total' => $grandTotal]);
 
             DB::commit();
             return redirect()->route('pesanan.index')->with('success', 'Pesanan berhasil diperbarui!');
+
         } catch (\Exception $e) {
             DB::rollBack();
+            \Illuminate\Support\Facades\Log::error("UPDATE ORDER FAILED: " . $e->getMessage());
             return back()->withErrors(['message' => 'Gagal memperbarui pesanan: ' . $e->getMessage()]);
         }
     }

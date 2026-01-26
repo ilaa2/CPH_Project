@@ -79,7 +79,7 @@ export default function CreateKunjungan() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    post(route('kunjungan.store'));
+    post(route('admin.kunjungan.store'));
   };
 
   const customStyles = {
@@ -181,7 +181,7 @@ export default function CreateKunjungan() {
           </div>
 
           <div className="flex justify-end gap-4 pt-4">
-            <Link href={route('kunjungan.jadwal')}>
+            <Link href={route('admin.kunjungan.jadwal')}>
               <SecondaryButton>Batal</SecondaryButton>
             </Link>
             <PrimaryButton disabled={processing}>

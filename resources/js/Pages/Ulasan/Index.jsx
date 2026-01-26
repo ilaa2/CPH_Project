@@ -28,7 +28,7 @@ export default function UlasanIndex() {
       confirmButtonText: 'Ya, hapus!',
     }).then((result) => {
       if (result.isConfirmed) {
-        router.delete(route('ulasan.destroy', id), {
+        router.delete(route('admin.ulasan.destroy', id), {
           onSuccess: () => Swal.fire('Berhasil!', 'Ulasan telah dihapus.', 'success'),
         });
       }
@@ -42,7 +42,7 @@ export default function UlasanIndex() {
     const inactiveClasses = 'bg-white text-gray-700 hover:bg-gray-100 border';
 
     return (
-      <Link href={route('ulasan.index', { filter: filterValue })} className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`} preserveState preserveScroll>
+      <Link href={route('admin.ulasan.index', { filter: filterValue })} className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`} preserveState preserveScroll>
         {children}
       </Link>
     );
@@ -79,7 +79,7 @@ export default function UlasanIndex() {
                     <td className="px-4 py-2">{index + 1}</td>
                     <td className="px-4 py-2">
                       <div className="flex items-center gap-3">
-                        <img src={item.foto_profil || `https://ui-avatars.com/api/?name=${item.nama}&color=7F9CF5&background=EBF4FF`} alt={item.nama} className="w-10 h-10 rounded-full object-cover"/>
+                        <img src={item.foto_profil || `https://ui-avatars.com/api/?name=${item.nama}&color=7F9CF5&background=EBF4FF`} alt={item.nama} className="w-10 h-10 rounded-full object-cover" />
                         <div>
                           <div className="font-medium">{item.nama}</div>
                           <div className="text-xs text-gray-500">{format(new Date(item.tanggal), 'd MMM yyyy', { locale: id })}</div>
@@ -93,7 +93,7 @@ export default function UlasanIndex() {
                     </td>
                     <td className="px-4 py-2">
                       {item.foto_ulasan && item.foto_ulasan.length > 0 ? (
-                        <img src={item.foto_ulasan[0]} alt="Foto Ulasan" className="w-16 h-16 rounded-md object-cover"/>
+                        <img src={item.foto_ulasan[0]} alt="Foto Ulasan" className="w-16 h-16 rounded-md object-cover" />
                       ) : (
                         <span className="text-xs text-gray-400">N/A</span>
                       )}

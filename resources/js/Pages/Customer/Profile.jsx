@@ -37,7 +37,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
 
     // Form untuk update foto profil
     const { data: photoData, setData: setPhotoData, post: updatePhoto, errors: photoErrors, processing: photoProcessing, recentlySuccessful: photoRecentlySuccessful } = useForm({
-        foto_profil: null,
+        avatar: null,
     });
 
 
@@ -55,7 +55,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                 });
             }
             if (status === 'password-updated') {
-                 Swal.fire({
+                Swal.fire({
                     toast: true,
                     position: 'top-end',
                     icon: 'success',
@@ -95,6 +95,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
         e.preventDefault();
         updatePhoto(route('customer.profile.update-photo'), {
             preserveScroll: true,
+            forceFormData: true, // Required for file uploads
         });
     };
 
@@ -130,21 +131,22 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                         </header>
                         <div className="mt-6">
                             <img
-                                src={auth.pelanggan.foto_profil ? `/storage/${auth.pelanggan.foto_profil}` : `https://ui-avatars.com/api/?name=${auth.pelanggan.nama}&color=7F9CF5&background=EBF4FF`}
+                                src={auth.pelanggan.avatar ? `/storage/${auth.pelanggan.avatar}` : `https://ui-avatars.com/api/?name=${auth.pelanggan.nama}&color=7F9CF5&background=EBF4FF`}
                                 alt="Foto Profil"
                                 className="w-24 h-24 rounded-full object-cover"
                             />
                         </div>
                         <form onSubmit={submitPhoto} className="mt-6 space-y-6">
                             <div>
-                                <InputLabel htmlFor="foto_profil" value="Ganti Foto Profil" />
+                                <InputLabel htmlFor="avatar" value="Ganti Foto Profil" />
                                 <TextInput
-                                    id="foto_profil"
+                                    id="avatar"
                                     type="file"
+                                    accept="image/*"
                                     className="mt-1 block w-full"
-                                    onChange={(e) => setPhotoData('foto_profil', e.target.files[0])}
+                                    onChange={(e) => setPhotoData('avatar', e.target.files[0])}
                                 />
-                                <InputError message={photoErrors.foto_profil} className="mt-2" />
+                                <InputError message={photoErrors.avatar} className="mt-2" />
                             </div>
                             <div className="flex items-center gap-4">
                                 <PrimaryButton disabled={photoProcessing}>Simpan Foto</PrimaryButton>

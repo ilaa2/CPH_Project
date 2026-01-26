@@ -11,7 +11,7 @@ export default function CreatePelanggan() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    post(route('pelanggan.store'));
+    post(route('admin.pelanggan.store'));
   };
 
   return (
@@ -72,7 +72,7 @@ export default function CreatePelanggan() {
             {/* Tombol Simpan & Batal */}
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4">
               <Link
-                href={route('pelanggan.index')}
+                href={route('admin.pelanggan.index')}
                 className="w-full sm:w-auto text-center px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 font-semibold text-sm"
               >
                 Batal

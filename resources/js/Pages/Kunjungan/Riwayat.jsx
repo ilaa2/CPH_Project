@@ -1,23 +1,101 @@
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, usePage, router } from '@inertiajs/react';
 import KunjunganLayout from '@/Layouts/KunjunganLayout';
-import { useState } from 'react';
+import Modal from '@/Components/Modal';
+import UlasanPreview from '@/Components/UlasanPreview';
+import LoadingSpinner from '@/Components/LoadingSpinner'; // Import LoadingSpinner
+import { useState, useEffect, useCallback } from 'react'; // Import useEffect
+import { debounce } from 'lodash';
+import FilterHeader from '@/Components/FilterHeader';
 
 export default function RiwayatKunjungan() {
   const { props } = usePage();
   const riwayat = props.riwayat || [];
+  const filters = props.filters || {};
   const [selected, setSelected] = useState(null);
+  const [ulasanModalState, setUlasanModalState] = useState({ isOpen: false, item: null });
+  const [tipeFilter, setTipeFilter] = useState(filters.tipe || 'Semua');
+  const [searchValue, setSearchValue] = useState(filters.search || '');
+  const [isLoading, setIsLoading] = useState(false); // State Loading
+
+  const debouncedFilter = useCallback(
+    debounce((search, tipe) => {
+      router.get(route('admin.kunjungan.riwayat'), {
+        search: search || undefined,
+        tipe: tipe !== 'Semua' ? tipe : undefined
+      }, {
+        preserveState: true,
+        replace: true,
+      });
+    }, 300),
+    []
+  );
+
+  const handleSearchChange = (e) => {
+    setSearchValue(e.target.value);
+    debouncedFilter(e.target.value, tipeFilter);
+  };
+
+  const handleTipeChange = (tipe) => {
+    setTipeFilter(tipe);
+    debouncedFilter(searchValue, tipe);
+  };
+
+  // Listener Loading
+  useEffect(() => {
+    const removeStartListener = router.on('start', () => setIsLoading(true));
+    const removeFinishListener = router.on('finish', () => setIsLoading(false));
+
+    return () => {
+      removeStartListener();
+      removeFinishListener();
+    };
+  }, []);
+
+  const openUlasanModal = (item) => {
+    setUlasanModalState({ isOpen: true, item: item });
+  };
+
+  const closeUlasanModal = () => {
+    setUlasanModalState({ isOpen: false, item: null });
+  };
+
+  const handleFilterTipe = (tipe) => {
+    setTipeFilter(tipe);
+    router.get(route('admin.kunjungan.riwayat'), { tipe: tipe !== 'Semua' ? tipe : undefined }, {
+      preserveState: true,
+      replace: true
+    });
+  };
+
+  const tabs = ['Semua', 'Umum', 'Outing Class'];
 
   return (
     <>
       <Head title="Riwayat Kunjungan" />
 
       <div className="space-y-6">
-        <p className="text-gray-600 text-sm">
-          Berikut adalah riwayat kunjungan yang telah selesai dilakukan.
-        </p>
+        <div className="flex justify-between items-center">
+          <p className="text-gray-600 text-sm">
+            Berikut adalah riwayat kunjungan yang telah selesai dilakukan.
+          </p>
+        </div>
+
+        <FilterHeader
+          tabs={tabs}
+          activeTab={tipeFilter}
+          onTabChange={handleTipeChange}
+          searchValue={searchValue}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Cari nama pelanggan..."
+        />
 
         {/* Tabel */}
-        <div className="overflow-x-auto bg-white rounded-lg shadow">
+        <div className="overflow-x-auto bg-white rounded-lg shadow relative min-h-[300px]">
+          {isLoading && (
+            <div className="absolute inset-0 bg-white/70 z-10 flex items-center justify-center backdrop-blur-sm">
+              <LoadingSpinner text="Memuat riwayat kunjungan..." />
+            </div>
+          )}
           <table className="min-w-full text-sm text-left text-gray-700">
             <thead className="bg-green-100 text-green-800 text-xs uppercase">
               <tr>
@@ -26,36 +104,46 @@ export default function RiwayatKunjungan() {
                 <th className="px-4 py-2">Tipe</th>
                 <th className="px-4 py-2">Tanggal</th>
                 <th className="px-4 py-2">Status</th>
-                <th className="px-4 py-2">Aksi</th>
+                <th className="px-4 py-2 text-center">Aksi</th>
               </tr>
             </thead>
             <tbody>
-              {riwayat.length > 0 ? riwayat.map((item, index) => (
-                <tr key={item.id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-2">{index + 1}</td>
-                  <td className="px-4 py-2">{item.pelanggan?.nama || '-'}</td>
-                  <td className="px-4 py-2">{item.tipe?.nama_tipe || '-'}</td>
-                  <td className="px-4 py-2">{item.tanggal}</td>
-                  <td className="px-4 py-2 capitalize">{item.status}</td>
-                  <td className="px-4 py-2 space-x-2">
-                    <button
-                      onClick={() => setSelected(item)}
-                      className="text-gray-600 hover:text-blue-600"
-                      title="Lihat Detail"
-                    >
-                      ℹ️
-                    </button>
-                    {item.status === 'Selesai' && !item.ulasan && (
-                      <Link
-                        href={route('customer.kunjungan.ulasan.create', item.id)}
-                        className="text-sm text-green-600 hover:underline"
-                      >
-                        Beri Ulasan
-                      </Link>
-                    )}
-                  </td>
-                </tr>
-              )) : (
+              {riwayat.length > 0 ? (
+                riwayat.map((item, index) => (
+                  <tr key={item.id} className="border-b hover:bg-gray-50">
+                    <td className="px-4 py-2">{index + 1}</td>
+                    <td className="px-4 py-2">{item.pelanggan?.nama || '-'}</td>
+                    <td className="px-4 py-2">{item.tipe?.nama_tipe || '-'}</td>
+                    <td className="px-4 py-2">{item.tanggal}</td>
+                    <td className="px-4 py-2 capitalize">{item.status}</td>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => setSelected(item)}
+                          className="p-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-full transition-all shadow-sm active:scale-95"
+                          title="Lihat Detail Kunjungan"
+                        >
+                          👁️
+                        </button>
+                        {item.status === 'Selesai' && item.ulasan && (
+                          <button
+                            onClick={() => openUlasanModal(item)}
+                            className="p-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded-full transition-all shadow-sm active:scale-95"
+                            title="Lihat Ulasan Pengunjung"
+                          >
+                            ⭐
+                          </button>
+                        )}
+                        {!item.ulasan && item.status === 'Selesai' && (
+                          <div className="p-2 text-gray-300 cursor-not-allowed" title="Belum ada ulasan">
+                            ⭐
+                          </div>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : (
                 <tr>
                   <td colSpan="6" className="text-center py-4 text-gray-500">Belum ada riwayat kunjungan selesai.</td>
                 </tr>
@@ -64,14 +152,13 @@ export default function RiwayatKunjungan() {
           </table>
         </div>
 
-        {/* Modal Detail */}
+        {/* Modal Detail Kunjungan */}
         {selected && (
-          <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center transition-opacity duration-300">
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 animate-fade-in-up">
+          <Modal show={true} onClose={() => setSelected(null)} maxWidth="lg">
+            <div className="p-6">
               <h2 className="text-xl font-semibold text-green-700 mb-4">
                 Detail Kunjungan
               </h2>
-
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-gray-700 border rounded">
                   <tbody>
@@ -110,7 +197,6 @@ export default function RiwayatKunjungan() {
                   </tbody>
                 </table>
               </div>
-
               <div className="mt-6 text-right">
                 <button
                   onClick={() => setSelected(null)}
@@ -120,7 +206,35 @@ export default function RiwayatKunjungan() {
                 </button>
               </div>
             </div>
-          </div>
+          </Modal>
+        )}
+
+        {/* Modal Ulasan */}
+        {ulasanModalState.isOpen && (
+          <Modal show={true} onClose={closeUlasanModal} maxWidth="lg">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold text-gray-800">Ulasan Kunjungan</h2>
+                <button onClick={closeUlasanModal} className="text-gray-400 hover:text-gray-600">✕</button>
+              </div>
+
+              <UlasanPreview
+                ulasan={ulasanModalState.item?.ulasan}
+                pelanggan={ulasanModalState.item?.pelanggan}
+                tipe={ulasanModalState.item?.tipe?.nama_tipe}
+                isAdmin={true}
+              />
+
+              <div className="mt-6 text-right">
+                <button
+                  onClick={closeUlasanModal}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </Modal>
         )}
       </div>
     </>

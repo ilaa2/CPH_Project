@@ -51,10 +51,10 @@ class ProdukController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'id_kategori' => 'required|exists:product_categories,id',
-            'deskripsi' => 'nullable|string', // <-- Ditambahkan
-            'harga' => 'required|integer',
-            'stok' => 'required|integer',
-            'gambar' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'deskripsi' => 'nullable|string',
+            'harga' => 'required|integer|min:1', // Harga minimal 1
+            'stok' => 'required|integer|min:0', // Stok minimal 0
+            'gambar' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Max 2MB
             'status' => 'required|in:Aktif,Nonaktif',
         ]);
 
@@ -65,7 +65,7 @@ class ProdukController extends Controller
         Produk::create([
             'nama' => $request->nama,
             'id_kategori' => $request->id_kategori,
-            'deskripsi' => $request->deskripsi, // <-- Ditambahkan
+            'deskripsi' => $request->deskripsi,
             'harga' => $request->harga,
             'stok' => $request->stok,
             'gambar' => $filePath,
@@ -91,9 +91,9 @@ class ProdukController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'id_kategori' => 'required|exists:product_categories,id',
-            'deskripsi' => 'nullable|string', // <-- Ditambahkan
-            'harga' => 'required|integer',
-            'stok' => 'required|integer',
+            'deskripsi' => 'nullable|string',
+            'harga' => 'required|integer|min:1',
+            'stok' => 'required|integer|min:0',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'status' => 'required|in:Aktif,Nonaktif',
         ]);
@@ -113,7 +113,7 @@ class ProdukController extends Controller
         $produk->update([
             'nama' => $request->nama,
             'id_kategori' => $request->id_kategori,
-            'deskripsi' => $request->deskripsi, // <-- Ditambahkan
+            'deskripsi' => $request->deskripsi,
             'harga' => $request->harga,
             'stok' => $request->stok,
             'gambar' => $filePath,
@@ -121,6 +121,19 @@ class ProdukController extends Controller
         ]);
 
         return redirect()->route('produk.index')->with('success', 'Produk berhasil diperbarui.');
+    }
+
+    public function duplicate($id)
+    {
+        $produk = Produk::findOrFail($id);
+        
+        $newProduk = $produk->replicate();
+        $newProduk->nama = $produk->nama . ' (Copy)';
+        $newProduk->created_at = now();
+        $newProduk->updated_at = now();
+        $newProduk->save();
+
+        return redirect()->route('produk.index')->with('success', 'Produk berhasil diduplikasi.');
     }
 
     public function destroy($id)
