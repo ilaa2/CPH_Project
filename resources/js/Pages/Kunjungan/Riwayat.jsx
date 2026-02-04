@@ -112,7 +112,7 @@ export default function RiwayatKunjungan() {
                 riwayat.map((item, index) => (
                   <tr key={item.id} className="border-b hover:bg-gray-50">
                     <td className="px-4 py-2">{index + 1}</td>
-                    <td className="px-4 py-2">{item.pelanggan?.nama || '-'}</td>
+                    <td className="px-4 py-2">{item.user?.name || 'Guest'}</td>
                     <td className="px-4 py-2">{item.tipe?.nama_tipe || '-'}</td>
                     <td className="px-4 py-2">{item.tanggal}</td>
                     <td className="px-4 py-2 capitalize">{item.status}</td>
@@ -220,7 +220,7 @@ export default function RiwayatKunjungan() {
 
               <UlasanPreview
                 ulasan={ulasanModalState.item?.ulasan}
-                pelanggan={ulasanModalState.item?.pelanggan}
+                pelanggan={ulasanModalState.item?.user}
                 tipe={ulasanModalState.item?.tipe?.nama_tipe}
                 isAdmin={true}
               />

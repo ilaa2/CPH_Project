@@ -1,15 +1,15 @@
-import { Head, Link, router, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import Mainbar from '@/Components/Bar/Mainbar';
 import Modal from '@/Components/Modal';
-import InputError from '@/Components/InputError';
 import { useState, useEffect, useCallback } from 'react';
 import Swal from 'sweetalert2';
 import { debounce } from 'lodash';
-import Select from 'react-select';
 import UlasanPreview from '@/Components/UlasanPreview';
 import FilterHeader from '@/Components/FilterHeader';
+import LoadingSpinner from '@/Components/LoadingSpinner';
+import PesananFormModal from './Partials/PesananFormModal'; // Import Component Modal Baru
 
-// Komponen Detail Modal
+// Komponen Detail Modal (Tetap Pertahankan)
 const DetailModal = ({ model, onClose }) => (
   <Modal show={true} onClose={onClose} maxWidth="2xl">
     <div className="p-4 sm:p-6 lg:p-8 bg-white rounded-lg shadow-xl">
@@ -121,102 +121,7 @@ const DetailModal = ({ model, onClose }) => (
   </Modal>
 );
 
-// Komponen Form Pesanan
-const PesananForm = ({ isEditing, model, pelangganList, produkList, onSubmit, onCancel }) => {
-  const { data, setData, post, processing, errors, reset } = useForm({
-    pelanggan_id: model?.id_pelanggan || '',
-    tanggal: model?.tanggal || new Date().toISOString().split('T')[0],
-    biaya_pengiriman: model?.biaya_pengiriman || 0,
-    status: model?.status || 'Diproses',
-    items: model?.items?.map(i => ({ produk_id: i.produk_id, jumlah: i.jumlah })) || [{ produk_id: '', jumlah: 1 }],
-    _method: isEditing ? 'PUT' : 'POST',
-  });
-
-  useEffect(() => {
-    reset({
-      pelanggan_id: model?.id_pelanggan || '',
-      tanggal: model?.tanggal || new Date().toISOString().split('T')[0],
-      biaya_pengiriman: model?.biaya_pengiriman || 0,
-      status: model?.status || 'Diproses',
-      items: model?.items?.map(i => ({ produk_id: i.produk_id, jumlah: i.jumlah })) || [{ produk_id: '', jumlah: 1 }],
-      _method: isEditing ? 'PUT' : 'POST',
-    });
-  }, [model, isEditing]);
-
-  const handleItemChange = (index, field, value) => {
-    const newItems = [...data.items];
-    newItems[index][field] = value;
-    setData('items', newItems);
-  };
-
-  const addItem = () => setData('items', [...data.items, { produk_id: '', jumlah: 1 }]);
-  const removeItem = (index) => setData('items', data.items.filter((_, i) => i !== index));
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const url = isEditing ? route('admin.pesanan.update', model.id) : route('admin.pesanan.store');
-    post(url, { onSuccess: () => { reset(); onSubmit(); } });
-  };
-
-  const produkOptions = produkList.map(p => ({ value: p.id, label: `${p.nama} (Stok: ${p.stok})` }));
-  const pelangganOptions = pelangganList.map(p => ({ value: p.id, label: p.nama }));
-
-  return (
-    <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
-      <h2 className="text-2xl font-bold text-gray-800 mb-4">{isEditing ? 'Edit Pesanan' : 'Tambah Pesanan'}</h2>
-
-      <div>
-        <label className="block font-medium text-sm text-gray-700">Pelanggan</label>
-        <Select options={pelangganOptions} value={pelangganOptions.find(o => o.value === data.pelanggan_id)} onChange={opt => setData('pelanggan_id', opt.value)} />
-        <InputError message={errors.pelanggan_id} className="mt-2" />
-      </div>
-
-      <div>
-        <label className="block font-medium text-sm text-gray-700">Biaya Pengiriman</label>
-        <input type="number" min="0" value={data.biaya_pengiriman} onChange={e => setData('biaya_pengiriman', e.target.value)} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
-        <InputError message={errors.biaya_pengiriman} className="mt-2" />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block font-medium text-sm text-gray-700">Tanggal</label>
-          <input type="date" value={data.tanggal} onChange={e => setData('tanggal', e.target.value)} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm" />
-          <InputError message={errors.tanggal} className="mt-2" />
-        </div>
-        {isEditing && (
-          <div>
-            <label className="block font-medium text-sm text-gray-700">Status</label>
-            <select value={data.status} onChange={e => setData('status', e.target.value)} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
-              <option value="pending">Pending</option>
-              <option value="Diproses">Diproses</option>
-              <option value="Selesai">Selesai</option>
-            </select>
-            <InputError message={errors.status} className="mt-2" />
-          </div>
-        )}
-      </div>
-
-      <div>
-        <label className="block font-medium text-sm text-gray-700 mb-2">Item Produk</label>
-        {data.items.map((item, index) => (
-          <div key={index} className="flex items-center gap-2 mb-2">
-            <Select options={produkOptions} value={produkOptions.find(o => o.value === item.produk_id)} onChange={opt => handleItemChange(index, 'produk_id', opt.value)} className="flex-grow" />
-            <input type="number" min="1" value={item.jumlah} onChange={e => handleItemChange(index, 'jumlah', e.target.value)} className="w-24 border-gray-300 rounded-md shadow-sm" />
-            {data.items.length > 1 && <button type="button" onClick={() => removeItem(index)} className="text-red-500">Hapus</button>}
-          </div>
-        ))}
-        <button type="button" onClick={addItem} className="text-sm text-green-600 hover:underline mt-2">+ Tambah Item</button>
-      </div>
-
-      <div className="mt-6 flex justify-end space-x-3">
-        <button type="button" onClick={onCancel} className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300">Batal</button>
-        <button type="submit" disabled={processing} className="px-6 py-2 bg-green-600 text-white rounded-lg shadow hover:bg-green-700 disabled:opacity-50">{isEditing ? 'Simpan' : 'Tambah'}</button>
-      </div>
-    </form>
-  );
-};
-
-// Komponen Pagination
+// Pagination
 const Pagination = ({ links }) => (
   <div className="flex flex-wrap justify-center mt-4">
     {links.map((link, index) => (
@@ -225,25 +130,23 @@ const Pagination = ({ links }) => (
   </div>
 );
 
-import LoadingSpinner from '@/Components/LoadingSpinner'; // Update import
-
 export default function PesananIndex({ pesanan, filters, pelangganList, produkList }) {
   const { flash } = usePage().props;
   const { data, links, from } = pesanan;
+  
+  // State 
   const [modalState, setModalState] = useState({ type: null, model: null });
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // State khusus buat Create Modal Baru
   const [searchValue, setSearchValue] = useState(filters.search || '');
-  // State untuk Status Filter
   const [statusFilter, setStatusFilter] = useState(filters.status || 'Semua');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handler Filter Status
+  // Filter Handlers
   const handleStatusChange = (status) => {
     setStatusFilter(status);
     router.get(route('admin.pesanan.index'), { status: status !== 'Semua' ? status : undefined, search: searchValue }, {
-      preserveState: true,
-      replace: true,
-      onStart: () => setIsLoading(true),
-      onFinish: () => setIsLoading(false)
+      preserveState: true, replace: true,
+      onStart: () => setIsLoading(true), onFinish: () => setIsLoading(false)
     });
   };
 
@@ -252,44 +155,39 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
 
   const debouncedSearch = useCallback(debounce((value) => {
     router.get(route('admin.pesanan.index'), { search: value, status: statusFilter !== 'Semua' ? statusFilter : undefined }, {
-      preserveState: true,
-      replace: true,
-      onStart: () => setIsLoading(true),
-      onFinish: () => setIsLoading(false)
+      preserveState: true, replace: true,
+      onStart: () => setIsLoading(true), onFinish: () => setIsLoading(false)
     });
-  }, 300), [statusFilter]); // Dependensi statusFilter penting
+  }, 300), [statusFilter]);
 
   const handleSearchChange = (e) => {
     setSearchValue(e.target.value);
     debouncedSearch(e.target.value);
   };
 
-  useEffect(() => {
-    const removeStartListener = router.on('start', () => setIsLoading(true));
-    const removeFinishListener = router.on('finish', () => setIsLoading(false));
-    return () => {
-      removeStartListener();
-      removeFinishListener();
-    };
+  useEffect(() => { // Global Loading Handler
+    const removeStart = router.on('start', () => setIsLoading(true));
+    const removeFinish = router.on('finish', () => setIsLoading(false));
+    return () => { removeStart(); removeFinish(); };
   }, []);
 
-  useEffect(() => {
+  useEffect(() => { // Flash Message Handler
     if (flash.success) Swal.fire({ icon: 'success', title: 'Berhasil!', text: flash.success, timer: 2000, showConfirmButton: false });
     if (flash.error) Swal.fire({ icon: 'error', title: 'Gagal!', text: flash.error });
   }, [flash]);
 
-  // handleDelete dihapus - Pesanan tidak boleh dihapus
-  // Pesanan adalah histori transaksi yang harus tetap ada
-
-  const tabs = ['Semua', 'Menunggu', 'Diproses', 'Dikirim', 'Selesai']; // Tab yang tersedia
+  const tabs = ['Semua', 'Menunggu', 'Diproses', 'Dikirim', 'Selesai'];
 
   return (
     <Mainbar header={
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-800">Pesanan</h2>
-        <Link href={route('admin.pesanan.create')} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105">
+        <button
+          onClick={() => setIsCreateModalOpen(true)}
+          className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105"
+        >
           + Tambah Pesanan
-        </Link>
+        </button>
       </div>
     }>
       <Head title="Manajemen Pesanan" />
@@ -322,62 +220,27 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
             </thead>
             <tbody>
               {data.length > 0 ? (
-                data.map((item, index) => (
+                data.map(item => ( // Render Logic Sama
                   <tr key={item.id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">{from + index}</td>
+                    <td className="px-4 py-2">{item.kode_pesanan || item.nomor_pesanan || item.id}</td>
                     <td className="px-4 py-2 font-medium">{item.user?.name || '-'}</td>
                     <td className="px-4 py-2">{item.tanggal}</td>
                     <td className="px-4 py-2">Rp {item.total.toLocaleString('id-ID')}</td>
                     <td className="px-4 py-2">
-                      {(() => {
-                        const s = item.status?.toLowerCase();
-                        let label = item.status;
-                        let color = 'bg-gray-100 text-gray-800';
-
-                        if (s === 'completed' || s === 'selesai') {
-                          label = 'Selesai';
-                          color = 'bg-green-100 text-green-800';
-                        } else if (s === 'processed' || s === 'diproses') {
-                          label = 'Diproses';
-                          color = 'bg-blue-100 text-blue-800';
-                        } else if (s === 'shipped' || s === 'dikirim') {
-                          label = 'Dikirim';
-                          color = 'bg-purple-100 text-purple-800';
-                        } else if (s === 'pending' || s === 'menunggu pembayaran') {
-                          label = 'Menunggu';
-                          color = 'bg-yellow-100 text-yellow-800';
-                        } else if (s === 'dibatalkan' || s === 'cancelled') {
-                          label = 'Dibatalkan';
-                          color = 'bg-red-100 text-red-800';
-                        }
-
-                        return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${color}`}>{label}</span>;
-                      })()}
+                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                           item.status === 'Selesai' ? 'bg-green-100 text-green-800' : 
+                           item.status === 'Dibatalkan' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                       }`}>{item.status}</span>
                     </td>
-                    <td className="px-4 py-2">
-                      <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full" title="Lihat Detail">👁️</button>
-                        <Link href={route('admin.pesanan.edit', item.id)} className="p-2 bg-blue-100 hover:bg-blue-200 rounded-full inline-flex items-center justify-center" title="Edit">✏️</Link>
-                        {item.status === 'Selesai' && item.ulasan && (
-                          <button
-                            onClick={() => openModal('ulasan', item)}
-                            className="p-2 bg-yellow-100 hover:bg-yellow-200 rounded-full text-yellow-700"
-                            title="Lihat Ulasan"
-                          >
-                            ⭐
-                          </button>
-                        )}
-                      </div>
+                    <td className="px-4 py-2 text-center flex justify-center gap-2">
+                        <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 rounded-full">👁️</button>
+                        <Link href={route('admin.pesanan.edit', item.id)} className="p-2 bg-blue-100 rounded-full">✏️</Link>
+                        {item.status === 'Selesai' && item.ulasan && <button onClick={() => openModal('ulasan', item)} className="p-2 bg-yellow-100 rounded-full">⭐</button>}
                     </td>
-
                   </tr>
                 ))
               ) : (
-                <tr>
-                  <td colSpan="6" className="text-center py-8 text-gray-500">
-                    Data pesanan tidak ditemukan.
-                  </td>
-                </tr>
+                <tr><td colSpan="6" className="text-center py-8 text-gray-500">Data tidak ditemukan.</td></tr>
               )}
             </tbody>
           </table>
@@ -385,45 +248,27 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
         <Pagination links={links} />
       </div >
 
+      {/* Modal Detail (Existing) */}
       {modalState.type === 'detail' && <DetailModal model={modalState.model} onClose={closeModal} />}
 
-      {/* Modal Ulasan */}
-      {
-        modalState.type === 'ulasan' && (
+      {/* Modal Ulasan (Existing) */}
+      {modalState.type === 'ulasan' && (
           <Modal show={true} onClose={closeModal} maxWidth="lg">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-gray-800">Ulasan Pesanan</h2>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">✕</button>
-              </div>
-
-              <UlasanPreview
-                ulasan={modalState.model?.ulasan}
-                pelanggan={modalState.model?.user}
-                tipe="Pembelian Produk"
-                isAdmin={true}
-              />
-
-              <div className="mt-6 text-right">
-                <button
-                  onClick={closeModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
+             <div className="p-6">
+                <UlasanPreview ulasan={modalState.model?.ulasan} pelanggan={modalState.model?.user} isAdmin={true} />
+                <button onClick={closeModal} className="mt-4 w-full bg-gray-200 py-2 rounded">Tutup</button>
+             </div>
           </Modal>
-        )
-      }
+      )}
 
-      {
-        modalState.type === 'form' && (
-          <Modal show={true} onClose={closeModal} maxWidth="2xl">
-            <PesananForm isEditing={!!modalState.model} model={modalState.model} pelangganList={pelangganList} produkList={produkList} onSubmit={closeModal} onCancel={closeModal} />
-          </Modal>
-        )
-      }
+      {/* Modal CREATE Pesanan Baru (Modified) */}
+      <PesananFormModal 
+        isOpen={isCreateModalOpen} 
+        onClose={() => setIsCreateModalOpen(false)} 
+        pelangganList={pelangganList}
+        produkList={produkList}
+      />
+
     </Mainbar >
   );
 }

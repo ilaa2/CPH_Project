@@ -40,8 +40,46 @@ class VisitBookingController extends Controller
 
         return Inertia::render('Kunjungan/Jadwal', [
             'kunjungan' => $data,
-            'filters' => request()->only(['search', 'tipe']),
+            'filters' => request()->all(['search', 'tipe']),
+            'pelangganList' => User::where('role', 'customer')->get(),
+            'tipeKunjunganList' => TipeKunjungan::all()
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'tipe_id' => 'required|exists:tipe_kunjungan,id',
+            'tanggal' => 'required|date',
+            'jam' => 'required',
+            'jumlah_dewasa' => 'required|integer|min:0',
+            'jumlah_anak' => 'required|integer|min:0',
+            'jumlah_balita' => 'required|integer|min:0',
+            'status' => 'required|string',
+        ]);
+
+        $tipe = TipeKunjungan::findOrFail($request->tipe_id);
+        
+        // Kalkulasi Total Biaya (Dewasa + Anak) * Harga Tiket
+        // Balita gratis (asumsi bisnis)
+        $totalPerson = $request->jumlah_dewasa + $request->jumlah_anak;
+        $totalBiaya = $totalPerson * $tipe->harga_tiket;
+
+        Kunjungan::create([
+            'user_id' => $request->user_id,
+            'tipe_id' => $request->tipe_id,
+            'tanggal' => $request->tanggal,
+            'jam' => $request->jam,
+            'jumlah_dewasa' => $request->jumlah_dewasa,
+            'jumlah_anak' => $request->jumlah_anak,
+            'jumlah_balita' => $request->jumlah_balita,
+            'total_biaya' => $totalBiaya,
+            'status' => $request->status,
+            'payment_status' => 'paid', // Admin create assumed paid/manual
+        ]);
+
+        return redirect()->back()->with('success', 'Kunjungan berhasil dijadwalkan.');
     }
 
     public function kalender()
@@ -85,39 +123,7 @@ class VisitBookingController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'pelanggan_id' => 'required|exists:users,id',
-            'tipe_kunjungan_id' => 'required|exists:tipe_kunjungan,id',
-            'tanggal' => 'required|date',
-            'jam' => 'required',
-            'jumlah_dewasa' => 'required|integer|min:0',
-            'jumlah_anak' => 'required|integer|min:0',
-            'jumlah_balita' => 'required|integer|min:0',
-            'total_biaya' => 'required|numeric|min:0',
-            'status' => 'required|in:Dijadwalkan,Selesai',
-        ]);
 
-        // Validasi kustom: pastikan ada pengunjung
-        if ($validated['jumlah_dewasa'] + $validated['jumlah_anak'] + $validated['jumlah_balita'] == 0) {
-            return back()->withErrors(['jumlah_dewasa' => 'Jumlah pengunjung tidak boleh nol.'])->withInput();
-        }
-
-        Kunjungan::create([
-            'user_id' => $validated['pelanggan_id'],
-            'tipe_id' => $validated['tipe_kunjungan_id'],
-            'tanggal' => $validated['tanggal'],
-            'jam' => $validated['jam'],
-            'jumlah_dewasa' => $validated['jumlah_dewasa'],
-            'jumlah_anak' => $validated['jumlah_anak'],
-            'jumlah_balita' => $validated['jumlah_balita'],
-            'total_biaya' => $validated['total_biaya'],
-            'status' => $validated['status'],
-        ]);
-
-        return redirect()->route('admin.kunjungan.jadwal')->with('success', 'Kunjungan berhasil ditambahkan.');
-    }
 
     public function show($id)
     {

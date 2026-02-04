@@ -19,8 +19,8 @@ class EnsureUserIsCustomer
         }
 
         if (auth()->user()->role !== 'customer') {
-            // Redirect admins to dashboard
-            return redirect()->route('dashboard')->with('error', 'Halaman ini khusus untuk customer.');
+            // Redirect admins to admin dashboard
+            return redirect()->route('admin.dashboard')->with('error', 'Halaman ini khusus untuk customer.');
         }
 
         return $next($request);

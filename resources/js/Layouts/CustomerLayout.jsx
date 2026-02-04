@@ -3,10 +3,12 @@ import { FiShoppingCart, FiUser, FiLogIn, FiMenu, FiX, FiSearch } from 'react-ic
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import CartPanel from '@/Components/CartPanel'; // <-- Impor CartPanel
 import { debounce } from 'lodash';
+import Swal from 'sweetalert2';
 
 // Komponen Header
 export function SiteHeader({ auth, onCartClick }) {
-    const user = auth?.pelanggan;
+    // Gunakan auth.user jika auth.pelanggan null (misal login sebagai admin)
+    const user = auth?.pelanggan || auth?.user;
     const { cart } = usePage().props;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -87,40 +89,68 @@ export function SiteHeader({ auth, onCartClick }) {
                             <input type="search" placeholder="Cari produk..." value={searchQuery} onChange={handleSearchChange} className="hidden sm:block h-9 w-40 md:w-56 rounded-md border border-green-200 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500" />
                         </form>
 
-                        <button
-                            onClick={() => handleProtectedAction(onCartClick)}
-                            className="relative h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100 transition-colors"
-                            title="Keranjang"
-                        >
-                            <FiShoppingCart />
-                            {user && cart.count > 0 && (
-                                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                                    {cart.count}
-                                </span>
+                        {/* Hide Cart for Admin */
+                            (user?.role !== 'admin') && (
+                                <button
+                                    onClick={() => handleProtectedAction(onCartClick)}
+                                    className="relative h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100 transition-colors"
+                                    title="Keranjang"
+                                >
+                                    <FiShoppingCart />
+                                    {(!user || user.role === 'customer') && cart.count > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
+                                            {cart.count}
+                                        </span>
+                                    )}
+                                </button>
                             )}
-                        </button>
 
+                        {/* Profile / Login Button */}
                         <div className="relative" ref={profileDropdownRef}>
-                            <button
-                                onClick={() => handleProtectedAction(() => setIsProfileOpen(!isProfileOpen))}
-                                className={`h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100 transition-colors ${!user ? 'animate-pulse border border-green-200' : ''}`}
-                                title={user ? "Akun Saya" : "Login untuk akses"}
-                            >
-                                <FiUser />
-                            </button>
+                            {user ? (
+                                <>
+                                    <button
+                                        onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                        className="h-9 w-9 rounded-full flex items-center justify-center bg-green-50 text-green-800 hover:bg-green-100 transition-colors"
+                                        title={user.role === 'admin' ? "Akun Admin" : "Akun Saya"}
+                                    >
+                                        <FiUser />
+                                        {/* Indikator Admin */}
+                                        {user.role === 'admin' && (
+                                            <span className="absolute -bottom-1 -right-1 bg-red-500 text-white text-[9px] px-1 rounded-full">A</span>
+                                        )}
+                                    </button>
 
-                            {user && (
-                                <div className={`absolute top-full right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg transition-opacity duration-200 ${isProfileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
-                                    <div className="px-4 py-3 border-b">
-                                        <p className="text-sm font-semibold truncate">{user.nama}</p>
-                                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                    <div className={`absolute top-full right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg transition-opacity duration-200 ${isProfileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                                        <div className="px-4 py-3 border-b">
+                                            <p className="text-sm font-semibold truncate">{user.nama || user.name}</p>
+                                            <p className="text-xs text-gray-500 truncate">{user.email}</p>
+                                            {user.role === 'admin' && (
+                                                <span className="block mt-1 text-xs font-bold text-red-600 bg-red-50 w-fit px-2 py-0.5 rounded">Administrator</span>
+                                            )}
+                                        </div>
+                                        <div className="p-1">
+                                            {user.role === 'admin' ? (
+                                                <Link href="/admin" className="block w-full text-left px-3 py-2 text-sm font-semibold text-green-700 rounded-md hover:bg-green-50">
+                                                    Dashboard Admin
+                                                </Link>
+                                            ) : (
+                                                <>
+                                                    <Link href="/customer/profile" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Profil Saya</Link>
+                                                    <Link href="/customer/pesanan" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Riwayat Pesanan</Link>
+                                                </>
+                                            )}
+                                            <Link href="/logout" method="post" as="button" className="block w-full text-left px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50">Logout</Link>
+                                        </div>
                                     </div>
-                                    <div className="p-1">
-                                        <Link href="/customer/profile" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Profil Saya</Link>
-                                        <Link href="/customer/pesanan" className="block w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-50">Riwayat Pesanan</Link>
-                                        <Link href="/logout" method="post" as="button" className="block w-full text-left px-3 py-2 text-sm text-red-600 rounded-md hover:bg-red-50">Logout</Link>
-                                    </div>
-                                </div>
+                                </>
+                            ) : (
+                                <a
+                                    href="/login"
+                                    className="hidden sm:flex items-center gap-2 h-9 px-4 rounded-full bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+                                >
+                                    <FiLogIn /> Login
+                                </a>
                             )}
                         </div>
                         <button className="md:hidden h-9 w-9 flex items-center justify-center" onClick={() => setIsMenuOpen(!isMenuOpen)}>{isMenuOpen ? <FiX size={24} /> : <FiMenu size={24} />}</button>
@@ -189,7 +219,7 @@ export function FooterNote({ user }) {
     );
 }
 
-import Swal from 'sweetalert2';
+// Swal sudah diimport di atas
 
 // Layout Utama Pelanggan
 export default function CustomerLayout({ children }) {

@@ -105,6 +105,12 @@ Route::middleware(['auth', 'verified', 'customer'])->prefix('customer')->group(f
         Route::get('/summary', [CheckoutController::class, 'summary'])->name('summary');
         Route::post('/process', [CheckoutController::class, 'process'])->name('process');
         
+        // Handle GET request to /process (e.g., when user clicks back after Midtrans popup)
+        Route::get('/process', function () {
+            return redirect()->route('customer.pesanan.index')
+                ->with('info', 'Pembayaran telah selesai. Lihat riwayat pesanan Anda.');
+        })->name('process.redirect');
+        
         Route::post('/buy-now', [CheckoutController::class, 'buyNow'])->name('buyNow');
     });
 });

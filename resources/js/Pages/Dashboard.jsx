@@ -31,7 +31,7 @@ ChartJS.register(
     Legend
 );
 
-export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbaru, stokMenipis, pesananPerluDiproses, kunjunganHariIni, grafikPendapatan }) {
+export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbaru, stokMenipis, pesananPerluDiproses, kunjunganHariIni, grafikPendapatan, grafikKunjungan }) {
 
     // Format Currency
     const formatCurrency = (amount) => {
@@ -191,21 +191,55 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                     </div>
 
                     {/* Sales Trend Chart */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                                <FiTrendingUp className="text-green-600" /> Tren Pendapatan (7 Hari)
-                            </h3>
+                    {/* CHART SECTION: Pendapatan & Kunjungan */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                        {/* Grafik Pendapatan */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-semibold text-gray-800 flex items-center gap-2 text-sm">
+                                    <FiTrendingUp className="text-green-600" /> Pendapatan (7 Hari)
+                                </h3>
+                            </div>
+                            <div className="h-48">
+                                {grafikPendapatan && grafikPendapatan.length > 0 ? (
+                                    <Line options={chartOptions} data={chartData} />
+                                ) : (
+                                    <div className="h-full flex flex-col items-center justify-center text-gray-400">
+                                        <FiActivity className="text-4xl mb-2 text-gray-300" />
+                                        <p>Belum ada data</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <div className="h-64">
-                            {grafikPendapatan && grafikPendapatan.length > 0 ? (
-                                <Line options={chartOptions} data={chartData} />
-                            ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                                    <FiActivity className="text-4xl mb-2 text-gray-300" />
-                                    <p>Belum ada data penjualan minggu ini.</p>
-                                </div>
-                            )}
+
+                        {/* Grafik Kunjungan (NEW) */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="font-semibold text-gray-800 flex items-center gap-2 text-sm">
+                                    <FiUsers className="text-orange-600" /> Tren Jumlah Pengunjung
+                                </h3>
+                            </div>
+                            <div className="h-48">
+                                <Line options={{
+                                    responsive: true,
+                                    plugins: { legend: { display: false } },
+                                    scales: {
+                                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                                        x: { grid: { display: false } }
+                                    }
+                                }} data={{
+                                    labels: grafikKunjungan?.map(item => format(new Date(item.date), 'dd MMM', { locale: id })) || [],
+                                    datasets: [{
+                                        fill: true,
+                                        label: 'Pengunjung',
+                                        data: grafikKunjungan?.map(item => item.total) || [],
+                                        borderColor: 'rgb(234, 88, 12)', // Orange-600
+                                        backgroundColor: 'rgba(234, 88, 12, 0.1)',
+                                        tension: 0.4,
+                                    }],
+                                }} />
+                            </div>
                         </div>
                     </div>
 

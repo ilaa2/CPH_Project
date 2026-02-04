@@ -19,7 +19,7 @@ class CustomerController extends Controller
     public function index(Request $request)
     {
         $query = User::where('role', 'customer')
-            ->withCount('pesanan')
+            ->withCount(['pesanan', 'kunjungan'])
             ->withSum('pesanan as total_belanja', 'total')
             ->orderBy('created_at', 'desc');
 
@@ -31,9 +31,21 @@ class CustomerController extends Controller
 
         $pelanggan = $query->paginate(10)->withQueryString();
 
+        // Statistik ringkas
+        $totalCustomers = User::where('role', 'customer')->count();
+        $totalKunjungan = \App\Models\Kunjungan::whereHas('user', function($q) {
+            $q->where('role', 'customer');
+        })->count();
+        $totalUlasan = \App\Models\Ulasan::count();
+
         return Inertia::render('Pelanggan/Index', [
             'pelanggan' => $pelanggan,
             'filters' => $request->only(['search']),
+            'stats' => [
+                'total' => $totalCustomers,
+                'kunjungan' => $totalKunjungan,
+                'ulasan' => $totalUlasan,
+            ]
         ]);
     }
 
