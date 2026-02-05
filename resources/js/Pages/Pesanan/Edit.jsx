@@ -204,9 +204,14 @@ export default function Edit({ pesanan }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="text-xs text-gray-500 uppercase font-semibold">Metode</label>
-                <div className="font-semibold text-gray-800">{pesanan.metode_pengiriman}</div>
+                <div className="font-semibold text-gray-800">
+                  {['Ambil di Toko', 'Ambil Sendiri', 'Kurir Lokal'].includes(pesanan.metode_pengiriman)
+                    ? pesanan.metode_pengiriman
+                    : 'Ekspedisi'}
+                </div>
 
-                {pesanan.metode_pengiriman !== 'Ambil di Toko' && (
+                {/* Hide Ekspedisi/Estimasi for Pickup AND Local Courier (redundant) */}
+                {!['Ambil di Toko', 'Ambil Sendiri', 'Kurir Lokal'].includes(pesanan.metode_pengiriman) && (
                   <div className="mt-3">
                     <label className="text-xs text-gray-500 uppercase font-semibold">Ekspedisi / Estimasi</label>
                     <div className="text-gray-800">

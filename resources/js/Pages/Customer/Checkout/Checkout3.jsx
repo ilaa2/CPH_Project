@@ -163,7 +163,9 @@ export default function Checkout3({ cartItems, subtotal, alamat, pengiriman, aut
                                             <FiTruck className="text-green-600" />
                                             <h3 className="font-bold text-gray-800">Metode Pengiriman</h3>
                                         </div>
-                                        <p className="font-semibold text-gray-800">{pengiriman?.name}</p>
+                                        <p className="font-semibold text-gray-800">
+                                            {isPickup ? 'Ambil di Toko' : (pengiriman?.code === 'LOCAL' ? 'Kurir Lokal' : 'Ekspedisi')}
+                                        </p>
                                         <p className="text-sm text-gray-600">{pengiriman?.description}</p>
                                         {isPickup ? (
                                             <p className="text-sm text-gray-500 mt-1">📍 {formatAddress(alamat?.full_address_string)}</p>

@@ -72,6 +72,8 @@ Route::middleware(['auth', 'verified', 'customer'])->prefix('customer')->group(f
     Route::post('/kunjungan/customer', [CustomerVisitBookingController::class, 'store'])->name('customer.kunjungan.store');
     Route::get('/kunjungan/{kunjungan}/payment', [CustomerVisitBookingController::class, 'showPayment'])->name('customer.kunjungan.payment');
     Route::get('/kunjungan/{kunjungan}', [CustomerVisitBookingController::class, 'show'])->name('customer.kunjungan.show');
+    Route::get('/kunjungan/{kunjungan}/invoice', [CustomerVisitBookingController::class, 'downloadInvoice'])->name('customer.kunjungan.invoice');
+    Route::post('/kunjungan/{kunjungan}/complete', [CustomerVisitBookingController::class, 'complete'])->name('customer.kunjungan.complete');
 
     // --- Profil Customer ---
     Route::get('/profile', [CustomerProfileController::class, 'edit'])->name('customer.profile.edit');
@@ -83,6 +85,8 @@ Route::middleware(['auth', 'verified', 'customer'])->prefix('customer')->group(f
     // --- Pesanan Customer ---
     Route::get('/pesanan', [CustomerOrderController::class, 'index'])->name('customer.pesanan.index');
     Route::get('/pesanan/{pesanan}', [CustomerOrderController::class, 'show'])->name('customer.pesanan.show');
+    Route::get('/pesanan/{pesanan}/invoice', [CustomerOrderController::class, 'downloadInvoice'])->name('customer.pesanan.invoice');
+    Route::post('/pesanan/{pesanan}/complete', [CustomerOrderController::class, 'complete'])->name('customer.pesanan.complete');
 
     // --- Ulasan Customer ---
     Route::get('/ulasan/create/{pesanan}', [CustomerReviewController::class, 'create'])->name('customer.ulasan.create');

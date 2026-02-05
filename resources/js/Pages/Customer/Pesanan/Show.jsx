@@ -1,10 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import CustomerLayout from '@/Layouts/CustomerLayout';
+import Swal from 'sweetalert2';
 import {
     FiCheckCircle, FiClock, FiXCircle, FiUser, FiTruck, FiArchive,
-    FiRefreshCw, FiCreditCard, FiArrowLeft, FiAlertTriangle
+    FiRefreshCw, FiCreditCard, FiArrowLeft, FiAlertTriangle,
+    FiCopy, FiCheck, FiDownload, FiFileText, FiStar
 } from 'react-icons/fi';
+
+// Review Card Component
+const UlasanCard = ({ ulasan }) => (
+    <div className="mt-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+        <div className="flex justify-between items-start gap-4">
+            <div className="flex-1">
+                <h3 className="text-base font-semibold text-green-800 mb-2 flex items-center gap-2">
+                    <FiStar className="text-yellow-500" />
+                    Ulasan Anda
+                </h3>
+                <div className="flex gap-1 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                        <FiStar key={i} className={`w-4 h-4 ${i < ulasan.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                    ))}
+                </div>
+                <p className="text-gray-700 text-sm italic">"{ulasan.komentar}"</p>
+            </div>
+            {ulasan.fotos && ulasan.fotos.length > 0 && (
+                <img
+                    src={`/storage/${ulasan.fotos[0].foto_path}`}
+                    alt="Foto Ulasan"
+                    className="h-20 w-20 object-cover rounded-lg flex-shrink-0 border border-green-100"
+                />
+            )}
+        </div>
+    </div>
+);
 
 export default function Show({ pesanan, auth }) {
     const { flash } = usePage().props;
@@ -92,18 +121,54 @@ export default function Show({ pesanan, auth }) {
 
     // Status configuration
     const getStatusConfig = () => {
-        const status = pesanan.payment_status || 'unpaid';
+        // Prioritas status: Complete > Shipped > Paid > Pending
+        const status = pesanan.status?.toLowerCase() || 'pending';
+        const paymentStatus = pesanan.payment_status || 'unpaid';
 
-        switch (status) {
+        if (status === 'completed') {
+            return {
+                headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
+                icon: FiCheckCircle,
+                iconColor: 'text-white',
+                title: 'Pesanan Selesai',
+                subtitle: 'Pesanan telah diterima. Terima kasih telah berbelanja!',
+                badgeColor: 'bg-white/20 text-white border border-white/30',
+                badgeText: 'SELESAI',
+                showPayButton: false,
+                needsRetry: false,
+            };
+        }
+
+        if (status === 'shipped') {
+            return {
+                headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
+                icon: FiTruck,
+                iconColor: 'text-white',
+                title: 'Pesanan Sedang Dikirim',
+                subtitle: 'Paket Anda sedang dalam perjalanan ke alamat tujuan.',
+                badgeColor: 'bg-white/20 text-white border border-white/30',
+                badgeText: 'DIKIRIM',
+                showPayButton: false,
+                needsRetry: false,
+                badgeColor: 'bg-white/20 text-white border border-white/30',
+                badgeText: 'DIKIRIM',
+                showPayButton: false,
+                needsRetry: false,
+            };
+        }
+
+        // Fallback ke Payment Status jika belum dikirim/selesai
+        switch (paymentStatus) {
             case 'paid':
+                // Paid tapi masih processed/pending
                 return {
-                    headerBg: 'bg-gradient-to-r from-green-500 to-emerald-600',
+                    headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
                     icon: FiCheckCircle,
                     iconColor: 'text-white',
-                    title: 'Pesanan Diterima',
-                    subtitle: 'Terima kasih! Pesanan Anda sedang kami proses.',
+                    title: 'Pembayaran Diterima',
+                    subtitle: 'Terima kasih! Pesanan Anda sedang kami siapkan.',
                     badgeColor: 'bg-green-100 text-green-700',
-                    badgeText: 'LUNAS',
+                    badgeText: status === 'processed' ? 'DIPROSES' : 'LUNAS',
                     showPayButton: false,
                     needsRetry: false,
                 };
@@ -114,7 +179,7 @@ export default function Show({ pesanan, auth }) {
                     icon: FiClock,
                     iconColor: 'text-white',
                     title: 'Menunggu Pembayaran',
-                    subtitle: 'Pembayaran sedang menunggu konfirmasi. Silakan selesaikan pembayaran sesuai instruksi.',
+                    subtitle: 'Pembayaran sedang menunggu konfirmasi. Silakan selesaikan pembayaran.',
                     badgeColor: 'bg-yellow-100 text-yellow-700',
                     badgeText: 'PENDING',
                     showPayButton: false, // TIDAK tampil tombol bayar
@@ -141,10 +206,10 @@ export default function Show({ pesanan, auth }) {
                     headerBg: 'bg-gradient-to-r from-red-500 to-rose-600',
                     icon: FiXCircle,
                     iconColor: 'text-white',
-                    title: status === 'expired' ? 'Pembayaran Kedaluwarsa' : 'Pembayaran Gagal',
+                    title: paymentStatus === 'expired' ? 'Pembayaran Kedaluwarsa' : 'Pembayaran Gagal',
                     subtitle: 'Token pembayaran sudah tidak valid. Klik tombol di bawah untuk mendapatkan token baru.',
                     badgeColor: 'bg-red-100 text-red-700',
-                    badgeText: status === 'expired' ? 'KEDALUWARSA' : 'GAGAL',
+                    badgeText: paymentStatus === 'expired' ? 'KEDALUWARSA' : 'GAGAL',
                     showPayButton: true,
                     needsRetry: true, // Token expired, HARUS generate baru
                     isPending: false,
@@ -155,7 +220,7 @@ export default function Show({ pesanan, auth }) {
                     icon: FiClock,
                     iconColor: 'text-white',
                     title: 'Status Pesanan',
-                    subtitle: 'Silakan cek status pembayaran Anda.',
+                    subtitle: 'Silakan cek detail pesanan Anda.',
                     badgeColor: 'bg-gray-100 text-gray-700',
                     badgeText: (status || 'unknown').toUpperCase(),
                     showPayButton: false,
@@ -309,29 +374,29 @@ export default function Show({ pesanan, auth }) {
         <CustomerLayout auth={auth}>
             <Head title={`Detail Pesanan #${pesanan.nomor_pesanan}`} />
 
-            <main className="bg-gray-50 min-h-screen py-8 sm:py-12">
+            <main className="bg-gray-50 min-h-screen py-6 sm:py-8">
                 <div className="max-w-4xl mx-auto px-4">
 
                     {/* Back Button - Modern Style */}
                     <Link
                         href={route('customer.pesanan.index')}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow transition-all mb-6 group"
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:shadow transition-all mb-4 group"
                     >
                         <FiArrowLeft className="text-green-600 group-hover:-translate-x-1 transition-transform" />
-                        <span>Kembali ke Riwayat Pesanan</span>
+                        <span>Kembali</span>
                     </Link>
 
                     <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
 
                         {/* Dynamic Header based on payment status */}
-                        <div className={`${config.headerBg} p-6 sm:p-8 text-center text-white`}>
-                            <StatusIcon className={`${config.iconColor} text-5xl mx-auto mb-4`} />
-                            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{config.title}</h1>
-                            <p className="text-white/80 mt-2">{config.subtitle}</p>
+                        <div className={`${config.headerBg} p-5 sm:p-6 text-center text-white`}>
+                            <StatusIcon className={`${config.iconColor} text-4xl mx-auto mb-3`} />
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{config.title}</h1>
+                            <p className="text-white/90 mt-1 text-sm">{config.subtitle}</p>
 
                             {/* Payment Status Badge */}
-                            <div className="mt-4">
-                                <span className={`inline-flex items-center px-4 py-1.5 rounded-full text-sm font-semibold ${config.badgeColor}`}>
+                            <div className="mt-3">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${config.badgeColor}`}>
                                     {config.badgeText}
                                 </span>
                             </div>
@@ -339,59 +404,56 @@ export default function Show({ pesanan, auth }) {
 
                         {/* PENDING Status Section */}
                         {config.isPending && (
-                            <div className="bg-yellow-50 border-b p-4 sm:p-6">
+                            <div className="bg-yellow-50 border-b p-4">
                                 {/* Info Box */}
-                                <div className="flex items-start gap-3 p-4 bg-white border border-yellow-200 rounded-xl mb-5">
-                                    <FiClock className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                    <div className="text-sm text-yellow-800">
-                                        <p className="font-semibold text-base">Pembayaran Sedang Menunggu</p>
-                                        <p className="mt-2 text-yellow-700">
-                                            Transaksi Anda sudah dibuat. Pilih salah satu opsi di bawah untuk melanjutkan.
+                                <div className="flex items-start gap-3 p-3 bg-white border border-yellow-200 rounded-lg mb-4">
+                                    <FiClock className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                    <div className="text-xs text-yellow-800">
+                                        <p className="font-semibold text-sm">Pembayaran Sedang Menunggu</p>
+                                        <p className="mt-1 text-yellow-700">
+                                            Transaksi Anda sudah dibuat. Pilih opsi di bawah.
                                         </p>
                                     </div>
                                 </div>
 
                                 {/* 2 Tombol Utama */}
-                                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                     {/* Lanjutkan Pembayaran - Token yang sama */}
-                                    <div className="flex flex-col items-center">
+                                    <div className="flex flex-col items-center w-full sm:w-auto">
                                         <button
                                             type="button"
                                             onClick={handlePayNow}
                                             disabled={isProcessing}
-                                            className="flex items-center justify-center gap-2 px-6 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition shadow-lg disabled:opacity-50"
+                                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-semibold rounded-lg hover:bg-green-700 transition shadow disabled:opacity-50"
                                         >
-                                            <FiCreditCard className="w-5 h-5" />
+                                            <FiCreditCard className="w-4 h-4" />
                                             Lanjutkan Pembayaran
                                         </button>
-                                        <p className="text-xs text-gray-500 mt-2 text-center">Pakai transaksi yang sama</p>
+                                        <p className="text-xs text-gray-500 mt-1 text-center">Pakai transaksi yang sama</p>
                                     </div>
 
                                     {/* Ganti Metode - Token baru */}
-                                    <div className="flex flex-col items-center">
+                                    <div className="flex flex-col items-center w-full sm:w-auto">
                                         <button
                                             type="button"
-                                            onClick={() => {
-                                                alert('GANTI METODE CLICKED!');
-                                                handleRetryPayment();
-                                            }}
+                                            onClick={() => handleRetryPayment()}
                                             disabled={isProcessing}
                                             style={{ pointerEvents: 'auto', zIndex: 9999 }}
-                                            className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-gray-400 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition disabled:opacity-50"
+                                            className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 border border-gray-400 text-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-100 transition disabled:opacity-50"
                                         >
-                                            <FiRefreshCw className={`w-5 h-5 ${isProcessing ? 'animate-spin' : ''}`} />
+                                            <FiRefreshCw className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
                                             {isProcessing ? 'Memproses...' : 'Ganti Metode'}
                                         </button>
-                                        <p className="text-xs text-gray-500 mt-2 text-center">Buat pembayaran baru</p>
+                                        <p className="text-xs text-gray-500 mt-1 text-center">Buat pembayaran baru</p>
                                     </div>
                                 </div>
 
                                 {/* Link kecil refresh */}
-                                <div className="text-center mt-5">
+                                <div className="text-center mt-3">
                                     <button
                                         onClick={handleCheckStatus}
                                         disabled={isProcessing}
-                                        className="text-sm text-gray-500 hover:text-gray-700 underline disabled:opacity-50"
+                                        className="text-xs text-gray-500 hover:text-gray-700 underline disabled:opacity-50"
                                     >
                                         {isProcessing ? 'Memuat...' : 'Refresh Status'}
                                     </button>
@@ -401,21 +463,21 @@ export default function Show({ pesanan, auth }) {
 
                         {/* Action Buttons - Only for UNPAID and EXPIRED/FAILED */}
                         {config.showPayButton && (
-                            <div className="bg-gray-50 border-b p-4 sm:p-6">
+                            <div className="bg-gray-50 border-b p-4">
                                 <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
                                     <button
                                         onClick={handleMainAction}
                                         disabled={isProcessing}
-                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-3 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-all shadow hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
                                     >
                                         {config.needsRetry ? (
                                             <>
-                                                <FiRefreshCw className={`w-5 h-5 ${isProcessing ? 'animate-spin' : ''}`} />
-                                                {isProcessing ? 'Membuat Token Baru...' : 'Bayar Ulang'}
+                                                <FiRefreshCw className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                                                {isProcessing ? 'Token Baru...' : 'Bayar Ulang'}
                                             </>
                                         ) : (
                                             <>
-                                                <FiCreditCard className="w-5 h-5" />
+                                                <FiCreditCard className="w-4 h-4" />
                                                 {isProcessing ? 'Memproses...' : 'Bayar Sekarang'}
                                             </>
                                         )}
@@ -424,22 +486,20 @@ export default function Show({ pesanan, auth }) {
 
                                 {/* Unpaid Notice */}
                                 {pesanan.payment_status === 'unpaid' && (
-                                    <div className="mt-4 flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-                                        <FiAlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                                        <div className="text-sm text-yellow-800">
-                                            <p className="font-semibold">Pesanan akan diproses setelah pembayaran berhasil.</p>
-                                            <p className="mt-1 text-yellow-700">Klik tombol di atas untuk memilih metode pembayaran.</p>
+                                    <div className="mt-3 flex items-start gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                                        <FiAlertTriangle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                                        <div className="text-xs text-yellow-800">
+                                            <p className="font-semibold">Pesanan diproses setelah bayar.</p>
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Expired/Failed Notice */}
                                 {config.needsRetry && (
-                                    <div className="mt-4 flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-xl">
-                                        <FiAlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                                        <div className="text-sm text-red-800">
-                                            <p className="font-semibold">Token pembayaran sebelumnya sudah tidak valid.</p>
-                                            <p className="mt-1 text-red-700">Klik "Bayar Ulang" untuk mendapatkan token baru dan melanjutkan pembayaran.</p>
+                                    <div className="mt-3 flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                        <FiAlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
+                                        <div className="text-xs text-red-800">
+                                            <p className="font-semibold">Token kadaluarsa. Klik "Bayar Ulang".</p>
                                         </div>
                                     </div>
                                 )}
@@ -447,47 +507,105 @@ export default function Show({ pesanan, auth }) {
                         )}
 
                         {/* Order Content */}
-                        <div className="p-6 sm:p-8">
+                        <div className="p-5 sm:p-6">
                             {flash?.success && typeof flash.success === 'string' && (
-                                <div className="bg-green-100 border-l-4 border-green-500 text-green-800 p-4 rounded-md mb-6" role="alert">
+                                <div className="bg-green-100 border-l-4 border-green-500 text-green-800 p-3 rounded text-sm mb-4" role="alert">
                                     <p>{flash.success}</p>
                                 </div>
                             )}
 
-                            {/* Order Info */}
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 pb-4 border-b">
-                                <div>
-                                    <p className="text-sm text-gray-500">Nomor Pesanan</p>
-                                    <p className="font-mono font-semibold text-green-600 text-lg">{pesanan.nomor_pesanan || '-'}</p>
-                                </div>
-                                <div className="text-left sm:text-right">
-                                    <p className="text-sm text-gray-500">Tanggal Pesanan</p>
-                                    <p className="font-medium text-gray-700">{formatDate(pesanan.created_at)}</p>
-                                </div>
-                            </div>
-
                             {/* Customer & Shipping Info */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                                <div className="bg-gray-50 rounded-xl p-4">
-                                    <h3 className="font-semibold text-gray-800 flex items-center mb-3">
-                                        <FiUser className="mr-2 text-green-500" />
-                                        Info Pelanggan
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                {/* Info Pelanggan & Pesanan Merged */}
+                                <div className="bg-gray-50 rounded-lg p-3">
+                                    <h3 className="font-semibold text-gray-800 text-sm flex items-center mb-2">
+                                        <FiUser className="mr-2 text-green-500 w-4 h-4" />
+                                        Info Pelanggan & Pesanan
                                     </h3>
-                                    <p className="text-gray-600">{pesanan.user?.name || '-'}</p>
-                                    <p className="text-sm text-gray-500">{pesanan.user?.email || '-'}</p>
+                                    <div className="flex flex-col gap-3">
+                                        <div>
+                                            <p className="text-gray-600 text-sm font-medium">{pesanan.user?.name || '-'}</p>
+                                            <p className="text-xs text-gray-500">{pesanan.user?.email || '-'}</p>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-gray-100 flex flex-col gap-1.5">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[10px] text-gray-500">No. Pesanan</span>
+                                                <span className="font-mono text-green-600 text-sm font-bold">{pesanan.nomor_pesanan || '-'}_</span>
+                                            </div>
+
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[10px] text-gray-500">Tanggal</span>
+                                                <span className="text-xs text-gray-700">{formatDate(pesanan.created_at)}</span>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="bg-gray-50 rounded-xl p-4">
-                                    <h3 className="font-semibold text-gray-800 flex items-center mb-3">
-                                        <FiTruck className="mr-2 text-green-500" />
-                                        Info Pengiriman
-                                    </h3>
-                                    <p className="text-gray-600">{pesanan.alamat_pengiriman || 'Alamat tidak tersedia'}</p>
-                                    <p className="text-sm font-medium text-gray-700 mt-1">{pesanan.metode_pengiriman || '-'}</p>
+                                <div className="bg-gray-50 rounded-lg p-3 flex flex-col justify-between">
+                                    <div>
+                                        <h3 className="font-semibold text-gray-800 text-sm flex items-center mb-2">
+                                            <FiTruck className="mr-2 text-green-500 w-4 h-4" />
+                                            Info Pengiriman
+                                        </h3>
+                                        <p className="text-gray-600 text-sm">{pesanan.alamat_pengiriman || 'Alamat tidak tersedia'}</p>
+                                        <p className="text-xs font-medium text-gray-700 mt-1">{pesanan.metode_pengiriman || '-'}</p>
+                                    </div>
+
+                                    {(pesanan.nomor_resi || pesanan.payment_status === 'paid') && (
+                                        <div className="mt-2 pt-2 border-t border-dashed border-gray-200 flex justify-between items-end">
+                                            {/* Resi Section (Left) */}
+                                            <div>
+                                                {pesanan.nomor_resi && (() => {
+                                                    const [copied, setCopied] = React.useState(false);
+                                                    const handleCopy = () => {
+                                                        navigator.clipboard.writeText(pesanan.nomor_resi);
+                                                        setCopied(true);
+                                                        setTimeout(() => setCopied(false), 2000);
+                                                    };
+
+                                                    return (
+                                                        <>
+                                                            <p className="text-[10px] text-gray-500 uppercase font-bold">Nomor Resi</p>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded text-xs select-all tracking-wide">
+                                                                    {pesanan.nomor_resi}
+                                                                </span>
+                                                                <button
+                                                                    onClick={handleCopy}
+                                                                    className="p-1 text-gray-500 hover:text-indigo-600 bg-white border border-gray-200 hover:border-indigo-300 rounded transition-colors flex items-center gap-1"
+                                                                    title="Salin Resi"
+                                                                >
+                                                                    {copied ? (
+                                                                        <FiCheck className="w-3 h-3 text-green-500" />
+                                                                    ) : (
+                                                                        <FiCopy className="w-3 h-3" />
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        </>
+                                                    );
+                                                })()}
+                                            </div>
+
+                                            {/* Invoice Section (Right) */}
+                                            {pesanan.payment_status === 'paid' && (
+                                                <a
+                                                    href={route('customer.pesanan.invoice', pesanan.id)}
+                                                    className="inline-flex items-center text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors mb-0.5"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                >
+                                                    <FiFileText className="mr-1.5 w-3 h-3" />
+                                                    Lihat Invoice
+                                                </a>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
-                            {/* Shipping/Processing Notice - for ALL methods */}
-                            {pesanan.payment_status === 'paid' && (() => {
+                            {/* Shipping/Processing Notice - only if PAID and NOT YET shipped/completed */}
+                            {pesanan.payment_status === 'paid' && !['shipped', 'completed'].includes(pesanan.status?.toLowerCase()) && (() => {
                                 // Operating hours: 07:30 - 18:00
                                 const now = new Date();
                                 const hour = now.getHours();
@@ -555,7 +673,7 @@ export default function Show({ pesanan, auth }) {
                                 <FiArchive className="mr-2 text-green-500" />
                                 Rincian Produk
                             </h3>
-                            <ul className="divide-y divide-gray-100 border rounded-xl overflow-hidden mb-6">
+                            <ul className="divide-y divide-gray-100 border rounded-xl overflow-y-auto max-h-80 mb-6 custom-scrollbar">
                                 {pesanan.items?.map((item) => (
                                     <li key={item.id} className="flex items-center p-4 bg-white hover:bg-gray-50 transition-colors">
                                         <img
@@ -591,14 +709,79 @@ export default function Show({ pesanan, auth }) {
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Reviews Section */}
+                            {pesanan.ulasan && pesanan.ulasan.length > 0 ? (
+                                <div className="mt-6">
+                                    <h3 className="font-semibold text-lg text-gray-800 flex items-center mb-4">
+                                        <FiStar className="mr-2 text-green-500" />
+                                        Ulasan Pesanan
+                                    </h3>
+                                    {pesanan.ulasan.map((review) => (
+                                        <UlasanCard key={review.id} ulasan={review} />
+                                    ))}
+                                </div>
+                            ) : (
+                                ['completed', 'selesai'].includes(pesanan.status?.toLowerCase()) && (
+                                    <div className="mt-6 text-center p-5 bg-gray-50 rounded-xl border border-dashed border-gray-300">
+                                        <FiStar className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                                        <p className="text-gray-600 text-sm mb-3">Bagaimana pengalaman belanja Anda?</p>
+                                        <Link
+                                            href={route('customer.ulasan.create', pesanan.id)}
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                                        >
+                                            <FiStar />
+                                            Beri Ulasan
+                                        </Link>
+                                    </div>
+                                )
+                            )}
                         </div>
 
                         {/* Footer Actions */}
+                        {/* Footer Actions */}
                         <div className="bg-gray-50 border-t p-4 sm:p-6">
+                            {/* Confirm Received Button - Only visible when Shipped */}
+                            {['shipped', 'dikirim'].includes(pesanan.status?.toLowerCase()) && (
+                                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl w-full">
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                                        <div className="flex items-center gap-2 text-blue-800">
+                                            <FiCheckCircle className="w-5 h-5 flex-shrink-0" />
+                                            <div className="text-sm text-left">
+                                                <p className="font-semibold">Pesanan Diterima?</p>
+                                                <p className="text-xs text-blue-600 mt-0.5">Konfirmasi jika pesanan sudah Anda terima dengan baik.</p>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick={() => {
+                                                Swal.fire({
+                                                    title: 'Pesanan Diterima?',
+                                                    text: "Pastikan barang sudah Anda terima dengan baik. Status pesanan akan diubah menjadi Selesai.",
+                                                    icon: 'question',
+                                                    showCancelButton: true,
+                                                    confirmButtonColor: '#059669',
+                                                    cancelButtonColor: '#d33',
+                                                    confirmButtonText: 'Ya, Sudah Diterima',
+                                                    cancelButtonText: 'Batal'
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        router.post(route('customer.pesanan.complete', pesanan.id));
+                                                    }
+                                                });
+                                            }}
+                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 hover:shadow-lg transition-all whitespace-nowrap"
+                                        >
+                                            <FiCheckCircle />
+                                            Konfirmasi Diterima
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="flex flex-col sm:flex-row gap-3 justify-center">
                                 <Link
                                     href={route('belanja.index')}
-                                    className="text-center px-6 py-3 bg-green-600 text-white font-semibold rounded-xl hover:bg-green-700 transition shadow"
+                                    className="text-center px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition"
                                 >
                                     Lanjut Belanja
                                 </Link>
@@ -613,6 +796,6 @@ export default function Show({ pesanan, auth }) {
                     </div>
                 </div>
             </main>
-        </CustomerLayout>
+        </CustomerLayout >
     );
 }

@@ -187,7 +187,7 @@ class VisitBookingController extends Controller
             abort(403, 'AKSES DITOLAK');
         }
 
-        $kunjungan->load(['tipe', 'ulasan']);
+        $kunjungan->load(['tipe', 'ulasan.fotos', 'user']);
 
         return Inertia::render('Customer/Kunjungan/Show', [
             'kunjungan' => $kunjungan,
@@ -292,5 +292,46 @@ class VisitBookingController extends Controller
         }
 
         return $biaya;
+    }
+
+    /**
+     * Download Invoice Kunjungan (PDF).
+     */
+    public function downloadInvoice(Kunjungan $kunjungan)
+    {
+        if ($kunjungan->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Hanya boleh download jika PAID atau status Selesai
+        if ($kunjungan->payment_status !== 'paid' && $kunjungan->status !== 'Selesai') {
+            abort(404, 'Invoice belum tersedia (Menunggu Pembayaran).');
+        }
+
+        $kunjungan->load(['tipe', 'user']);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice_kunjungan', [
+            'kunjungan' => $kunjungan
+        ]);
+
+        return $pdf->stream('invoice-kunjungan-' . $kunjungan->id . '.pdf');
+    }
+
+    /**
+     * Mark visit as completed by customer.
+     */
+    public function complete(Kunjungan $kunjungan)
+    {
+        if ($kunjungan->user_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        if ($kunjungan->status !== 'Dijadwalkan') {
+            return back()->with('error', 'Kunjungan tidak dapat diselesaikan saat ini.');
+        }
+
+        $kunjungan->update(['status' => 'Selesai']);
+
+        return back()->with('success', 'Kunjungan telah selesai. Terima kasih atas kunjungan Anda!');
     }
 }

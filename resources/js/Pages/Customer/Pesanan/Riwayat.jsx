@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import CustomerLayout from '@/Layouts/CustomerLayout';
 import { FiArchive, FiCalendar, FiShoppingBag, FiMapPin, FiUsers } from 'react-icons/fi';
@@ -12,22 +12,32 @@ const PesananProdukCard = ({ pesanan }) => {
         'Diproses': 'bg-blue-100 text-blue-800',
         'Selesai': 'bg-green-100 text-green-800',
         'pending': 'bg-yellow-100 text-yellow-800',
+        'Batal': 'bg-red-100 text-red-800',
+        'completed': 'bg-green-100 text-green-800',
+        'shipped': 'bg-blue-100 text-blue-800',
     };
 
+    // Normalize status text
+    const statusLabel = pesanan.status === 'completed' ? 'Selesai' :
+        pesanan.status === 'shipped' ? 'Dikirim' :
+            pesanan.status === 'pending' ? 'Menunggu' : pesanan.status;
+
     return (
-        <div className="block bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-green-500 transition-all duration-300 overflow-hidden">
+        <div className="block bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-green-500 transition-all duration-300 overflow-hidden group">
             <Link href={route('customer.pesanan.show', pesanan.id)}>
                 <div className="p-5">
                     <div className="flex justify-between items-center">
                         <div>
-                            <p className="font-semibold text-green-600 text-sm flex items-center"><FiArchive className="mr-2" />{pesanan.nomor_pesanan}</p>
+                            <p className="font-semibold text-green-600 text-sm flex items-center group-hover:text-green-700 transition-colors">
+                                <FiArchive className="mr-2" />{pesanan.nomor_pesanan}
+                            </p>
                             <p className="text-xs text-gray-500 mt-1">{formatDate(pesanan.created_at)}</p>
                         </div>
-                        <span className={`px-3 py-1 text-xs font-semibold rounded-full ${statusStyles[pesanan.status] || 'bg-gray-100 text-gray-800'}`}>
-                            {pesanan.status}
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-wide ${statusStyles[pesanan.status] || 'bg-gray-100 text-gray-800'}`}>
+                            {statusLabel}
                         </span>
                     </div>
-                    <div className="border-t my-4"></div>
+                    <div className="border-t my-4 border-gray-100"></div>
                     <div className="flex items-center">
                         <div className="flex -space-x-4">
                             {pesanan.items.slice(0, 3).map(item => (
@@ -46,22 +56,25 @@ const PesananProdukCard = ({ pesanan }) => {
                     </div>
                 </div>
             </Link>
-            <div className="bg-gray-50/70 px-5 py-3 flex justify-between items-center text-sm">
-                <div>
-                    <span className="text-gray-600">Total Pembayaran</span>
-                    <p className="font-bold text-gray-900">{formatCurrency(pesanan.total)}</p>
-                </div>
-                {pesanan.status === 'Selesai' && (
-                    pesanan.ulasan?.length > 0 ? (
-                        <Link href={route('customer.pesanan.show', pesanan.id)} className="bg-gray-200 text-gray-700 font-semibold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-xs">
+            <div className="bg-gray-50/70 px-5 py-3 flex justify-between items-center text-sm border-t border-gray-100">
+                {/* Actions: Left */}
+                <div className="flex items-center gap-2">
+                    {pesanan.ulasan?.length > 0 ? (
+                        <Link href={route('customer.pesanan.show', pesanan.id)} className="text-xs font-semibold text-gray-600 hover:text-green-600 transition-colors">
                             Lihat Ulasan
                         </Link>
                     ) : (
-                        <Link href={route('customer.ulasan.create', pesanan.id)} className="bg-green-600 text-white font-semibold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors text-xs">
-                            Beri Ulasan
+                        <Link href={route('customer.pesanan.show', pesanan.id)} className="text-xs font-semibold text-gray-600 hover:text-green-600 transition-colors">
+                            Lihat Detail
                         </Link>
-                    )
-                )}
+                    )}
+                </div>
+
+                {/* Total: Right */}
+                <div className="text-right">
+                    <span className="text-[10px] text-gray-500 block">Total Pembayaran</span>
+                    <p className="font-bold text-gray-900">{formatCurrency(pesanan.total)}</p>
+                </div>
             </div>
         </div>
     );
@@ -70,93 +83,84 @@ const PesananProdukCard = ({ pesanan }) => {
 const PesananKunjunganCard = ({ kunjungan }) => {
     const formatCurrency = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-
-    const statusStyles = {
-        'Selesai': 'bg-green-100 text-green-800 border border-green-200',
-        'Dijadwalkan': 'bg-blue-100 text-blue-800 border border-blue-200',
-        'Menunggu Pembayaran': 'bg-yellow-100 text-yellow-800 border border-yellow-200',
-        'Batal': 'bg-red-100 text-red-800 border border-red-200',
-    };
-
-    // Format jam (ambil 5 karakter pertama, misal 09:00:00 -> 09:00)
     const formatJam = (jam) => jam ? jam.substring(0, 5) + ' WIB' : '-';
 
+    const statusStyles = {
+        'Selesai': 'bg-green-100 text-green-800',
+        'Dijadwalkan': 'bg-blue-100 text-blue-800',
+        'Menunggu Pembayaran': 'bg-yellow-100 text-yellow-800',
+        'Batal': 'bg-red-100 text-red-800',
+        'pending': 'bg-yellow-100 text-yellow-800',
+    };
+
     return (
-        <div className="block bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md hover:border-green-500 transition-all duration-300 overflow-hidden group">
-            <Link href={route('customer.kunjungan.show', kunjungan.id)} className="block p-5">
-                <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-start">
-                        <div className="bg-green-50 p-3 rounded-lg mr-4 group-hover:bg-green-100 transition-colors">
-                            <FiCalendar className="w-6 h-6 text-green-600" />
-                        </div>
+        <div className="block bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-green-500 transition-all duration-300 overflow-hidden group">
+            <Link href={route('customer.kunjungan.show', kunjungan.id)}>
+                <div className="p-5">
+                    <div className="flex justify-between items-center">
                         <div>
-                            <h4 className="font-bold text-gray-900 text-lg">
+                            {/* Header: Green ID (No Pembayaran) + Date */}
+                            <p className="font-semibold text-green-600 text-sm flex items-center group-hover:text-green-700 transition-colors">
+                                <FiCalendar className="mr-2" />
+                                {kunjungan.midtrans_order_id || `BOOK-${kunjungan.id.toString().padStart(5, '0')}`}
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1">{formatDate(kunjungan.tanggal)}</p>
+                        </div>
+                        {/* Status Badge */}
+                        <span className={`px-3 py-1 text-xs font-semibold rounded-full uppercase tracking-wide ${statusStyles[kunjungan.status] || 'bg-gray-100 text-gray-800'}`}>
+                            {kunjungan.status}
+                        </span>
+                    </div>
+
+                    <div className="border-t my-4 border-gray-100"></div>
+
+                    {/* Content: Mocking Product Card Layout */}
+                    <div className="flex items-center">
+                        {/* Avatar for Visit Type */}
+                        <div className="w-12 h-12 rounded-full bg-green-50 flex items-center justify-center border-2 border-white flex-shrink-0">
+                            <FiUsers className="text-green-600 w-5 h-5" />
+                        </div>
+
+                        <div className="ml-4 flex-grow">
+                            <p className="text-sm font-medium text-gray-800">
                                 {kunjungan.tipe ? kunjungan.tipe.nama_tipe : 'Kunjungan'}
-                            </h4>
-                            <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500 mt-1 gap-1 sm:gap-3">
-                                <span>{formatDate(kunjungan.tanggal)}</span>
-                                <span className="hidden sm:inline text-gray-300">•</span>
-                                <span className="font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded text-xs w-fit">
-                                    {formatJam(kunjungan.jam)}
+                                <span className="text-gray-500 font-normal text-xs ml-1">
+                                    • {kunjungan.jumlah_pengunjung || (kunjungan.jumlah_dewasa + kunjungan.jumlah_anak)} Orang
                                 </span>
-                            </div>
+                            </p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                                {formatJam(kunjungan.jam)} • Lihat detail kunjungan
+                            </p>
                         </div>
-                    </div>
-                    <span className={`px-3 py-1 text-xs font-bold rounded-full uppercase tracking-wide ${statusStyles[kunjungan.status] || 'bg-gray-100 text-gray-800'}`}>
-                        {kunjungan.status}
-                    </span>
-                </div>
-
-                <div className="border-t border-gray-100 my-3"></div>
-
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                        <p className="text-gray-500 text-xs mb-1">Pengunjung</p>
-                        <div className="flex items-center text-gray-800 font-medium">
-                            <FiUsers className="mr-2 text-gray-400" />
-                            {kunjungan.jumlah_pengunjung} Orang
-                        </div>
-                        <p className="text-xs text-gray-400 mt-0.5 pl-6">
-                            {(kunjungan.jumlah_dewasa || 0) > 0 && `${kunjungan.jumlah_dewasa} Dws`}
-                            {(kunjungan.jumlah_anak || 0) > 0 && `, ${kunjungan.jumlah_anak} Ank`}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-gray-500 text-xs mb-1">Total Biaya</p>
-                        <p className="font-bold text-gray-900 text-base">{formatCurrency(kunjungan.total_biaya)}</p>
                     </div>
                 </div>
             </Link>
 
-            <div className="bg-gray-50 px-5 py-3 border-t border-gray-100 flex justify-between items-center sm:justify-end gap-3">
-                <Link
-                    href={route('customer.kunjungan.show', kunjungan.id)}
-                    className="text-sm font-medium text-gray-600 hover:text-green-700 transition-colors"
-                >
-                    Lihat Detail
-                </Link>
-                {kunjungan.status === 'Selesai' && (
-                    kunjungan.ulasan?.length > 0 ? (
-                        <Link
-                            href={route('customer.kunjungan.show', kunjungan.id)}
-                            className="inline-flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all"
-                        >
-                            <span className="mr-2">⭐</span> Lihat Ulasan
-                        </Link>
+            <div className="bg-gray-50/70 px-5 py-3 flex justify-between items-center text-sm border-t border-gray-100">
+                {/* Actions: Left */}
+                <div className="flex items-center gap-2">
+                    {kunjungan.payment_status === 'pending' && kunjungan.status !== 'Batal' ? (
+                        <a href={route('customer.kunjungan.payment', kunjungan.id)} className="bg-green-600 text-white font-semibold py-1.5 px-3 rounded-md hover:bg-green-700 transition-all text-xs animate-pulse">
+                            Bayar Sekarang
+                        </a>
                     ) : (
-                        <Link
-                            href={route('customer.kunjungan.ulasan.create', kunjungan.id)}
-                            className="inline-flex items-center justify-center px-4 py-2 bg-green-600 border border-transparent rounded-lg text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-all"
-                        >
-                            Beri Ulasan
-                        </Link>
-                    )
-                )}
-                {kunjungan.payment_status === 'pending' && kunjungan.status !== 'Batal' && (
-                    <a href={route('customer.kunjungan.payment', kunjungan.id)} className="inline-flex items-center justify-center px-4 py-2 bg-green-600 border border-transparent rounded-lg text-sm font-bold text-white shadow-sm hover:bg-green-700 transition-all animate-pulse">
-                        Bayar Sekarang
-                    </a>
-                )}
+                        kunjungan.ulasan?.length > 0 ? (
+                            <Link href={route('customer.kunjungan.show', kunjungan.id)} className="text-xs font-semibold text-gray-600 hover:text-green-600 transition-colors">
+                                Lihat Ulasan
+                            </Link>
+                        ) : (
+                            <Link href={route('customer.kunjungan.show', kunjungan.id)} className="text-xs font-semibold text-gray-600 hover:text-green-600 transition-colors">
+                                Lihat Detail
+                            </Link>
+                        )
+                    )}
+                </div>
+
+                {/* Total: Right */}
+                <div className="text-right">
+                    <span className="text-[10px] text-gray-500 block">Total Biaya</span>
+                    <p className="font-bold text-gray-900">{formatCurrency(kunjungan.total_biaya)}</p>
+                </div>
             </div>
         </div>
     );
@@ -164,7 +168,29 @@ const PesananKunjunganCard = ({ kunjungan }) => {
 
 
 export default function Riwayat({ riwayatProduk, riwayatKunjungan, auth }) {
-    const [activeTab, setActiveTab] = useState('produk');
+    // Check URL hash to determine initial tab
+    const getInitialTab = () => {
+        if (typeof window !== 'undefined' && window.location.hash === '#kunjungan') {
+            return 'kunjungan';
+        }
+        return 'produk';
+    };
+
+    const [activeTab, setActiveTab] = useState(getInitialTab());
+
+    // Handle hash changes
+    useEffect(() => {
+        const handleHashChange = () => {
+            if (window.location.hash === '#kunjungan') {
+                setActiveTab('kunjungan');
+            } else if (window.location.hash === '#produk' || window.location.hash === '') {
+                setActiveTab('produk');
+            }
+        };
+
+        window.addEventListener('hashchange', handleHashChange);
+        return () => window.removeEventListener('hashchange', handleHashChange);
+    }, []);
 
     const TabButton = ({ tabName, label, icon }) => (
         <button

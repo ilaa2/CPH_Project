@@ -107,7 +107,7 @@ const DetailModal = ({ model, onClose }) => (
           </div>
           <div className="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t border-gray-300">
             <span>Total Tagihan</span>
-            <span className="text-green-700">Rp {model.total.toLocaleString('id-ID')}</span>
+            <span className="text-green-700">Rp {Number(model.total).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
           </div>
         </div>
       </div>
@@ -133,7 +133,7 @@ const Pagination = ({ links }) => (
 export default function PesananIndex({ pesanan, filters, pelangganList, produkList }) {
   const { flash } = usePage().props;
   const { data, links, from } = pesanan;
-  
+
   // State 
   const [modalState, setModalState] = useState({ type: null, model: null });
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false); // State khusus buat Create Modal Baru
@@ -227,15 +227,14 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
                     <td className="px-4 py-2">{item.tanggal}</td>
                     <td className="px-4 py-2">Rp {item.total.toLocaleString('id-ID')}</td>
                     <td className="px-4 py-2">
-                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                           item.status === 'Selesai' ? 'bg-green-100 text-green-800' : 
-                           item.status === 'Dibatalkan' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                       }`}>{item.status}</span>
+                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.status === 'Selesai' ? 'bg-green-100 text-green-800' :
+                          item.status === 'Dibatalkan' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                        }`}>{item.status}</span>
                     </td>
                     <td className="px-4 py-2 text-center flex justify-center gap-2">
-                        <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 rounded-full">👁️</button>
-                        <Link href={route('admin.pesanan.edit', item.id)} className="p-2 bg-blue-100 rounded-full">✏️</Link>
-                        {item.status === 'Selesai' && item.ulasan && <button onClick={() => openModal('ulasan', item)} className="p-2 bg-yellow-100 rounded-full">⭐</button>}
+                      <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 rounded-full">👁️</button>
+                      <Link href={route('admin.pesanan.edit', item.id)} className="p-2 bg-blue-100 rounded-full">✏️</Link>
+                      {item.status === 'Selesai' && item.ulasan && <button onClick={() => openModal('ulasan', item)} className="p-2 bg-yellow-100 rounded-full">⭐</button>}
                     </td>
                   </tr>
                 ))
@@ -253,18 +252,18 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
 
       {/* Modal Ulasan (Existing) */}
       {modalState.type === 'ulasan' && (
-          <Modal show={true} onClose={closeModal} maxWidth="lg">
-             <div className="p-6">
-                <UlasanPreview ulasan={modalState.model?.ulasan} pelanggan={modalState.model?.user} isAdmin={true} />
-                <button onClick={closeModal} className="mt-4 w-full bg-gray-200 py-2 rounded">Tutup</button>
-             </div>
-          </Modal>
+        <Modal show={true} onClose={closeModal} maxWidth="lg">
+          <div className="p-6">
+            <UlasanPreview ulasan={modalState.model?.ulasan} pelanggan={modalState.model?.user} isAdmin={true} />
+            <button onClick={closeModal} className="mt-4 w-full bg-gray-200 py-2 rounded">Tutup</button>
+          </div>
+        </Modal>
       )}
 
       {/* Modal CREATE Pesanan Baru (Modified) */}
-      <PesananFormModal 
-        isOpen={isCreateModalOpen} 
-        onClose={() => setIsCreateModalOpen(false)} 
+      <PesananFormModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
         pelangganList={pelangganList}
         produkList={produkList}
       />
