@@ -138,7 +138,7 @@ class OrderController extends Controller
             }
 
             DB::commit();
-            return redirect()->route('admin.pesanan.index')->with('success', 'Pesanan berhasil ditambahkan.');
+            return redirect()->back()->with('success', 'Pesanan berhasil dibuat!');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['message' => 'Gagal menyimpan pesanan: ' . $e->getMessage()]);

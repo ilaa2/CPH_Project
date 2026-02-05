@@ -156,12 +156,12 @@ class ReportController extends Controller
         // Data Grafik: Kunjungan per hari
         $chartData = Kunjungan::where('status', '!=', 'Dibatalkan')
             ->whereBetween('tanggal', [$startDate, $endDate])
-            ->selectRaw('DATE(tanggal) as date, COUNT(*) as total')
+            ->selectRaw('DATE(tanggal) as date, SUM(jumlah_dewasa + jumlah_anak + jumlah_balita) as total')
             ->groupBy('date')
             ->orderBy('date')
             ->get()
             ->map(function ($item) {
-                return ['label' => date('d M', strtotime($item->date)), 'value' => $item->total];
+                return ['label' => date('d M', strtotime($item->date)), 'value' => (int) $item->total];
             });
 
         // Data Tabel: 10 Kunjungan Terakhir
@@ -186,7 +186,7 @@ class ReportController extends Controller
                 'labels' => $chartData->pluck('label'),
                 'datasets' => [
                     [
-                        'label' => 'Jumlah Kunjungan',
+                        'label' => 'Jumlah Pengunjung',
                         'data' => $chartData->pluck('value'),
                         'borderColor' => '#2563eb',
                         'backgroundColor' => 'rgba(37, 99, 235, 0.1)',

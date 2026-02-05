@@ -12,6 +12,8 @@ use App\Models\Kunjungan;
 
 class DashboardController extends Controller
 {
+    // Note: Middleware diatur di routes/web.php dengan middleware(['auth', 'verified', 'admin'])
+    
     public function index()
     {
         // 1. Ambil Statistik Utama
@@ -71,6 +73,21 @@ class DashboardController extends Controller
             ];
         })->values();
 
+        // 4.1. Statistik Grafik Kunjungan (7 Hari Terakhir) - NEW
+        $visitData = Kunjungan::selectRaw('DATE(tanggal) as date, SUM(jumlah_dewasa + jumlah_anak + jumlah_balita) as total')
+            ->where('status', '!=', 'Batal')
+            ->whereDate('tanggal', '>=', $startDate)
+            ->groupBy('date')
+            ->get()
+            ->pluck('total', 'date');
+
+        $grafikKunjungan = $dates->map(function ($default, $date) use ($visitData) {
+            return [
+                'date' => $date,
+                'total' => (int) ($visitData->get($date) ?? 0)
+            ];
+        })->values();
+
         // 5. Ambil Aktivitas Terbaru
         $pesananTerbaru = Pesanan::with('user')
             ->where('status', '!=', 'Dibatalkan')
@@ -105,6 +122,7 @@ class DashboardController extends Controller
             'pesananPerluDiproses' => $pesananPerluDiproses,
             'kunjunganHariIni' => $kunjunganHariIni,
             'grafikPendapatan' => $grafikPendapatan,
+            'grafikKunjungan' => $grafikKunjungan, // <-- Added
             'pesananTerbaru' => $pesananTerbaru,
             'pelangganTerbaru' => $pelangganTerbaru,
         ]);

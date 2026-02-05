@@ -5,9 +5,9 @@ export default function KunjunganLayout({ children }) {
   const { url } = usePage();
 
   const tabs = [
-    { name: 'Jadwal Kunjungan', href: route('kunjungan.jadwal'), current: url.startsWith('/kunjungan/jadwal') },
-    { name: 'Kalender Kunjungan', href: route('kunjungan.kalender'), current: url.startsWith('/kunjungan/kalender') },
-    { name: 'Riwayat Kunjungan', href: route('kunjungan.riwayat'), current: url.startsWith('/kunjungan/riwayat') },
+    { name: 'Jadwal Kunjungan', href: route('admin.kunjungan.jadwal'), current: url.startsWith('/admin/kunjungan/jadwal') },
+    { name: 'Kalender Kunjungan', href: route('admin.kunjungan.kalender'), current: url.startsWith('/admin/kunjungan/kalender') },
+    { name: 'Riwayat Kunjungan', href: route('admin.kunjungan.riwayat'), current: url.startsWith('/admin/kunjungan/riwayat') },
   ];
 
   return (
@@ -26,11 +26,10 @@ export default function KunjunganLayout({ children }) {
                 <Link
                   key={tab.name}
                   href={tab.href}
-                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    tab.current
-                      ? 'border-green-500 text-green-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
+                  className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${tab.current
+                    ? 'border-green-500 text-green-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
                 >
                   {tab.name}
                 </Link>

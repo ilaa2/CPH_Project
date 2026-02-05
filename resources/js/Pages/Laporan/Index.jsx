@@ -366,16 +366,22 @@ export default function LaporanIndex({ initialSummary, filters }) {
                   <span className="mt-2 text-sm">Memuat visualisasi data...</span>
                 </div>
               ) : previewData ? (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="space-y-8">
 
-                  {/* CHART */}
-                  <div className="lg:col-span-2 bg-white border border-gray-100 rounded-lg p-4">
-                    <h4 className="text-sm font-semibold text-gray-600 mb-4 text-center">Visualisasi Tren & Komparasi</h4>
-                    <div className="h-72 w-full">
+                  {/* CHART Section (Full Width Top) */}
+                  <div className="bg-white border border-gray-100 rounded-lg p-6 shadow-sm">
+                    <h4 className="text-lg font-bold text-gray-700 mb-6 text-center">Visualisasi Tren & Komparasi</h4>
+                    <div className="h-80 w-full">
                       {previewType === 'produk-terlaris' ? (
                         <Bar
                           data={previewData.chart}
-                          options={{ responsive: true, maintainAspectRatio: false }}
+                          options={{
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                              legend: { position: 'top' },
+                            }
+                          }}
                         />
                       ) : (
                         <Line
@@ -384,37 +390,46 @@ export default function LaporanIndex({ initialSummary, filters }) {
                             responsive: true,
                             maintainAspectRatio: false,
                             tension: 0.4,
-                            fill: true
+                            fill: true,
+                            plugins: {
+                              legend: { position: 'top' },
+                            },
+                            interaction: {
+                              mode: 'index',
+                              intersect: false,
+                            },
                           }}
                         />
                       )}
                     </div>
                   </div>
 
-                  {/* TABLE */}
-                  <div className="lg:col-span-1 border border-gray-100 rounded-lg overflow-hidden">
-                    <div className="bg-gray-50 px-4 py-2 border-b border-gray-100">
-                      <h4 className="text-sm font-semibold text-gray-600">Overview Table (Top 10)</h4>
+                  {/* TABLE Section (Full Width Bottom) */}
+                  <div className="border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                    <div className="bg-gray-50 px-6 py-3 border-b border-gray-200">
+                      <h4 className="text-base font-bold text-gray-700">Detail Data (Overview)</h4>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-gray-500 uppercase bg-gray-50 border-b">
+
+                    {/* Table Container with Max Height & Scroll */}
+                    <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
+                      <table className="w-full text-sm text-left relative">
+                        <thead className="text-xs text-gray-500 uppercase bg-gray-100 border-b sticky top-0 z-10">
                           <tr>
                             {previewData.table.headers.map((h, i) => (
-                              <th key={i} className="px-4 py-2 font-medium">{h}</th>
+                              <th key={i} className="px-6 py-3 font-semibold tracking-wider bg-gray-100">{h}</th>
                             ))}
                           </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-gray-100">
                           {previewData.table.rows.length > 0 ? (
                             previewData.table.rows.map((row, i) => (
-                              <tr key={i} className="border-b last:border-0 hover:bg-gray-50">
-                                <td className="px-4 py-2 font-medium text-gray-900 truncate max-w-[100px]">{row.col1}</td>
-                                <td className="px-4 py-2 text-gray-600 truncate max-w-[100px]">{row.col2}</td>
-                                {row.col3 && <td className="px-4 py-2 text-gray-600">{row.col3}</td>}
+                              <tr key={i} className="bg-white hover:bg-green-50 transition-colors">
+                                <td className="px-6 py-3 font-medium text-gray-900">{row.col1}</td>
+                                <td className="px-6 py-3 text-gray-600">{row.col2}</td>
+                                {row.col3 && <td className="px-6 py-3 text-gray-600">{row.col3}</td>}
                                 {row.col4 && (
-                                  <td className="px-4 py-2">
-                                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
+                                  <td className="px-6 py-3">
+                                    <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
                                       {row.col4}
                                     </span>
                                   </td>
@@ -423,7 +438,7 @@ export default function LaporanIndex({ initialSummary, filters }) {
                             ))
                           ) : (
                             <tr>
-                              <td colSpan="4" className="px-4 py-8 text-center text-gray-400">
+                              <td colSpan="4" className="px-6 py-12 text-center text-gray-400 italic">
                                 Tidak ada data pada periode ini
                               </td>
                             </tr>
@@ -431,6 +446,12 @@ export default function LaporanIndex({ initialSummary, filters }) {
                         </tbody>
                       </table>
                     </div>
+                    {/* Pagination Info / Footer could go here */}
+                    {previewData.table.rows.length > 10 && (
+                      <div className="bg-gray-50 px-6 py-2 border-t border-gray-200 text-xs text-gray-500 text-right">
+                        Menampilkan semua data (Scroll untuk melihat lebih banyak)
+                      </div>
+                    )}
                   </div>
 
                 </div>

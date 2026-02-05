@@ -1,5 +1,88 @@
 # Catatan Perubahan
 
+## 4 Februari 2026
+
+### Dokumentasi BAB IV (4.2 - 4.5) untuk Laporan PA - Revisi Format PCR
+- **File Artifact**: `bab_iv_4_2_sampai_4_5.md`
+- **Format Standar PCR**:
+  - Narasi ilmiah/formal siap masuk dokumen Word
+  - Istilah asing ditulis *italic* (checkout, feedback, stakeholder, dll.)
+  - Penomoran subbab konsisten (4.2, 4.2.1, 4.2.2, dst.)
+  - Placeholder untuk bukti (*screenshot*, dokumentasi foto, surat validasi) ditandai jelas
+- **File Artifact**: `bab_iv_4_2_sampai_4_5.md`
+- **Struktur Dokumentasi**:
+  - **4.2 Develop**: Code Body, Integrate Code, Verify The Code
+  - **4.3 Test**: Test Report (73 skenario, 100% pass), Optimize Code
+  - **4.4 Evaluate**: Discuss With Stakeholders, Demonstrate, Feedback
+  - **4.5 Maintenance**: Fix Bugs (5 bug fixed), Change Features as Needed
+- **Highlight Implementasi**:
+  - CheckoutController multi-step dengan 3 metode pengiriman (pickup, local, expedition)
+  - MidtransController dengan notification handler dan stock reduction at settlement
+  - Biteship API integration untuk kalkulasi ongkir ekspedisi
+  - Soft delete produk untuk menjaga integritas histori transaksi
+
+### Fix: Error "Unknown column 'ulasan.produk_id'" dan Seeder Legacy
+- **Masalah**: 
+  1. Tabel ulasan tidak memiliki kolom `produk_id`, `pesanan_id`, `kunjungan_id`, `balasan`
+  2. Semua seeder masih menggunakan `pelanggan_id` yang sudah tidak ada
+- **Solusi**:
+  1. Memperbarui migration `create_ulasan_table` untuk menambahkan semua kolom yang diperlukan
+  2. Menghapus migration duplikat (`add_kunjungan_id_to_ulasan_table`, `add_reply_to_ulasan_table`, `add_balasan_to_ulasan_table`)
+  3. Memperbarui `PelangganSeeder` untuk menggunakan tabel `users` dengan role 'customer'
+  4. Memperbarui `UlasanSeeder`, `KunjunganSeeder`, `PesananSeeder` untuk menggunakan `user_id`
+
+### Fix: Error "Method Not Allowed" pada /checkout/process setelah pembayaran
+- **Masalah**: Ketika user menutup pop-up Midtrans dan menekan tombol back, browser mencoba mengakses `/customer/checkout/process` dengan GET request, tapi route ini hanya mendukung POST.
+- **Solusi**: Menambahkan route GET untuk `/checkout/process` yang redirect ke halaman riwayat pesanan dengan pesan informasi.
+
+### Fix: Akun Admin dan Redirect Login
+- **Masalah**: 
+  1. Akun admin sebelumnya (ila@gmail.com) tidak memiliki role admin yang benar
+  2. Redirect setelah login admin mengarah ke `/dashboard` (customer) bukan `/admin/dashboard`
+  3. Middleware `EnsureUserIsCustomer` redirect ke route yang tidak ada
+- **Solusi**:
+  1. Mengubah akun admin di `DatabaseSeeder` menjadi `admin@cph.com` dengan password `password`
+  2. Memperbaiki redirect admin di `AuthenticatedSessionController` ke `/admin/dashboard`
+  3. Memperbaiki redirect di `EnsureUserIsCustomer` ke `route('admin.dashboard')`
+- **Akun Login Aktif**:
+  - Admin: `admin@cph.com` / `password`
+  - Customer: Semua customer dari PelangganSeeder / `password`
+
+### Security Audit: Route-Based Authorization
+- **Masalah Awal**: Dosen pembimbing concern dengan keamanan authorization - customer bisa akses halaman admin dengan mengganti URL manual.
+- **Solusi yang Diterapkan**:
+  - **Route Middleware**: Semua admin routes (`/admin/*`) dilindungi middleware `['auth', 'verified', 'admin']`
+  - **Note**: Constructor middleware (`$this->middleware()`) **TIDAK TERSEDIA** di Laravel 11. Proteksi harus dilakukan via routes.
+- **Routes yang Diproteksi**:
+  - `/admin` - Dashboard admin
+  - `/admin/produk/*` - CRUD produk
+  - `/admin/pesanan/*` - Manajemen pesanan
+  - `/admin/kunjungan/*` - Manajemen kunjungan
+  - `/admin/pelanggan/*` - Data pelanggan
+  - `/admin/laporan/*` - Export laporan
+  - `/admin/ulasan/*` - Moderasi ulasan
+  - `/admin/profile/*` - Profil admin
+- **Hasil**: Customer yang mencoba akses URL admin akan di-redirect ke halaman home dengan pesan error
+- **UI/UX Refinement (4 Feb 2026)**:
+  - **Hide Cart for Admin**: Icon keranjang disembunyikan jika user login sebagai admin (mencegah kebingungan role).
+  - **Fix Dashboard Link**: Menu "Dashboard Admin" di header diperbaiki mengarah ke `/admin` (sebelumnya `/admin/dashboard` yang 404).
+  - **Login Button Logic**: Tombol login diganti menjadi dropdown user jika sudah login (termasuk admin), mencegah loop redirect.
+
+### Dokumentasi Code Body 3.2.1 untuk Laporan PA
+- **File Artifact**: `code_body_3_2_1.md`
+- **Struktur Dokumentasi**:
+  - **3.2.1.1 Implementasi Struktur Kode**: Arsitektur MVC, pembagian Admin/Customer Controllers
+  - **3.2.1.2 Implementasi Modul Utama**: Autentikasi, Cart, Checkout Multi-Step, Midtrans, Booking Kunjungan, Laporan Export
+  - **3.2.1.3 Implementasi Logika Proses**: Flow status pesanan, pengurangan stok otomatis, estimasi pickup
+  - **3.2.1.4 Pengelolaan Database**: Struktur tabel, ERD, Soft Delete, migrasi konsolidasi users
+- **Statistik Proyek**:
+  - 27 Backend Controllers (8 Admin, 10 Customer, 9 Auth)
+  - 13 Eloquent Models
+  - 49 Database Migrations
+  - 52 React Pages
+  - 21 Reusable Components
+  - 112 Registered Routes
+
 ## 19 Januari 2026
 
 ### Reorganisasi Struktur MVC Backend

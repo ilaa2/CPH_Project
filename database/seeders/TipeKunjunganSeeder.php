@@ -24,11 +24,6 @@ class TipeKunjunganSeeder extends Seeder
                 'nama_tipe' => 'Umum',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
-            ],
-            [
-                'nama_tipe' => 'Gak umum',
-                'created_at' => Carbon::now(),
-                'updated_at' => Carbon::now(),
             ]
         ]);
     }

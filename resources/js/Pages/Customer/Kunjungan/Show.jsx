@@ -1,45 +1,44 @@
-import React from 'react';
-import { Head, Link, router } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import CustomerLayout from '@/Layouts/CustomerLayout';
-import { FiArrowLeft, FiCalendar, FiClock, FiUsers, FiTag, FiCheckCircle, FiStar, FiCreditCard, FiAlertCircle, FiMapPin, FiDollarSign } from 'react-icons/fi';
-
-// Status Badge Component
-const StatusBadge = ({ status }) => {
-    const statusConfig = {
-        'Selesai': { bg: 'bg-green-100', text: 'text-green-700', icon: <FiCheckCircle />, label: 'Selesai' },
-        'Dijadwalkan': { bg: 'bg-blue-100', text: 'text-blue-700', icon: <FiClock />, label: 'Dijadwalkan' },
-        'Menunggu Pembayaran': { bg: 'bg-yellow-100', text: 'text-yellow-700', icon: <FiAlertCircle />, label: 'Menunggu Pembayaran' },
-    };
-    const config = statusConfig[status] || { bg: 'bg-gray-100', text: 'text-gray-700', icon: <FiClock />, label: status };
-
-    return (
-        <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
-            {config.icon}
-            {config.label}
-        </span>
-    );
-};
+import Swal from 'sweetalert2';
+import {
+    FiArrowLeft, FiCalendar, FiClock, FiUsers, FiTag,
+    FiCheckCircle, FiStar, FiCreditCard, FiAlertCircle,
+    FiMapPin, FiDollarSign, FiFileText, FiRefreshCw, FiAlertTriangle
+} from 'react-icons/fi';
 
 // Review Card Component
 const UlasanCard = ({ ulasan }) => (
     <div className="mt-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
-        <h3 className="text-base font-semibold text-green-800 mb-3 flex items-center gap-2">
-            <FiStar className="text-yellow-500" />
-            Ulasan Anda
-        </h3>
-        <div className="flex gap-1 mb-2">
-            {[...Array(5)].map((_, i) => (
-                <FiStar key={i} className={`w-4 h-4 ${i < ulasan.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
-            ))}
+        <div className="flex justify-between items-start gap-4">
+            <div className="flex-1">
+                <h3 className="text-base font-semibold text-green-800 mb-2 flex items-center gap-2">
+                    <FiStar className="text-yellow-500" />
+                    Ulasan Anda
+                </h3>
+                <div className="flex gap-1 mb-2">
+                    {[...Array(5)].map((_, i) => (
+                        <FiStar key={i} className={`w-4 h-4 ${i < ulasan.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                    ))}
+                </div>
+                <p className="text-gray-700 text-sm italic">"{ulasan.komentar}"</p>
+            </div>
+            {ulasan.fotos && ulasan.fotos.length > 0 && (
+                <img
+                    src={`/storage/${ulasan.fotos[0].foto_path}`}
+                    alt="Foto Ulasan"
+                    className="h-20 w-20 object-cover rounded-lg flex-shrink-0 border border-green-100"
+                />
+            )}
         </div>
-        <p className="text-gray-700 text-sm italic">"{ulasan.komentar}"</p>
-        {ulasan.foto_ulasan && (
-            <img src={`/storage/${ulasan.foto_ulasan}`} alt="Foto Ulasan" className="mt-3 h-24 w-24 object-cover rounded-lg" />
-        )}
     </div>
 );
 
 export default function KunjunganShow({ auth, kunjungan }) {
+    const { flash } = usePage().props;
+    const [isProcessing, setIsProcessing] = useState(false);
+
     const formatCurrency = (number) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(number);
     const formatDate = (dateString) => new Date(dateString).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
     const formatTime = (timeString) => {
@@ -54,7 +53,51 @@ export default function KunjunganShow({ auth, kunjungan }) {
         return timeMap[time] || time;
     };
 
-    const isPendingPayment = kunjungan.status === 'Menunggu Pembayaran' || kunjungan.payment_status === 'pending' || kunjungan.payment_status === 'unpaid';
+    // Status Configuration
+    const getStatusConfig = () => {
+        const status = kunjungan.status;
+        const paymentStatus = kunjungan.payment_status;
+
+        if (status === 'Selesai') {
+            return {
+                headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
+                icon: FiCheckCircle,
+                iconColor: 'text-white',
+                title: 'Kunjungan Selesai',
+                subtitle: 'Kunjungan telah selesai. Terima kasih atas kedatangan Anda!',
+                badgeColor: 'bg-white/20 text-white border border-white/30',
+                badgeText: 'SELESAI',
+                showPayButton: false,
+            };
+        }
+
+        if (status === 'Menunggu Pembayaran' || paymentStatus === 'pending' || paymentStatus === 'unpaid') {
+            return {
+                headerBg: 'bg-gradient-to-r from-yellow-500 to-amber-600',
+                icon: FiClock,
+                iconColor: 'text-white',
+                title: 'Menunggu Pembayaran',
+                subtitle: 'Silakan selesaikan pembayaran untuk konfirmasi kunjungan.',
+                badgeColor: 'bg-yellow-100 text-yellow-700',
+                badgeText: 'BELUM LUNAS',
+                showPayButton: true,
+            };
+        }
+
+        return {
+            headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
+            icon: FiCalendar,
+            iconColor: 'text-white',
+            title: 'Kunjungan Dijadwalkan',
+            subtitle: 'Sampai jumpa di lokasi pada waktu yang ditentukan.',
+            badgeColor: 'bg-white/20 text-white border border-white/30',
+            badgeText: 'DIJADWALKAN',
+            showPayButton: false,
+        };
+    };
+
+    const config = getStatusConfig();
+    const StatusIcon = config.icon;
 
     const handlePayNow = () => {
         router.visit(route('customer.kunjungan.payment', kunjungan.id));
@@ -64,109 +107,212 @@ export default function KunjunganShow({ auth, kunjungan }) {
         <CustomerLayout auth={auth}>
             <Head title="Detail Kunjungan" />
 
-            <main className="min-h-screen bg-gradient-to-b from-green-50/50 to-white py-8 sm:py-12">
-                <div className="max-w-2xl mx-auto px-4 sm:px-6">
+            <main className="bg-gray-50 min-h-screen py-6 sm:py-8">
+                <div className="max-w-4xl mx-auto px-4">
 
-                    {/* Back Button - Modern Style */}
+                    {/* Back Button */}
                     <Link
-                        href={route('customer.pesanan.index')}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:shadow transition-all mb-6 group"
+                        href={route('customer.pesanan.index')} // Using same history route if merged, or specialized one
+                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-200 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:shadow transition-all mb-4 group"
                     >
                         <FiArrowLeft className="text-green-600 group-hover:-translate-x-1 transition-transform" />
                         <span>Kembali ke Riwayat</span>
                     </Link>
 
-                    {/* Main Card */}
-                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
 
-                        {/* Header with Status & Price */}
-                        <div className={`px-6 py-5 ${isPendingPayment ? 'bg-gradient-to-r from-yellow-500 to-amber-500' : 'bg-gradient-to-r from-green-600 to-emerald-600'}`}>
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div>
-                                    <StatusBadge status={kunjungan.status} />
-                                    <h1 className="text-white text-lg font-bold mt-2">
-                                        Kunjungan {kunjungan.tipe?.nama_tipe}
-                                    </h1>
-                                </div>
-                                <div className="text-white text-right">
-                                    <p className="text-white/80 text-xs uppercase tracking-wide">Total Biaya</p>
-                                    <p className="text-2xl font-bold">{formatCurrency(kunjungan.total_biaya)}</p>
-                                </div>
+                        {/* Dynamic Header */}
+                        <div className={`${config.headerBg} p-5 sm:p-6 text-center text-white`}>
+                            <StatusIcon className={`${config.iconColor} text-4xl mx-auto mb-3`} />
+                            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">{config.title}</h1>
+                            <p className="text-white/90 mt-1 text-sm">{config.subtitle}</p>
+
+                            <div className="mt-3">
+                                <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${config.badgeColor}`}>
+                                    {config.badgeText}
+                                </span>
                             </div>
                         </div>
 
+                        {/* Action Buttons for Pending */}
+                        {config.showPayButton && (
+                            <div className="bg-gray-50 border-b p-4">
+                                <div className="flex justify-center">
+                                    <button
+                                        onClick={handlePayNow}
+                                        className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition-all shadow hover:shadow-md"
+                                    >
+                                        <FiCreditCard className="w-4 h-4" />
+                                        Bayar Sekarang
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Content */}
-                        <div className="p-6">
-                            {/* Info Grid */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                {/* Tanggal */}
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-                                        <FiCalendar className="text-green-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500">Tanggal</p>
-                                        <p className="font-medium text-gray-800">{formatDate(kunjungan.tanggal)}</p>
+                        <div className="p-5 sm:p-6">
+                            {flash?.success && (
+                                <div className="bg-green-100 border-l-4 border-green-500 text-green-800 p-3 rounded text-sm mb-4">
+                                    <p>{flash.success}</p>
+                                </div>
+                            )}
+
+                            {/* Info Grid (Pelanggan & Kunjungan) */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                                {/* Using similar structure to Order Detail */}
+                                <div className="bg-gray-50 rounded-lg p-3">
+                                    <h3 className="font-semibold text-gray-800 text-sm flex items-center mb-2">
+                                        <FiUsers className="mr-2 text-green-500 w-4 h-4" />
+                                        Info Pelanggan & Booking
+                                    </h3>
+                                    <div className="flex flex-col gap-3">
+                                        <div>
+                                            <p className="text-gray-600 text-sm font-medium">{kunjungan.user?.name || '-'}</p>
+                                            <p className="text-xs text-gray-500">{kunjungan.user?.email || '-'}</p>
+                                        </div>
+
+                                        <div className="pt-2 border-t border-gray-100 flex flex-col gap-1.5">
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[10px] text-gray-500">No. Pembayaran</span>
+                                                <span className="font-mono text-green-600 text-sm font-bold">
+                                                    {kunjungan.midtrans_order_id || '-'}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex flex-col gap-0.5">
+                                                <span className="text-[10px] text-gray-500">Tanggal Booking</span>
+                                                <span className="text-xs text-gray-700">{formatDate(kunjungan.created_at)}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Jam */}
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <FiClock className="text-blue-600" />
-                                    </div>
+                                {/* Visit Detail Card */}
+                                <div className="bg-gray-50 rounded-lg p-3 flex flex-col justify-between">
                                     <div>
-                                        <p className="text-xs text-gray-500">Waktu</p>
-                                        <p className="font-medium text-gray-800">{formatTime(kunjungan.jam)}</p>
+                                        <h3 className="font-semibold text-gray-800 text-sm flex items-center mb-2">
+                                            <FiTag className="mr-2 text-green-500 w-4 h-4" />
+                                            Detail Kunjungan
+                                        </h3>
+                                        <div className="space-y-2">
+                                            <div className="flex justify-between">
+                                                <span className="text-xs text-gray-500">Tipe</span>
+                                                <span className="text-sm font-medium text-gray-800">{kunjungan.tipe?.nama_tipe}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-xs text-gray-500">Tanggal</span>
+                                                <span className="text-sm font-medium text-gray-800">{formatDate(kunjungan.tanggal)}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-xs text-gray-500">Jam</span>
+                                                <span className="text-sm font-medium text-gray-800">{formatTime(kunjungan.jam)}</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
 
-                                {/* Tipe Kunjungan */}
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                                    <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                                        <FiTag className="text-purple-600" />
-                                    </div>
-                                    <div>
-                                        <p className="text-xs text-gray-500">Tipe</p>
-                                        <p className="font-medium text-gray-800">{kunjungan.tipe?.nama_tipe}</p>
-                                    </div>
+                                    {/* Invoice Link */}
+                                    {kunjungan.payment_status === 'paid' && (
+                                        <div className="mt-3 pt-2 border-t border-dashed border-gray-200 text-right">
+                                            <a
+                                                href={route('customer.kunjungan.invoice', kunjungan.id)}
+                                                className="inline-flex items-center text-xs font-medium text-indigo-600 hover:text-indigo-800 transition-colors"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                <FiFileText className="mr-1.5 w-3 h-3" />
+                                                Lihat Invoice
+                                            </a>
+                                        </div>
+                                    )}
                                 </div>
+                            </div>
 
-                                {/* Jumlah Pengunjung */}
-                                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                                    <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center">
-                                        <FiUsers className="text-orange-600" />
-                                    </div>
+                            {/* Rincian Peserta */}
+                            <h3 className="font-semibold text-lg text-gray-800 flex items-center mb-4">
+                                <FiUsers className="mr-2 text-green-500" />
+                                Rincian Peserta
+                            </h3>
+                            <ul className="divide-y divide-gray-100 border rounded-xl overflow-hidden mb-6">
+                                {/* Dewasa */}
+                                <li className="flex items-center justify-between p-4 bg-white hover:bg-gray-50">
                                     <div>
-                                        <p className="text-xs text-gray-500">Pengunjung</p>
-                                        {kunjungan.tipe?.nama_tipe === 'Outing Class' ? (
-                                            <>
-                                                <p className="font-medium text-gray-800">{kunjungan.jumlah_anak || 0} Anak</p>
-                                                <p className="text-xs text-green-600">+ Guru gratis</p>
-                                            </>
-                                        ) : (
-                                            <p className="font-medium text-gray-800">
-                                                {(kunjungan.jumlah_dewasa || 0) + (kunjungan.jumlah_anak || 0) + (kunjungan.jumlah_balita || 0)} Orang
-                                            </p>
+                                        <p className="font-semibold text-gray-800">Dewasa</p>
+                                        <p className="text-xs text-gray-500">Umur &gt; 12 tahun</p>
+                                    </div>
+                                    <p className="font-semibold text-gray-900">{kunjungan.jumlah_dewasa} Orang</p>
+                                </li>
+                                {/* Anak */}
+                                <li className="flex items-center justify-between p-4 bg-white hover:bg-gray-50">
+                                    <div>
+                                        <p className="font-semibold text-gray-800">Anak-anak</p>
+                                        <p className="text-xs text-gray-500">Umur 5-12 tahun</p>
+                                        {/* Special Note for Outing Class */}
+                                        {kunjungan.tipe?.nama_tipe === 'Outing Class' && (
+                                            <div className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700">
+                                                <FiCheckCircle className="mr-1 w-3 h-3" />
+                                                Termasuk Paket Edukasi & Buket Sayur
+                                            </div>
                                         )}
+                                    </div>
+                                    <p className="font-semibold text-gray-900">{kunjungan.jumlah_anak} Orang</p>
+                                </li>
+                                {/* Balita */}
+                                {(kunjungan.jumlah_balita > 0) && (
+                                    <li className="flex items-center justify-between p-4 bg-white hover:bg-gray-50">
+                                        <div>
+                                            <p className="font-semibold text-gray-800">Balita</p>
+                                            <p className="text-xs text-gray-500">Umur &lt; 5 tahun (Gratis)</p>
+                                        </div>
+                                        <p className="font-semibold text-gray-900">{kunjungan.jumlah_balita} Orang</p>
+                                    </li>
+                                )}
+                            </ul>
+
+                            {/* Payment Summary */}
+                            <div className="bg-gray-50 rounded-xl p-4">
+                                <h4 className="font-semibold text-gray-800 mb-3">Ringkasan Pembayaran</h4>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between items-center pt-2 border-t border-gray-200 mt-2">
+                                        <span className="font-bold text-gray-900">Total Biaya</span>
+                                        <span className="font-bold text-green-600 text-lg">
+                                            {formatCurrency(kunjungan.total_biaya)}
+                                        </span>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Payment Button for Pending */}
-                            {isPendingPayment && (
-                                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+                            {/* Completion Button for Scheduled Visits */}
+                            {kunjungan.status === 'Dijadwalkan' && kunjungan.payment_status === 'paid' && (
+                                <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
                                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                        <div className="flex items-center gap-2 text-yellow-700">
-                                            <FiAlertCircle />
-                                            <span className="text-sm font-medium">Pembayaran belum selesai</span>
+                                        <div className="flex items-center gap-2 text-blue-800">
+                                            <FiCheckCircle className="w-5 h-5 flex-shrink-0" />
+                                            <div className="text-sm">
+                                                <p className="font-semibold">Kunjungan Selesai?</p>
+                                                <p className="text-xs text-blue-600 mt-0.5">Konfirmasi jika Anda sudah selesai melakukan kunjungan.</p>
+                                            </div>
                                         </div>
                                         <button
-                                            onClick={handlePayNow}
-                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all"
+                                            onClick={() => {
+                                                Swal.fire({
+                                                    title: 'Selesaikan Kunjungan?',
+                                                    text: "Pastikan Anda sudah selesai melakukan kunjungan. Status akan diubah menjadi Selesai.",
+                                                    icon: 'question',
+                                                    showCancelButton: true,
+                                                    confirmButtonColor: '#059669',
+                                                    cancelButtonColor: '#d33',
+                                                    confirmButtonText: 'Ya, Selesai',
+                                                    cancelButtonText: 'Batal'
+                                                }).then((result) => {
+                                                    if (result.isConfirmed) {
+                                                        router.post(route('customer.kunjungan.complete', kunjungan.id));
+                                                    }
+                                                });
+                                            }}
+                                            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-green-600 text-white font-semibold rounded-lg shadow-md hover:bg-green-700 hover:shadow-lg transition-all"
                                         >
-                                            <FiCreditCard />
-                                            Bayar Sekarang
+                                            <FiCheckCircle />
+                                            Selesaikan Kunjungan
                                         </button>
                                     </div>
                                 </div>
@@ -190,6 +336,25 @@ export default function KunjunganShow({ auth, kunjungan }) {
                                     </div>
                                 )
                             )}
+
+                        </div>
+
+                        {/* Footer Actions */}
+                        <div className="bg-gray-50 border-t p-4 sm:p-6">
+                            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                <Link
+                                    href={route('kunjungan.index')}
+                                    className="text-center px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition"
+                                >
+                                    Booking Lagi
+                                </Link>
+                                <Link
+                                    href={route('customer.pesanan.index') + '#kunjungan'}
+                                    className="text-center px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-100 transition"
+                                >
+                                    Lihat Semua Kunjungan
+                                </Link>
+                            </div>
                         </div>
                     </div>
                 </div>
