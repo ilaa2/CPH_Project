@@ -1,5 +1,39 @@
 # Catatan Perubahan
 
+## 6 Februari 2026
+
+### Update Dokumen Blackbox Testing (Revisi Berdasarkan UI)
+- **File Artifact**: `blackbox_testing_final.md`
+- **Total Skenario**: 92 skenario testing (diverifikasi berdasarkan UI yang tersedia)
+  - **Admin**: 44 skenario
+  - **Customer**: 48 skenario
+- **Modul Admin**:
+  - **Autentikasi**: Login, Logout
+  - **Dashboard**: Statistik, Grafik Pendapatan & Kunjungan, Pesanan Pending, Stok Menipis, Jadwal Hari Ini
+  - **Produk**: List, Filter, Search, Tambah, Edit, Hapus (Soft Delete), Duplikat, Toggle Status
+  - **Pesanan**: List, Filter Status, Search, Detail/Invoice, Edit Status, Input Resi, Tambah Manual, Lihat Ulasan
+  - **Kunjungan**: List, Filter Tipe, Search, Detail, Tambah Manual
+  - **Pelanggan**: List, Search, Lihat Detail
+  - **Laporan**: Summary Stats, Quick Filter, Rentang Tanggal, Preview Penjualan/Kunjungan, Export PDF/Excel
+- **Modul Customer**:
+  - **Autentikasi**: Register, Login, Reset Password, Logout
+  - **Katalog**: List Produk, Filter Kategori, Detail Produk, Tambah Keranjang, **Beli Langsung (Buy Now)**
+  - **Keranjang**: List, Update Qty, Hapus Item, Pilih Item, Checkout
+  - **Checkout**: Pilih Metode (Pickup/Lokal/Ekspedisi), Isi Alamat, Ringkasan, Bayar Midtrans
+  - **Riwayat**: Tab Pesanan, Tab Kunjungan, Detail, Retry Payment, Konfirmasi Diterima
+  - **Kunjungan**: Landing, Form Booking, Konfirmasi, Bayar, Selesaikan
+  - **Ulasan**: Form Ulasan Pesanan, Form Ulasan Kunjungan, **Lihat Balasan Penjual**
+  - **Profil**: Foto, Edit Info, Ubah Password, Hapus Akun
+  - **Publik**: Home, Tentang Kami
+- **Catatan Fitur**:
+  - **Buy Now**: Tersedia di halaman detail produk (Skenario Customer #11)
+  - **Balas Ulasan Admin**: Backend ready (`ReviewController.reply()`), tombol UI belum tersedia, balasan tampil di Customer
+  - Menu Ulasan Admin (route tersedia, menu di-hide di sidebar)
+  - Hapus Customer (admin hanya bisa view)
+  - Hapus Pesanan (tidak tersedia untuk menjaga integritas data)
+- **Dokumentasi Pendukung**: `dokumentasi_hmw_brainstorming_reevaluate.md` - HMW, Brainstorming, Re-Evaluate, Chunk, Pre-Evaluation yang sudah disesuaikan
+- **Status**: ✅ 100% Pass (92/92 skenario)
+
 ## 4 Februari 2026
 
 ### Dokumentasi BAB IV (4.2 - 4.5) untuk Laporan PA - Revisi Format PCR
