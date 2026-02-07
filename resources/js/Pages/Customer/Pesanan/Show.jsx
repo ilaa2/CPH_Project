@@ -150,10 +150,6 @@ export default function Show({ pesanan, auth }) {
                 badgeText: 'DIKIRIM',
                 showPayButton: false,
                 needsRetry: false,
-                badgeColor: 'bg-white/20 text-white border border-white/30',
-                badgeText: 'DIKIRIM',
-                showPayButton: false,
-                needsRetry: false,
             };
         }
 
