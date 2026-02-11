@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { FiUser, FiPhone, FiCalendar, FiUsers, FiSend, FiCheckCircle, FiClipboard, FiDollarSign, FiArrowRight, FiSmile, FiBriefcase, FiClock } from 'react-icons/fi';
 import Swal from 'sweetalert2';
+import axios from 'axios';
 
 // Komponen InputField yang Ditingkatkan
 const InputField = ({ id, label, type, value, onChange, error, icon, description, ...props }) => (
@@ -78,6 +79,10 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
         return tipeKunjungan.length > 0 ? tipeKunjungan[0].id : '';
     };
 
+    const [unavailableSlots, setUnavailableSlots] = useState([]);
+
+
+
     const { data, setData, post, processing, errors, reset } = useForm({
         nama_lengkap: auth?.pelanggan?.nama || '',
         no_hp: auth?.pelanggan?.telepon || '',
@@ -88,6 +93,24 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
         jumlah_anak: 0,
         jumlah_balita: 0,
     });
+
+    // Fetch slot yang tidak tersedia saat tanggal dipilih
+    useEffect(() => {
+        if (data.tanggal_kunjungan) {
+            axios.get(route('kunjungan.check_availability'), {
+                params: { date: data.tanggal_kunjungan }
+            })
+                .then(response => {
+                    console.log("Unavailable slots for " + data.tanggal_kunjungan + ":", response.data.bookedSlots);
+                    setUnavailableSlots(response.data.bookedSlots || []);
+                })
+                .catch(error => {
+                    console.error("Error fetching availability:", error);
+                });
+        } else {
+            setUnavailableSlots([]);
+        }
+    }, [data.tanggal_kunjungan]);
 
     const selectedTipe = useMemo(() => {
         return tipeKunjungan.find(t => t.id === data.tipe_kunjungan_id);
@@ -270,10 +293,21 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
                                                 required
                                             >
                                                 <option value="">Pilih Jam</option>
-                                                <option value="09:00">09.00 – 11.00 WIB</option>
-                                                <option value="11:00">11.00 – 13.00 WIB</option>
-                                                <option value="13:00">13.00 – 15.00 WIB</option>
-                                                <option value="15:00">15.00 – 17.00 WIB</option>
+                                                {[
+                                                    { value: "09:00", label: "09.00 – 11.00 WIB" },
+                                                    { value: "11:00", label: "11.00 – 13.00 WIB" },
+                                                    { value: "13:00", label: "13.00 – 15.00 WIB" },
+                                                    { value: "15:00", label: "15.00 – 17.00 WIB" }
+                                                ].map((slot) => (
+                                                    <option
+                                                        key={slot.value}
+                                                        value={slot.value}
+                                                        disabled={unavailableSlots.includes(slot.value)}
+                                                        className={unavailableSlots.includes(slot.value) ? "text-gray-400 bg-gray-100" : ""}
+                                                    >
+                                                        {slot.label} {unavailableSlots.includes(slot.value) ? "(Penuh)" : ""}
+                                                    </option>
+                                                ))}
                                             </select>
                                             <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 pointer-events-none">
                                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>

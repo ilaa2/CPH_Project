@@ -52,6 +52,22 @@ class KunjunganControllerCust extends Controller
             'jumlah_balita'     => 'required|integer|min:0',
         ]);
 
+        // CEK KETERSEDIAAN SLOT
+        // Slot dianggap terisi jika ada kunjungan dengan tanggal & jam sama,
+        // status TIDAK 'Batal', dan payment_status 'paid' atau 'pending'
+        $isBooked = Kunjungan::where('tanggal', $validated['tanggal_kunjungan'])
+            ->where('jam', $validated['jam_kunjungan'] . ':00')
+            ->where('status', '!=', 'Batal')
+            ->where(function ($q) {
+                $q->where('payment_status', 'paid')
+                  ->orWhere('payment_status', 'pending');
+            })
+            ->exists();
+
+        if ($isBooked) {
+            return back()->withInput()->withErrors(['jam_kunjungan' => 'Jam kunjungan ini sudah terisi. Silakan pilih jam lain.']);
+        }
+
         // Validasi kustom: jika Sewa Tempat, dewasa harus min 1
         $tipe = TipeKunjungan::find($validated['tipe_kunjungan_id']);
         if ($tipe && $tipe->nama_tipe === 'Umum' && $validated['jumlah_dewasa'] < 1) {
@@ -122,6 +138,20 @@ class KunjunganControllerCust extends Controller
 
         if ($tipeKunjungan && $tipeKunjungan->nama_tipe === 'Umum' && $validated['jumlah_dewasa'] < 1) {
             return back()->withInput()->withErrors(['jumlah_dewasa' => 'Sewa Tempat memerlukan minimal 1 orang dewasa.']);
+        }
+
+        // CEK LAGI KETERSEDIAAN SLOT (prevent race condition)
+        $isBooked = Kunjungan::where('tanggal', $validated['tanggal_kunjungan'])
+            ->where('jam', $validated['jam_kunjungan'] . ':00')
+            ->where('status', '!=', 'Batal')
+            ->where(function ($q) {
+                $q->where('payment_status', 'paid')
+                  ->orWhere('payment_status', 'pending');
+            })
+            ->exists();
+
+        if ($isBooked) {
+            return redirect()->route('kunjungan.index')->with('error', 'Maaf, jam kunjungan tersebut baru saja dibooking orang lain. Silakan pilih jadwal ulang.');
         }
 
         $finalTotalBiaya = $this->calculateTotalCost($tipeKunjungan, $validated);
@@ -314,5 +344,34 @@ class KunjunganControllerCust extends Controller
         }
 
         return $biaya;
+    }
+
+    /**
+     * API untuk mengecek slot jam yang sudah terisi pada tanggal tertentu.
+     */
+    public function checkAvailability(Request $request)
+    {
+        $date = $request->query('date');
+        
+        if (!$date) {
+            return response()->json([]);
+        }
+
+        // Ambil semua kunjungan pada tanggal tsb yang statusnya 'paid' atau 'pending' (dan tidak Batal)
+        $bookedSlots = Kunjungan::where('tanggal', $date)
+            ->where('status', '!=', 'Batal')
+            ->where(function ($q) {
+                $q->where('payment_status', 'paid')
+                  ->orWhere('payment_status', 'pending');
+            })
+            ->pluck('jam') // formatnya H:i:s di DB
+            ->map(function ($jam) {
+                return substr($jam, 0, 5); // Ambil 'HH:mm' saja
+            })
+            ->toArray();
+
+        return response()->json([
+            'bookedSlots' => $bookedSlots
+        ]);
     }
 }

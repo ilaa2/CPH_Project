@@ -32,6 +32,15 @@ const UlasanCard = ({ ulasan }) => (
                 />
             )}
         </div>
+        {/* Balasan Admin */}
+        {ulasan.balasan && (
+            <div className="mt-4 pl-4 border-l-4 border-green-500 bg-white/70 p-3 rounded-r-lg">
+                <p className="text-xs font-bold text-green-800 mb-1">
+                    Balasan Penjual {ulasan.tanggal_balasan && `(${new Date(ulasan.tanggal_balasan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })})`}
+                </p>
+                <p className="text-sm text-gray-700">"{ulasan.balasan}"</p>
+            </div>
+        )}
     </div>
 );
 
@@ -271,7 +280,70 @@ export default function KunjunganShow({ auth, kunjungan }) {
                             {/* Payment Summary */}
                             <div className="bg-gray-50 rounded-xl p-4">
                                 <h4 className="font-semibold text-gray-800 mb-3">Ringkasan Pembayaran</h4>
-                                <div className="space-y-2">
+                                <div className="space-y-2 text-sm">
+                                    {kunjungan.tipe?.nama_tipe === 'Outing Class' ? (
+                                        <>
+                                            {kunjungan.jumlah_anak < 30 ? (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Paket Outing Class ({kunjungan.jumlah_anak} Anak)</span>
+                                                    <span className="text-gray-800">{formatCurrency(300000)}</span>
+                                                </div>
+                                            ) : (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Anak-anak ({kunjungan.jumlah_anak} × {formatCurrency(10000)})</span>
+                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_anak * 10000)}</span>
+                                                </div>
+                                            )}
+                                            {kunjungan.jumlah_dewasa > 0 && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Guru/Pendamping ({kunjungan.jumlah_dewasa} Orang)</span>
+                                                    <span className="text-green-600 font-medium">Gratis</span>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : kunjungan.tipe?.nama_tipe === 'Umum' ? (
+                                        <>
+                                            {kunjungan.jumlah_dewasa > 0 && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Dewasa ({kunjungan.jumlah_dewasa} × {formatCurrency(10000)})</span>
+                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_dewasa * 10000)}</span>
+                                                </div>
+                                            )}
+                                            {kunjungan.jumlah_anak > 0 && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Anak-anak ({kunjungan.jumlah_anak} × {formatCurrency(10000)})</span>
+                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_anak * 10000)}</span>
+                                                </div>
+                                            )}
+                                            {kunjungan.jumlah_balita > 0 && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Balita ({kunjungan.jumlah_balita} Orang)</span>
+                                                    <span className="text-green-600 font-medium">Gratis</span>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <>
+                                            {kunjungan.jumlah_dewasa > 0 && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Dewasa ({kunjungan.jumlah_dewasa} × {formatCurrency(kunjungan.tipe?.biaya || 0)})</span>
+                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_dewasa * (kunjungan.tipe?.biaya || 0))}</span>
+                                                </div>
+                                            )}
+                                            {kunjungan.jumlah_anak > 0 && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Anak-anak ({kunjungan.jumlah_anak} × {formatCurrency(kunjungan.tipe?.biaya || 0)})</span>
+                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_anak * (kunjungan.tipe?.biaya || 0))}</span>
+                                                </div>
+                                            )}
+                                            {kunjungan.jumlah_balita > 0 && (
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Balita ({kunjungan.jumlah_balita} × {formatCurrency(kunjungan.tipe?.biaya || 0)})</span>
+                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_balita * (kunjungan.tipe?.biaya || 0))}</span>
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
                                     <div className="flex justify-between items-center pt-2 border-t border-gray-200 mt-2">
                                         <span className="font-bold text-gray-900">Total Biaya</span>
                                         <span className="font-bold text-green-600 text-lg">

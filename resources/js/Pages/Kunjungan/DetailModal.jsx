@@ -18,7 +18,7 @@ export default function DetailModal({ item, onClose, onEdit, onViewReview }) {
                 <div className="space-y-4">
                     <div className="grid grid-cols-3 gap-2">
                         <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Pelanggan</span>
-                        <span className="col-span-2 text-sm text-gray-900 font-medium">: {item.pelanggan?.nama || '-'}</span>
+                        <span className="col-span-2 text-sm text-gray-900 font-medium">: {item.user?.name || '-'}</span>
                     </div>
                     <div className="grid grid-cols-3 gap-2">
                         <span className="text-sm font-semibold text-gray-500 uppercase tracking-wider">Tipe</span>
@@ -75,14 +75,7 @@ export default function DetailModal({ item, onClose, onEdit, onViewReview }) {
                 </div>
 
                 <div className="mt-8 flex justify-end space-x-3">
-                    {item.status === 'Selesai' && item.ulasan && (
-                        <button
-                            onClick={() => { onClose(); if (onViewReview) onViewReview(item); }}
-                            className="px-4 py-2 bg-yellow-50 hover:bg-yellow-100 text-yellow-700 font-bold rounded-xl transition-all border border-yellow-200 flex items-center gap-1"
-                        >
-                            <span>⭐</span> Lihat Ulasan
-                        </button>
-                    )}
+
 
                     {(item.status === 'Dijadwalkan' || item.status === 'Menunggu Konfirmasi') && (
                         <button

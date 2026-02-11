@@ -6,6 +6,7 @@ import LoadingSpinner from '@/Components/LoadingSpinner'; // Import LoadingSpinn
 import { useState, useEffect, useCallback } from 'react'; // Import useEffect
 import { debounce } from 'lodash';
 import FilterHeader from '@/Components/FilterHeader';
+import DetailModal from './DetailModal';
 
 export default function RiwayatKunjungan() {
   const { props } = usePage();
@@ -125,20 +126,24 @@ export default function RiwayatKunjungan() {
                         >
                           👁️
                         </button>
-                        {item.status === 'Selesai' && item.ulasan && (
-                          <button
-                            onClick={() => openUlasanModal(item)}
-                            className="p-2 bg-yellow-100 text-yellow-700 hover:bg-yellow-200 rounded-full transition-all shadow-sm active:scale-95"
-                            title="Lihat Ulasan Pengunjung"
-                          >
-                            ⭐
-                          </button>
-                        )}
-                        {!item.ulasan && item.status === 'Selesai' && (
-                          <div className="p-2 text-gray-300 cursor-not-allowed" title="Belum ada ulasan">
-                            ⭐
-                          </div>
-                        )}
+                        <a
+                          href={route('admin.kunjungan.edit', item.id)}
+                          className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-full transition-all shadow-sm active:scale-95 inline-flex"
+                          title="Edit Kunjungan"
+                        >
+                          ✏️
+                        </a>
+                        <button
+                          onClick={() => item.ulasan ? openUlasanModal(item) : null}
+                          className={`p-2 rounded-full transition-all shadow-sm active:scale-95 ${item.ulasan
+                            ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 cursor-pointer'
+                            : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                            }`}
+                          title={item.ulasan ? 'Lihat Ulasan' : 'Belum ada ulasan'}
+                          disabled={!item.ulasan}
+                        >
+                          ⭐
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -154,59 +159,11 @@ export default function RiwayatKunjungan() {
 
         {/* Modal Detail Kunjungan */}
         {selected && (
-          <Modal show={true} onClose={() => setSelected(null)} maxWidth="lg">
-            <div className="p-6">
-              <h2 className="text-xl font-semibold text-green-700 mb-4">
-                Detail Kunjungan
-              </h2>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm text-gray-700 border rounded">
-                  <tbody>
-                    <tr className="border-b">
-                      <td className="px-4 py-2 font-medium">Nama Pelanggan</td>
-                      <td className="px-4 py-2">{selected.pelanggan?.nama}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="px-4 py-2 font-medium">Alamat</td>
-                      <td className="px-4 py-2">{selected.pelanggan?.alamat}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="px-4 py-2 font-medium">Tipe</td>
-                      <td className="px-4 py-2">{selected.tipe?.nama_tipe || '-'}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="px-4 py-2 font-medium">Tanggal</td>
-                      <td className="px-4 py-2">{selected.tanggal}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="px-4 py-2 font-medium">Jam</td>
-                      <td className="px-4 py-2">{selected.jam}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="px-4 py-2 font-medium">Jumlah Pengunjung</td>
-                      <td className="px-4 py-2">{selected.jumlah_pengunjung}</td>
-                    </tr>
-                    <tr className="border-b">
-                      <td className="px-4 py-2 font-medium">Total Biaya</td>
-                      <td className="px-4 py-2">Rp {selected.total_biaya.toLocaleString('id-ID')}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-4 py-2 font-medium">Status</td>
-                      <td className="px-4 py-2 capitalize">{selected.status}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div className="mt-6 text-right">
-                <button
-                  onClick={() => setSelected(null)}
-                  className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
-          </Modal>
+          <DetailModal
+            item={selected}
+            onClose={() => setSelected(null)}
+            onViewReview={openUlasanModal}
+          />
         )}
 
         {/* Modal Ulasan */}

@@ -267,22 +267,22 @@ export default function BelanjaDetail({ product, reviews = [], reviewStats = { t
                                         <div key={review.id} className="border-t pt-6">
                                             <div className="flex items-start gap-4">
                                                 <div className="flex-shrink-0">
-                                                    {review.pelanggan?.foto_profil ? (
+                                                    {review.pelanggan?.avatar ? (
                                                         <img
-                                                            src={`/storage/${review.pelanggan.foto_profil}`}
-                                                            alt={review.pelanggan.nama}
+                                                            src={`/storage/${review.pelanggan.avatar}`}
+                                                            alt={review.pelanggan.name}
                                                             className="w-10 h-10 rounded-full object-cover"
                                                         />
                                                     ) : (
                                                         <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500">
-                                                            P
+                                                            {review.pelanggan?.name ? review.pelanggan.name.charAt(0).toUpperCase() : 'P'}
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="flex-1">
                                                     <div className="flex justify-between items-start">
                                                         <div>
-                                                            <h4 className="font-semibold text-gray-900">{review.pelanggan?.nama || 'Pelanggan'}</h4>
+                                                            <h4 className="font-semibold text-gray-900">{review.pelanggan?.name || 'Pelanggan'}</h4>
                                                             <div className="flex items-center gap-2 mt-1">
                                                                 <div className="flex text-yellow-400 text-sm">
                                                                     {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}

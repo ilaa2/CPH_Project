@@ -42,7 +42,7 @@ class BelanjaController extends Controller
         
         // Load ulasan dengan pelanggan
         $reviews = $product->ulasan()
-            ->with('pelanggan:id,nama,foto_profil', 'fotos')
+            ->with('pelanggan:id,name,avatar', 'fotos')
             ->orderBy('tanggal', 'desc')
             ->get();
 

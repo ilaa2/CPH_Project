@@ -225,16 +225,28 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
                     <td className="px-4 py-2">{item.kode_pesanan || item.nomor_pesanan || item.id}</td>
                     <td className="px-4 py-2 font-medium">{item.user?.name || '-'}</td>
                     <td className="px-4 py-2">{item.tanggal}</td>
-                    <td className="px-4 py-2">Rp {item.total.toLocaleString('id-ID')}</td>
+                    <td className="px-4 py-2">Rp {Number(item.total).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
                     <td className="px-4 py-2">
                       <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.status === 'Selesai' ? 'bg-green-100 text-green-800' :
-                          item.status === 'Dibatalkan' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                        item.status === 'Dibatalkan' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
                         }`}>{item.status}</span>
                     </td>
-                    <td className="px-4 py-2 text-center flex justify-center gap-2">
-                      <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 rounded-full">👁️</button>
-                      <Link href={route('admin.pesanan.edit', item.id)} className="p-2 bg-blue-100 rounded-full">✏️</Link>
-                      {item.status === 'Selesai' && item.ulasan && <button onClick={() => openModal('ulasan', item)} className="p-2 bg-yellow-100 rounded-full">⭐</button>}
+                    <td className="px-4 py-2">
+                      <div className="flex items-center justify-center gap-2">
+                        <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-all shadow-sm active:scale-95" title="Lihat Detail">👁️</button>
+                        <Link href={route('admin.pesanan.edit', item.id)} className="p-2 bg-blue-100 hover:bg-blue-200 rounded-full transition-all shadow-sm active:scale-95" title="Edit Pesanan">✏️</Link>
+                        <button
+                          onClick={() => item.ulasan?.length > 0 ? openModal('ulasan', item) : null}
+                          className={`p-2 rounded-full transition-all shadow-sm active:scale-95 ${item.ulasan?.length > 0
+                            ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200 cursor-pointer'
+                            : 'bg-gray-50 text-gray-300 cursor-not-allowed'
+                            }`}
+                          title={item.ulasan?.length > 0 ? 'Lihat Ulasan' : 'Belum ada ulasan'}
+                          disabled={!item.ulasan?.length}
+                        >
+                          ⭐
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -250,12 +262,25 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
       {/* Modal Detail (Existing) */}
       {modalState.type === 'detail' && <DetailModal model={modalState.model} onClose={closeModal} />}
 
-      {/* Modal Ulasan (Existing) */}
+      {/* Modal Ulasan */}
       {modalState.type === 'ulasan' && (
         <Modal show={true} onClose={closeModal} maxWidth="lg">
           <div className="p-6">
-            <UlasanPreview ulasan={modalState.model?.ulasan} pelanggan={modalState.model?.user} isAdmin={true} />
-            <button onClick={closeModal} className="mt-4 w-full bg-gray-200 py-2 rounded">Tutup</button>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Ulasan Pesanan</h2>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+            {modalState.model?.ulasan?.map((review) => (
+              <UlasanPreview
+                key={review.id}
+                ulasan={review}
+                pelanggan={review.user || modalState.model?.user}
+                isAdmin={true}
+              />
+            ))}
+            <div className="mt-6 text-right">
+              <button onClick={closeModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition">Tutup</button>
+            </div>
           </div>
         </Modal>
       )}
