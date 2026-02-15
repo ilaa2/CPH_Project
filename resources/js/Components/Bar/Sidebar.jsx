@@ -1,8 +1,8 @@
-import { Link, usePage } from '@inertiajs/react';
-import { createContext, useContext, useState } from "react";
+import { Link, usePage, useForm } from '@inertiajs/react';
+import { createContext, useContext, useState, useMemo } from "react";
 import {
   FiHome, FiShoppingBag, FiCalendar, FiSettings,
-  FiHelpCircle, FiFileText, FiLogOut, FiUser, FiX
+  FiHelpCircle, FiFileText, FiLogOut, FiUser, FiX, FiLock, FiCheck, FiAlertCircle
 } from "react-icons/fi";
 import { BsBoxSeam, BsPeople } from "react-icons/bs";
 
@@ -11,7 +11,37 @@ const SidebarContext = createContext();
 export default function Sidebar({ children }) {
   const [expanded, setExpanded] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
+  const [activeTab, setActiveTab] = useState('info');
   const { auth } = usePage().props;
+
+  const { data, setData, put, processing, errors, reset, recentlySuccessful } = useForm({
+    current_password: '',
+    password: '',
+    password_confirmation: '',
+  });
+
+  const passwordChecks = useMemo(() => ({
+    minLength: data.password.length >= 8,
+    hasUppercase: /[A-Z]/.test(data.password),
+    hasLowercase: /[a-z]/.test(data.password),
+    hasNumber: /[0-9]/.test(data.password),
+    hasSymbol: /[^A-Za-z0-9]/.test(data.password),
+  }), [data.password]);
+
+  const handlePasswordUpdate = (e) => {
+    e.preventDefault();
+    put(route('password.update'), {
+      preserveScroll: true,
+      onSuccess: () => reset(),
+    });
+  };
+
+  const handleCloseProfile = (e) => {
+    if (e) e.stopPropagation();
+    setShowProfile(false);
+    setActiveTab('info');
+    reset();
+  };
 
   return (
     <div className="flex">
@@ -47,12 +77,6 @@ export default function Sidebar({ children }) {
                 <SidebarItem icon={<BsPeople size={20} />} text="Customer" href="/admin/pelanggan" active={route().current('admin.pelanggan.index')} />
                 <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/admin/kunjungan" active={route().current('admin.kunjungan.index')} />
 
-                {/* Gabungan Setelan & Bantuan - Hidden for demo */}
-                {/* <SidebarItem icon={<FiSettings size={20} />} text="Setelan & Bantuan" href="/setelan" active={route().current('setelan.index') || route().current('bantuan.index')} /> */}
-
-                {/* Tambahan Ulasan & Feedback */}
-                {/* SidebarItem Ulasan dihapus */}
-
                 {/* LOGOUT */}
                 <SidebarItem
                   icon={<FiLogOut size={20} />}
@@ -68,60 +92,171 @@ export default function Sidebar({ children }) {
           </div>
 
           {/* USER INFO */}
-          {/* USER INFO */}
           <div className="relative border-t p-3">
             {showProfile && expanded && (
-              <div className="absolute bottom-full left-3 mb-2 w-64 bg-white rounded-xl shadow-2xl border border-green-100 overflow-hidden z-50 animate-fade-in-up">
+              <div className="absolute bottom-full left-3 mb-2 w-72 bg-white rounded-xl shadow-2xl border border-green-100 overflow-hidden z-50 animate-fade-in-up">
+                {/* Header */}
                 <div className="bg-gradient-to-r from-green-600 to-green-500 p-4">
                   <div className="flex justify-between items-start text-white">
                     <div>
-                      <h3 className="font-bold text-lg">Info Akun</h3>
+                      <h3 className="font-bold text-lg">Akun Admin</h3>
                       <p className="text-xs text-green-100 opacity-90">Administrator System</p>
                     </div>
                     <button
-                      onClick={(e) => { e.stopPropagation(); setShowProfile(false); }}
+                      onClick={handleCloseProfile}
                       className="text-white/80 hover:text-white transition-colors bg-white/10 rounded-full p-1"
                     >
                       <FiX size={16} />
                     </button>
                   </div>
                 </div>
-                <div className="p-4 bg-white space-y-4">
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                      <FiUser size={18} />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Nama Pengguna</label>
-                      <p className="text-sm font-semibold text-gray-800">{auth.user?.name}</p>
-                    </div>
-                  </div>
 
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                      <FiFileText size={18} />
-                    </div>
-                    <div className="flex-1">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Email</label>
-                      <p className="text-sm font-semibold text-gray-800 break-all">{auth.user?.email}</p>
-                    </div>
-                  </div>
+                {/* Tabs */}
+                <div className="flex border-b border-gray-200">
+                  <button
+                    onClick={() => setActiveTab('info')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${activeTab === 'info'
+                      ? 'text-green-600 border-b-2 border-green-600 bg-green-50/50'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      }`}
+                  >
+                    <FiUser size={13} /> Info Akun
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('password')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-semibold transition-colors ${activeTab === 'password'
+                      ? 'text-green-600 border-b-2 border-green-600 bg-green-50/50'
+                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                      }`}
+                  >
+                    <FiLock size={13} /> Password
+                  </button>
+                </div>
 
-                  <div className="flex items-start gap-3">
-                    <div className="p-2 bg-green-50 text-green-600 rounded-lg">
-                      <FiSettings size={18} />
+                {/* Tab Content */}
+                {activeTab === 'info' ? (
+                  <div className="p-4 bg-white space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                        <FiUser size={18} />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Nama Pengguna</label>
+                        <p className="text-sm font-semibold text-gray-800">{auth.user?.name}</p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Role Akses</label>
-                      <div className="mt-1">
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-100 text-green-700 border border-green-200 text-xs font-bold">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
-                          ADMIN
-                        </span>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                        <FiFileText size={18} />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Email</label>
+                        <p className="text-sm font-semibold text-gray-800 break-all">{auth.user?.email}</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+                        <FiSettings size={18} />
+                      </div>
+                      <div className="flex-1">
+                        <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider">Role Akses</label>
+                        <div className="mt-1">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-green-100 text-green-700 border border-green-200 text-xs font-bold">
+                            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>
+                            ADMIN
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <form onSubmit={handlePasswordUpdate} className="p-4 bg-white space-y-3">
+                    {recentlySuccessful && (
+                      <div className="flex items-center gap-2 p-2 bg-green-50 border border-green-200 rounded-lg text-xs text-green-700 font-medium">
+                        <FiCheck size={14} /> Password berhasil diperbarui!
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider block mb-1">Password Saat Ini</label>
+                      <input
+                        type="password"
+                        value={data.current_password}
+                        onChange={(e) => setData('current_password', e.target.value)}
+                        className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="Masukkan password saat ini"
+                        required
+                      />
+                      {errors.current_password && (
+                        <p className="mt-1 text-[11px] text-red-500 flex items-center gap-1">
+                          <FiAlertCircle size={11} /> {errors.current_password}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider block mb-1">Password Baru</label>
+                      <input
+                        type="password"
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                        className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="Masukkan password baru"
+                        required
+                      />
+                      {data.password.length > 0 && (
+                        <ul className="mt-1.5 space-y-0.5 bg-gray-50 rounded-md p-2 border border-gray-200">
+                          {[
+                            { met: passwordChecks.minLength, label: 'Min. 8 karakter' },
+                            { met: passwordChecks.hasUppercase, label: 'Huruf kapital (A-Z)' },
+                            { met: passwordChecks.hasLowercase, label: 'Huruf kecil (a-z)' },
+                            { met: passwordChecks.hasNumber, label: 'Angka (0-9)' },
+                            { met: passwordChecks.hasSymbol, label: 'Simbol (@, #, !)' },
+                          ].map((c, i) => (
+                            <li key={i} className={`flex items-center gap-1 text-[11px] ${c.met ? 'text-green-600' : 'text-red-500'}`}>
+                              {c.met ? <FiCheck size={11} /> : <FiX size={11} />}
+                              <span>{c.label}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {errors.password && (
+                        <p className="mt-1 text-[11px] text-red-500 flex items-center gap-1">
+                          <FiAlertCircle size={11} /> {errors.password}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] uppercase font-bold text-gray-400 tracking-wider block mb-1">Konfirmasi Password</label>
+                      <input
+                        type="password"
+                        value={data.password_confirmation}
+                        onChange={(e) => setData('password_confirmation', e.target.value)}
+                        className="w-full text-sm border border-gray-300 rounded-lg px-3 py-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="Ulangi password baru"
+                        required
+                      />
+                      {errors.password_confirmation && (
+                        <p className="mt-1 text-[11px] text-red-500 flex items-center gap-1">
+                          <FiAlertCircle size={11} /> {errors.password_confirmation}
+                        </p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={processing}
+                      className="w-full py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-semibold rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {processing ? 'Menyimpan...' : 'Simpan Password'}
+                    </button>
+                  </form>
+                )}
+
+                {/* Footer */}
                 <div className="bg-gray-50 px-4 py-2 border-t text-[10px] text-gray-400 text-center">
                   Central Palantea Hidroponik © 2026
                 </div>
@@ -186,3 +321,4 @@ function SidebarItem({ icon, text, active, alert, href, method = 'get', as = 'a'
     </li>
   );
 }
+

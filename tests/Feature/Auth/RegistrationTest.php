@@ -6,14 +6,24 @@ test('registration screen can be rendered', function () {
     $response->assertStatus(200);
 });
 
-test('new users can register', function () {
+test('new users can register with strong password', function () {
     $response = $this->post('/register', [
         'name' => 'Test User',
         'email' => 'test@example.com',
+        'password' => 'Password1@',
+        'password_confirmation' => 'Password1@',
+    ]);
+
+    $response->assertRedirect(route('login'));
+});
+
+test('weak password is rejected', function () {
+    $response = $this->post('/register', [
+        'name' => 'Test User',
+        'email' => 'weak@example.com',
         'password' => 'password',
         'password_confirmation' => 'password',
     ]);
 
-    $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
+    $response->assertSessionHasErrors('password');
 });

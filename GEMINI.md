@@ -1,5 +1,76 @@
 # Catatan Perubahan
 
+## 15 Februari 2026
+
+### Fitur: Update Password Admin dari Sidebar
+- **Tujuan**: Admin bisa mengganti password langsung dari panel profil di sidebar
+- **Implementasi**:
+  - Panel profil sidebar sekarang memiliki **2 tab**: "Info Akun" dan "Password"
+  - Tab Password: form dengan 3 field (password saat ini, password baru, konfirmasi)
+  - Checklist validasi password real-time (min 8 karakter, huruf besar/kecil, angka, simbol)
+  - Menggunakan route `PUT /password` yang sudah ada (`PasswordController::update()`)
+  - Pesan sukses "Password berhasil diperbarui!" setelah simpan
+  - Form di-reset saat panel ditutup
+- **Files Modified**: `resources/js/Components/Bar/Sidebar.jsx`
+
+### Fix: PesananSeeder Data Kosong (Produk Tidak Terisi)
+- **Masalah**: Beberapa record pesanan menampilkan produk kosong tetapi tetap memiliki harga (subtotal acak tanpa produk)
+- **Penyebab**: `PesananSeeder` membuat record `pesanan` dengan subtotal random, tetapi **tidak pernah mengisi `pesanan_items`** (tabel relasi produk-pesanan)
+- **Solusi**: Rewrite `PesananSeeder` secara menyeluruh:
+  - Mengambil produk real dari tabel `products`
+  - Setiap pesanan mendapat 1-3 produk acak dengan quantity 1-5
+  - Subtotal dihitung dari `harga × jumlah` produk asli
+  - Total = subtotal + ongkir
+  - `pesanan_items` di-insert untuk setiap produk dalam pesanan
+  - `nomor_pesanan` di-generate (format: `CPH-YYYYMMDD-XXXX`)
+  - Alamat pengiriman diambil dari data user yang sebenarnya
+  - `paid_at` diisi untuk pesanan non-pending
+- **Hasil**: 20 pesanan, 44 pesanan_items (terverifikasi)
+- **Files Modified**: `database/seeders/PesananSeeder.php`
+
+### Fix: Forgot Password & Reset Password
+- **Masalah**: Forgot password menampilkan "We can't find a user with that email address" dan email reset tidak terkirim.
+- **Penyebab**:
+  1. `MAIL_MAILER=log` — email hanya ditulis ke file log, tidak dikirim ke inbox
+  2. Pesan error default dalam bahasa Inggris
+- **Solusi**:
+  1. **SMTP Config** (`.env`): Mengubah dari `log` mailer ke Gmail SMTP (`smtp.gmail.com:587`)
+  2. **PasswordResetLinkController**: Pesan error/sukses dalam bahasa Indonesia
+  3. **NewPasswordController**: Menerapkan validasi password kuat yang sama dengan registrasi
+  4. **ForgotPassword.jsx**: UI diterjemahkan ke Indonesia + styling konsisten CPH (logo, warna hijau)
+  5. **ResetPassword.jsx**: UI diterjemahkan ke Indonesia + checklist password real-time + email read-only
+- **Catatan Penting**: User HARUS mengisi `MAIL_USERNAME` dan `MAIL_PASSWORD` di `.env` dengan Gmail + App Password yang valid
+- **Files Modified**:
+  - `.env`
+  - `app/Http/Controllers/Auth/PasswordResetLinkController.php`
+  - `app/Http/Controllers/Auth/NewPasswordController.php`
+  - `resources/js/Pages/Auth/ForgotPassword.jsx`
+  - `resources/js/Pages/Auth/ResetPassword.jsx`
+
+### Fitur: Validasi Password Kuat pada Registrasi
+- **Tujuan**: Meningkatkan keamanan akun pengguna dengan menerapkan standar password yang lebih ketat.
+- **Kriteria Password**:
+  - Minimal 8 karakter
+  - Mengandung minimal 1 huruf kapital (A-Z)
+  - Mengandung minimal 1 huruf kecil (a-z)
+  - Mengandung minimal 1 angka (0-9)
+  - Mengandung minimal 1 simbol (@, #, !, dll)
+- **Backend** (`RegisteredUserController.php`):
+  - Mengganti `Rules\Password::defaults()` dengan `Rules\Password::min(8)->mixedCase()->numbers()->symbols()`
+  - Menambahkan custom error messages dalam bahasa Indonesia untuk setiap kriteria yang gagal
+- **Frontend** (`Register.jsx`):
+  - Menambahkan komponen `PasswordCriteria` untuk checklist visual real-time
+  - Checklist muncul saat user mulai mengetik password
+  - Setiap kriteria menampilkan ✅ hijau (terpenuhi) atau ❌ merah (belum terpenuhi)
+  - Menggunakan `useMemo` untuk optimasi re-render
+- **Test** (`RegistrationTest.php`):
+  - Update test password dari `'password'` menjadi `'Password1@'`
+  - Tambah test case: password lemah ditolak dengan validation error
+- **Files Modified**:
+  - `app/Http/Controllers/Auth/RegisteredUserController.php`
+  - `resources/js/Pages/Auth/Register.jsx`
+  - `tests/Feature/Auth/RegistrationTest.php`
+
 ## 11 Februari 2026
 
 ### Fitur: Exclusive Visit Slot Booking

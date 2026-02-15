@@ -126,13 +126,7 @@ export default function RiwayatKunjungan() {
                         >
                           👁️
                         </button>
-                        <a
-                          href={route('admin.kunjungan.edit', item.id)}
-                          className="p-2 bg-blue-100 text-blue-600 hover:bg-blue-200 rounded-full transition-all shadow-sm active:scale-95 inline-flex"
-                          title="Edit Kunjungan"
-                        >
-                          ✏️
-                        </a>
+
                         <button
                           onClick={() => item.ulasan ? openUlasanModal(item) : null}
                           className={`p-2 rounded-full transition-all shadow-sm active:scale-95 ${item.ulasan

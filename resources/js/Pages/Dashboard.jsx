@@ -149,7 +149,7 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                         pesananPerluDiproses.map(p => (
                                             <div key={p.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-100">
                                                 <div>
-                                                    <div className="font-medium text-gray-800">#{p.kode_pesanan}</div>
+                                                    <div className="font-medium text-gray-800">#{p.nomor_pesanan}</div>
                                                     <div className="text-xs text-gray-500">{p.nama_pelanggan} • {formatCurrency(p.total)}</div>
                                                 </div>
                                                 <Link href={route('admin.pesanan.edit', p.id)} className="px-3 py-1 bg-white text-yellow-700 text-xs font-medium rounded border border-yellow-200 shadow-sm hover:bg-yellow-50">
