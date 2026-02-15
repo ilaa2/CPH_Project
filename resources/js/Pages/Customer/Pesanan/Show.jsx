@@ -32,6 +32,15 @@ const UlasanCard = ({ ulasan }) => (
                 />
             )}
         </div>
+        {/* Balasan Admin */}
+        {ulasan.balasan && (
+            <div className="mt-4 pl-4 border-l-4 border-green-500 bg-white/70 p-3 rounded-r-lg">
+                <p className="text-xs font-bold text-green-800 mb-1">
+                    Balasan Penjual {ulasan.tanggal_balasan && `(${new Date(ulasan.tanggal_balasan).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })})`}
+                </p>
+                <p className="text-sm text-gray-700">"{ulasan.balasan}"</p>
+            </div>
+        )}
     </div>
 );
 
@@ -146,10 +155,6 @@ export default function Show({ pesanan, auth }) {
                 iconColor: 'text-white',
                 title: 'Pesanan Sedang Dikirim',
                 subtitle: 'Paket Anda sedang dalam perjalanan ke alamat tujuan.',
-                badgeColor: 'bg-white/20 text-white border border-white/30',
-                badgeText: 'DIKIRIM',
-                showPayButton: false,
-                needsRetry: false,
                 badgeColor: 'bg-white/20 text-white border border-white/30',
                 badgeText: 'DIKIRIM',
                 showPayButton: false,

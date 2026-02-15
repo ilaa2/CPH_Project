@@ -3,9 +3,9 @@ import Mainbar from "@/Components/Bar/Mainbar";
 
 export default function Edit({ pelanggan }) {
   const { data, setData, put, processing, errors } = useForm({
-    nama: pelanggan.nama || '',
+    name: pelanggan.name || '',
     email: pelanggan.email || '',
-    telepon: pelanggan.telepon || '',
+    phone: pelanggan.phone || '',
     alamat: pelanggan.alamat || '',
   });
 
@@ -24,11 +24,11 @@ export default function Edit({ pelanggan }) {
             <label className="block font-medium mb-1">Nama</label>
             <input
               type="text"
-              value={data.nama}
-              onChange={e => setData('nama', e.target.value)}
+              value={data.name}
+              onChange={e => setData('name', e.target.value)}
               className="w-full border rounded px-3 py-2"
             />
-            {errors.nama && <div className="text-red-600 text-sm">{errors.nama}</div>}
+            {errors.name && <div className="text-red-600 text-sm">{errors.name}</div>}
           </div>
 
           <div>
@@ -46,11 +46,11 @@ export default function Edit({ pelanggan }) {
             <label className="block font-medium mb-1">Telepon</label>
             <input
               type="text"
-              value={data.telepon}
-              onChange={e => setData('telepon', e.target.value)}
+              value={data.phone}
+              onChange={e => setData('phone', e.target.value)}
               className="w-full border rounded px-3 py-2"
             />
-            {errors.telepon && <div className="text-red-600 text-sm">{errors.telepon}</div>}
+            {errors.phone && <div className="text-red-600 text-sm">{errors.phone}</div>}
           </div>
 
           <div>

@@ -78,11 +78,29 @@ class ReviewController extends Controller
      */
     public function create($id)
     {
-        $pesanan = Pesanan::with('items.produk')->findOrFail($id);
+        $pesanan = Pesanan::with(['items.produk' => function ($q) {
+            $q->withTrashed();
+        }])->findOrFail($id);
         
         // Verify ownership
         if ($pesanan->user_id !== Auth::id()) {
             abort(403);
+        }
+
+        // Only allow reviews for completed orders
+        if (!in_array(strtolower($pesanan->status), ['completed', 'selesai'])) {
+            return redirect()->route('customer.pesanan.index')
+                ->with('error', 'Ulasan hanya dapat diberikan untuk pesanan yang sudah selesai.');
+        }
+
+        // Check if already reviewed
+        $existingReview = Ulasan::where('pesanan_id', $pesanan->id)
+            ->where('user_id', Auth::id())
+            ->first();
+        
+        if ($existingReview) {
+            return redirect()->route('customer.pesanan.show', $pesanan->id)
+                ->with('info', 'Anda sudah memberikan ulasan untuk pesanan ini.');
         }
         
         return Inertia::render('Customer/Ulasan/Create', [

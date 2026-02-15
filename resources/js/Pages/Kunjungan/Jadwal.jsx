@@ -177,7 +177,7 @@ export default function JadwalKunjungan({ kunjungan, filters, pelangganList, tip
         <Pagination links={links} />
       </div>
 
-      {selected && <DetailModal model={selected} onClose={() => setSelected(null)} />}
+      {selected && <DetailModal item={selected} onClose={() => setSelected(null)} />}
 
       {/* Modal Create Baru */}
       <KunjunganFormModal

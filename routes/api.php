@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\RajaOngkirController;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -9,12 +9,7 @@ use App\Http\Controllers\Api\RajaOngkirController;
 |--------------------------------------------------------------------------
 */
 
-// RajaOngkir Location API
-Route::prefix('rajaongkir')->group(function () {
-    Route::get('/provinces', [RajaOngkirController::class, 'provinces']);
-    Route::get('/cities/{provinceId}', [RajaOngkirController::class, 'cities']);
-    Route::get('/subdistricts/{cityId}', [RajaOngkirController::class, 'subdistricts']);
-});
+// RajaOngkir routes removed (Controller deleted)
 
 // Biteship API
 Route::prefix('biteship')->group(function () {

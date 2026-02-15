@@ -67,6 +67,7 @@ Route::middleware(['auth', 'verified', 'customer'])->prefix('customer')->group(f
     Route::delete('/cart/{cart}', [CustomerCartController::class, 'destroy'])->name('cart.destroy');
 
     // --- Kunjungan Customer ---
+    Route::get('/kunjungan/check-availability', [CustomerVisitBookingController::class, 'checkAvailability'])->name('kunjungan.check_availability');
     Route::post('/kunjungan/handle-form', [CustomerVisitBookingController::class, 'handleForm'])->name('kunjungan.handle_form');
     Route::get('/kunjungan/konfirmasi', [CustomerVisitBookingController::class, 'showKonfirmasi'])->name('kunjungan.konfirmasi');
     Route::post('/kunjungan/customer', [CustomerVisitBookingController::class, 'store'])->name('customer.kunjungan.store');
@@ -74,6 +75,7 @@ Route::middleware(['auth', 'verified', 'customer'])->prefix('customer')->group(f
     Route::get('/kunjungan/{kunjungan}', [CustomerVisitBookingController::class, 'show'])->name('customer.kunjungan.show');
     Route::get('/kunjungan/{kunjungan}/invoice', [CustomerVisitBookingController::class, 'downloadInvoice'])->name('customer.kunjungan.invoice');
     Route::post('/kunjungan/{kunjungan}/complete', [CustomerVisitBookingController::class, 'complete'])->name('customer.kunjungan.complete');
+    Route::post('/kunjungan/{kunjungan}/confirm-payment', [CustomerVisitBookingController::class, 'confirmPayment'])->name('customer.kunjungan.confirm-payment');
 
     // --- Profil Customer ---
     Route::get('/profile', [CustomerProfileController::class, 'edit'])->name('customer.profile.edit');

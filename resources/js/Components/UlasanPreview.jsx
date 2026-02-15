@@ -25,16 +25,22 @@ export default function UlasanPreview({ ulasan, pelanggan, tipe, isAdmin = false
         balasan: '',
     });
     const [isReplying, setIsReplying] = useState(false);
+    const [localBalasan, setLocalBalasan] = useState(ulasan.balasan || null);
 
     const submitReply = (e) => {
         e.preventDefault();
-        post(route('ulasan.reply', ulasan.id), {
+        post(route('admin.ulasan.reply', ulasan.id), {
+            preserveScroll: true,
+            preserveState: true,
             onSuccess: () => {
+                setLocalBalasan(data.balasan);
                 setIsReplying(false);
                 reset();
             }
         });
     };
+
+    const hasBalasan = localBalasan || ulasan.balasan;
 
     return (
         <div className="bg-white border text-left border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
@@ -43,8 +49,8 @@ export default function UlasanPreview({ ulasan, pelanggan, tipe, isAdmin = false
             <div className="flex items-start gap-4">
                 {/* Avatar Pelanggan */}
                 <img
-                    src={pelanggan?.foto_profil ? `/storage/${pelanggan.foto_profil}` : `https://ui-avatars.com/api/?name=${pelanggan?.nama}&color=7F9CF5&background=EBF4FF`}
-                    alt={pelanggan?.nama}
+                    src={pelanggan?.avatar ? `/storage/${pelanggan.avatar}` : `https://ui-avatars.com/api/?name=${pelanggan?.name}&color=7F9CF5&background=EBF4FF`}
+                    alt={pelanggan?.name}
                     className="w-12 h-12 rounded-full object-cover border border-gray-100"
                 />
 
@@ -52,7 +58,7 @@ export default function UlasanPreview({ ulasan, pelanggan, tipe, isAdmin = false
                     {/* Header: Nama & Tanggal */}
                     <div className="flex justify-between items-start">
                         <div>
-                            <p className="font-bold text-gray-900 text-sm">{pelanggan?.nama || 'Pelanggan'}</p>
+                            <p className="font-bold text-gray-900 text-sm">{pelanggan?.name || 'Pelanggan'}</p>
                             <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
                                 <span>{new Date(ulasan.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                                 {tipe && (
@@ -87,15 +93,15 @@ export default function UlasanPreview({ ulasan, pelanggan, tipe, isAdmin = false
                     )}
 
                     {/* Balasan Admin */}
-                    {ulasan.balasan && (
+                    {hasBalasan && (
                         <div className="mt-4 pl-4 border-l-4 border-green-500 bg-green-50 p-3 rounded-r-lg">
                             <p className="text-xs font-bold text-green-800 mb-1">Balasan Admin {ulasan.tanggal_balasan && `(${new Date(ulasan.tanggal_balasan).toLocaleDateString('id-ID')})`}</p>
-                            <p className="text-sm text-gray-700">"{ulasan.balasan}"</p>
+                            <p className="text-sm text-gray-700">"{localBalasan || ulasan.balasan}"</p>
                         </div>
                     )}
 
                     {/* Form Balasan (Jika Admin & Belum ada balasan) */}
-                    {isAdmin && !ulasan.balasan && (
+                    {isAdmin && !hasBalasan && (
                         <div className="mt-4">
                             {!isReplying ? (
                                 <button

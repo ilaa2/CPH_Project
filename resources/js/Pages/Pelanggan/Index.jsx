@@ -26,13 +26,13 @@ const CustomerDetailModal = ({ customer, onClose }) => {
         <div className="w-full md:w-1/3 flex flex-col items-center text-center">
           <div className="relative">
             <img
-              src={customer.foto_profil ? `/storage/${customer.foto_profil}` : `https://ui-avatars.com/api/?name=${customer.nama}&background=e8f5e9&color=166534`}
-              alt={customer.nama}
+              src={customer.avatar ? `/storage/${customer.avatar}` : `https://ui-avatars.com/api/?name=${customer.name}&background=e8f5e9&color=166534`}
+              alt={customer.name}
               className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
             />
           </div>
 
-          <h3 className="text-xl font-bold text-gray-900 mt-4">{customer.nama}</h3>
+          <h3 className="text-xl font-bold text-gray-900 mt-4">{customer.name}</h3>
           <p className="text-sm text-gray-500">{customer.email}</p>
 
           <div className="mt-6 w-full space-y-3">
@@ -61,8 +61,8 @@ const CustomerDetailModal = ({ customer, onClose }) => {
             </div>
 
             {/* Stat 2: Transaksi */}
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <div className="flex items-center gap-2 mb-2 text-blue-700">
+            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
+              <div className="flex items-center justify-center gap-2 mb-2 text-blue-700">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
                 <span className="text-xs font-bold uppercase tracking-wider">Transaksi</span>
               </div>
@@ -70,8 +70,8 @@ const CustomerDetailModal = ({ customer, onClose }) => {
             </div>
 
             {/* Stat 3: Kunjungan (NEW) */}
-            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100">
-              <div className="flex items-center gap-2 mb-2 text-indigo-700">
+            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 text-center">
+              <div className="flex items-center justify-center gap-2 mb-2 text-indigo-700">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>
                 <span className="text-xs font-bold uppercase tracking-wider">Kunjungan</span>
               </div>
@@ -85,7 +85,7 @@ const CustomerDetailModal = ({ customer, onClose }) => {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
                 Telepon
               </label>
-              <p className="text-gray-800 font-semibold mt-1">{customer.telepon || '-'}</p>
+              <p className="text-gray-800 font-semibold mt-1">{customer.phone || '-'}</p>
             </div>
             <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
               <label className="text-xs text-gray-400 uppercase font-bold tracking-wider flex items-center gap-2 mb-2">
@@ -232,12 +232,12 @@ export default function PelangganList({ pelanggan, filters, stats }) {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
                           <img
-                            src={item.foto_profil ? `/storage/${item.foto_profil}` : `https://ui-avatars.com/api/?name=${item.nama}&background=e8f5e9&color=166534`}
-                            alt={item.nama}
+                            src={item.avatar ? `/storage/${item.avatar}` : `https://ui-avatars.com/api/?name=${item.name}&background=e8f5e9&color=166534`}
+                            alt={item.name}
                             className="w-10 h-10 rounded-full object-cover border border-gray-200 shadow-sm"
                           />
                           <div>
-                            <div className="font-bold text-gray-900 group-hover:text-green-600 transition-colors">{item.nama}</div>
+                            <div className="font-bold text-gray-900 group-hover:text-green-600 transition-colors">{item.name}</div>
                             <div className="text-xs text-gray-500">{item.email}</div>
                           </div>
                         </div>
@@ -246,7 +246,7 @@ export default function PelangganList({ pelanggan, filters, stats }) {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>
-                            {item.telepon || '-'}
+                            {item.phone || '-'}
                           </div>
                           <div className="flex items-center gap-2 text-xs text-gray-500">
                             <svg className="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>

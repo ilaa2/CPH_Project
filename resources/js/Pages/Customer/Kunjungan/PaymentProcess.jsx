@@ -1,5 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 import CustomerLayout from '@/Layouts/CustomerLayout';
 import { FiCreditCard, FiCheck, FiAlertCircle, FiRefreshCw, FiCalendar } from 'react-icons/fi';
 
@@ -31,9 +32,20 @@ export default function PaymentProcess({ auth, kunjungan, snapToken, clientKey, 
             onSuccess: function (result) {
                 console.log('Payment Success:', result);
                 setPaymentStatus('success');
-                setTimeout(() => {
-                    router.visit(route('customer.kunjungan.show', kunjungan.id));
-                }, 2000);
+                // Update status di backend langsung setelah pembayaran sukses
+                axios.post(route('customer.kunjungan.confirm-payment', kunjungan.id))
+                    .then(() => {
+                        setTimeout(() => {
+                            router.visit(route('customer.kunjungan.show', kunjungan.id));
+                        }, 1500);
+                    })
+                    .catch((err) => {
+                        console.error('Failed to confirm payment:', err);
+                        // Tetap redirect meskipun gagal update (webhook akan handle)
+                        setTimeout(() => {
+                            router.visit(route('customer.kunjungan.show', kunjungan.id));
+                        }, 1500);
+                    });
             },
             onPending: function (result) {
                 console.log('Payment Pending:', result);

@@ -1,5 +1,79 @@
 # Catatan Perubahan
 
+## 11 Februari 2026
+
+### Fitur: Exclusive Visit Slot Booking
+- **Masalah**: Slot kunjungan yang sudah dibooking dan dibayar masih bisa dipilih oleh customer lain.
+- **Solusi**:
+  - Menambahkan `checkAvailability()` API di `VisitBookingController` untuk mengembalikan daftar slot yang sudah terisi
+  - Menambahkan validasi slot di `handleForm()` dan `store()` (double-check, prevent race condition)
+  - Frontend `Kunjungan.jsx`: dropdown jam menampilkan "(Penuh)" dan di-disable untuk slot yang sudah terisi
+  - Route: `kunjungan.check_availability` (GET)
+- **Bug Fix**: Awalnya `checkAvailability()` salah ditaruh di `KunjunganControllerCust` (legacy), padahal route mengarah ke `CustomerVisitBookingController` → menyebabkan 500 error
+
+### Fix: Status Kunjungan Tidak Berubah Setelah Pembayaran Sukses
+- **Masalah**: Setelah pembayaran Midtrans berhasil (Snap popup menampilkan "sukses"), halaman detail kunjungan masih menampilkan "Menunggu Pembayaran" dan tombol "Bayar Sekarang", bukan "Dijadwalkan".
+- **Penyebab**: `PaymentProcess.jsx` `onSuccess` callback hanya redirect ke halaman detail tanpa update backend. Midtrans notification webhook (server-to-server) tidak bisa menjangkau localhost di development.
+- **Solusi**:
+  - Menambahkan method `confirmPayment()` di `VisitBookingController` — update `payment_status` → `paid`, `status` → `Dijadwalkan`, `paid_at` → `now()`
+  - `PaymentProcess.jsx`: `onSuccess` sekarang memanggil `axios.post(route('customer.kunjungan.confirm-payment'))` sebelum redirect
+  - Route: `customer.kunjungan.confirm-payment` (POST)
+  - Idempotent: hanya update jika belum `paid` (hindari duplikasi dengan webhook di production)
+- **Files Modified**:
+  - `app/Http/Controllers/Customer/VisitBookingController.php`
+  - `resources/js/Pages/Customer/Kunjungan/PaymentProcess.jsx`
+  - `routes/web.php`
+
+### Peningkatan: Ringkasan Pembayaran Detail di Halaman Kunjungan
+- **Masalah**: Ringkasan pembayaran di halaman detail kunjungan hanya menampilkan "Total Biaya" tanpa rincian per orang.
+- **Solusi**: Menambahkan breakdown detail berdasarkan tipe kunjungan:
+  - **Umum**: Dewasa (N × Rp 10.000) + Anak (N × Rp 10.000) + Balita (Gratis)
+  - **Outing Class**: Paket (< 30 anak = Rp 300.000 flat) atau Anak (N × Rp 10.000) + Guru/Pendamping (Gratis)
+  - **Tipe Lain**: Menggunakan biaya per tipe dari database
+- **File Modified**: `resources/js/Pages/Customer/Kunjungan/Show.jsx`
+
+### Fix: Data Customer (Telepon, Nama, Foto) Tidak Muncul di Admin
+- **Masalah**: No. telepon, nama, dan foto profil customer tidak muncul di halaman admin Pelanggan (menampilkan "-" atau avatar default) meskipun data sudah diisi oleh customer.
+- **Penyebab**: Frontend masih menggunakan nama field lama dari tabel `pelanggans` (`telepon`, `nama`, `foto_profil`), padahal setelah konsolidasi ke tabel `users` nama kolomnya adalah `phone`, `name`, `avatar`.
+- **Solusi**: Mengganti semua referensi field legacy di 3 file:
+  - `Pelanggan/Index.jsx`: `telepon`→`phone`, `nama`→`name`, `foto_profil`→`avatar`
+  - `Pelanggan/Edit.jsx`: `nama`→`name`, `telepon`→`phone`
+  - `Pelanggan/Create.jsx`: `nama`→`name`, `telepon`→`phone`
+
+## 6 Februari 2026
+
+### Update Dokumen Blackbox Testing (Revisi Berdasarkan UI)
+- **File Artifact**: `blackbox_testing_final.md`
+- **Total Skenario**: 92 skenario testing (diverifikasi berdasarkan UI yang tersedia)
+  - **Admin**: 44 skenario
+  - **Customer**: 48 skenario
+- **Modul Admin**:
+  - **Autentikasi**: Login, Logout
+  - **Dashboard**: Statistik, Grafik Pendapatan & Kunjungan, Pesanan Pending, Stok Menipis, Jadwal Hari Ini
+  - **Produk**: List, Filter, Search, Tambah, Edit, Hapus (Soft Delete), Duplikat, Toggle Status
+  - **Pesanan**: List, Filter Status, Search, Detail/Invoice, Edit Status, Input Resi, Tambah Manual, Lihat Ulasan
+  - **Kunjungan**: List, Filter Tipe, Search, Detail, Tambah Manual
+  - **Pelanggan**: List, Search, Lihat Detail
+  - **Laporan**: Summary Stats, Quick Filter, Rentang Tanggal, Preview Penjualan/Kunjungan, Export PDF/Excel
+- **Modul Customer**:
+  - **Autentikasi**: Register, Login, Reset Password, Logout
+  - **Katalog**: List Produk, Filter Kategori, Detail Produk, Tambah Keranjang, **Beli Langsung (Buy Now)**
+  - **Keranjang**: List, Update Qty, Hapus Item, Pilih Item, Checkout
+  - **Checkout**: Pilih Metode (Pickup/Lokal/Ekspedisi), Isi Alamat, Ringkasan, Bayar Midtrans
+  - **Riwayat**: Tab Pesanan, Tab Kunjungan, Detail, Retry Payment, Konfirmasi Diterima
+  - **Kunjungan**: Landing, Form Booking, Konfirmasi, Bayar, Selesaikan
+  - **Ulasan**: Form Ulasan Pesanan, Form Ulasan Kunjungan, **Lihat Balasan Penjual**
+  - **Profil**: Foto, Edit Info, Ubah Password, Hapus Akun
+  - **Publik**: Home, Tentang Kami
+- **Catatan Fitur**:
+  - **Buy Now**: Tersedia di halaman detail produk (Skenario Customer #11)
+  - **Balas Ulasan Admin**: Backend ready (`ReviewController.reply()`), tombol UI belum tersedia, balasan tampil di Customer
+  - Menu Ulasan Admin (route tersedia, menu di-hide di sidebar)
+  - Hapus Customer (admin hanya bisa view)
+  - Hapus Pesanan (tidak tersedia untuk menjaga integritas data)
+- **Dokumentasi Pendukung**: `dokumentasi_hmw_brainstorming_reevaluate.md` - HMW, Brainstorming, Re-Evaluate, Chunk, Pre-Evaluation yang sudah disesuaikan
+- **Status**: ✅ 100% Pass (92/92 skenario)
+
 ## 4 Februari 2026
 
 ### Dokumentasi BAB IV (4.2 - 4.5) untuk Laporan PA - Revisi Format PCR

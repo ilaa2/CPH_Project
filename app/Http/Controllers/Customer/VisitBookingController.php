@@ -52,6 +52,20 @@ class VisitBookingController extends Controller
             'jumlah_balita'     => 'required|integer|min:0',
         ]);
 
+        // CEK KETERSEDIAAN SLOT
+        $isBooked = Kunjungan::where('tanggal', $validated['tanggal_kunjungan'])
+            ->where('jam', $validated['jam_kunjungan'] . ':00')
+            ->where('status', '!=', 'Batal')
+            ->where(function ($q) {
+                $q->where('payment_status', 'paid')
+                  ->orWhere('payment_status', 'pending');
+            })
+            ->exists();
+
+        if ($isBooked) {
+            return back()->withInput()->withErrors(['jam_kunjungan' => 'Jam kunjungan ini sudah terisi. Silakan pilih jam lain.']);
+        }
+
         $tipe = TipeKunjungan::find($validated['tipe_kunjungan_id']);
         if ($tipe && $tipe->nama_tipe === 'Umum' && $validated['jumlah_dewasa'] < 1) {
             return back()->withInput()->withErrors(['jumlah_dewasa' => 'Sewa Tempat memerlukan minimal 1 orang dewasa.']);
@@ -114,6 +128,20 @@ class VisitBookingController extends Controller
 
         if ($tipeKunjungan && $tipeKunjungan->nama_tipe === 'Umum' && $validated['jumlah_dewasa'] < 1) {
             return back()->withInput()->withErrors(['jumlah_dewasa' => 'Sewa Tempat memerlukan minimal 1 orang dewasa.']);
+        }
+
+        // CEK LAGI KETERSEDIAAN SLOT (prevent race condition)
+        $isBooked = Kunjungan::where('tanggal', $validated['tanggal_kunjungan'])
+            ->where('jam', $validated['jam_kunjungan'] . ':00')
+            ->where('status', '!=', 'Batal')
+            ->where(function ($q) {
+                $q->where('payment_status', 'paid')
+                  ->orWhere('payment_status', 'pending');
+            })
+            ->exists();
+
+        if ($isBooked) {
+            return redirect()->route('kunjungan.index')->with('error', 'Maaf, jam kunjungan tersebut baru saja dibooking orang lain. Silakan pilih jadwal ulang.');
         }
 
         $finalTotalBiaya = $this->calculateTotalCost($tipeKunjungan, $validated);
@@ -333,5 +361,59 @@ class VisitBookingController extends Controller
         $kunjungan->update(['status' => 'Selesai']);
 
         return back()->with('success', 'Kunjungan telah selesai. Terima kasih atas kunjungan Anda!');
+    }
+
+    /**
+     * Konfirmasi pembayaran berhasil dari frontend (Snap onSuccess callback).
+     * Ini menjadi fallback jika Midtrans webhook belum sempat memproses.
+     */
+    public function confirmPayment(Kunjungan $kunjungan)
+    {
+        if ($kunjungan->user_id !== Auth::id()) {
+            abort(403);
+        }
+
+        // Hanya update jika belum paid (hindari duplikasi dengan webhook)
+        if ($kunjungan->payment_status !== 'paid') {
+            $kunjungan->update([
+                'payment_status' => 'paid',
+                'status' => 'Dijadwalkan',
+                'paid_at' => now(),
+            ]);
+
+            Log::info('Kunjungan payment confirmed via frontend callback', [
+                'kunjungan_id' => $kunjungan->id,
+            ]);
+        }
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
+     * API untuk mengecek slot jam yang sudah terisi pada tanggal tertentu.
+     */
+    public function checkAvailability(Request $request)
+    {
+        $date = $request->query('date');
+
+        if (!$date) {
+            return response()->json(['bookedSlots' => []]);
+        }
+
+        $bookedSlots = Kunjungan::where('tanggal', $date)
+            ->where('status', '!=', 'Batal')
+            ->where(function ($q) {
+                $q->where('payment_status', 'paid')
+                  ->orWhere('payment_status', 'pending');
+            })
+            ->pluck('jam')
+            ->map(function ($jam) {
+                return substr($jam, 0, 5);
+            })
+            ->toArray();
+
+        return response()->json([
+            'bookedSlots' => $bookedSlots
+        ]);
     }
 }
