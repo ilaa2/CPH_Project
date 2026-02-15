@@ -1,18 +1,36 @@
 import { Link, usePage, useForm } from '@inertiajs/react';
-import { createContext, useContext, useState, useMemo } from "react";
+import { createContext, useContext, useState, useMemo, useEffect } from "react";
 import {
   FiHome, FiShoppingBag, FiCalendar, FiSettings,
-  FiHelpCircle, FiFileText, FiLogOut, FiUser, FiX, FiLock, FiCheck, FiAlertCircle
+  FiHelpCircle, FiFileText, FiLogOut, FiUser, FiX, FiLock, FiCheck, FiAlertCircle, FiMenu
 } from "react-icons/fi";
 import { BsBoxSeam, BsPeople } from "react-icons/bs";
 
 const SidebarContext = createContext();
 
-export default function Sidebar({ children }) {
+export default function Sidebar({ header, children }) {
+  // Initialize expanded: default false usually for mobile-first, but logic below handles classes
   const [expanded, setExpanded] = useState(true);
   const [showProfile, setShowProfile] = useState(false);
   const [activeTab, setActiveTab] = useState('info');
   const { auth } = usePage().props;
+
+  // Auto-collapse on mobile on mount
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setExpanded(false);
+      } else {
+        setExpanded(true);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const { data, setData, put, processing, errors, reset, recentlySuccessful } = useForm({
     current_password: '',
@@ -44,26 +62,50 @@ export default function Sidebar({ children }) {
   };
 
   return (
-    <div className="flex">
+    <div className="min-h-screen bg-gray-100">
+      {/* Mobile Overlay */}
+      {expanded && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={() => setExpanded(false)}
+        />
+      )}
+
+      {/* Mobile Toggle Button (Visible only on mobile when collapsed) */}
+      {!expanded && (
+        <button
+          onClick={() => setExpanded(true)}
+          className="fixed top-4 left-4 z-50 p-2 bg-white rounded-md shadow-md md:hidden text-green-700 hover:bg-green-50"
+        >
+          <FiMenu size={24} />
+        </button>
+      )}
+
       {/* === SIDEBAR === */}
       <aside
-        className={`fixed top-0 left-0 h-screen bg-white border-r shadow-sm z-50 transition-all duration-300 ease-in-out ${expanded ? "w-64" : "w-20"
-          }`}
+        className={`fixed top-0 left-0 h-screen bg-white border-r shadow-sm z-50 transition-all duration-300 ease-in-out
+          ${expanded ? "translate-x-0 w-64" : "-translate-x-full w-64 md:translate-x-0 md:w-20"}
+        `}
       >
         <nav className="h-full flex flex-col justify-between">
           <div>
             {/* LOGO & TOGGLE */}
             <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-2">
-                <img src="/storage/logo/logoo.png" alt="Logo" className="w-8 h-8" />
-                {expanded && (
-                  <span className="text-sm font-semibold text-green-700">
-                    CENTRAL PALANTEA
-                  </span>
-                )}
+              <div className="flex items-center gap-2 overflow-hidden">
+                <img src="/storage/logo/logoo.png" alt="Logo" className="w-8 h-8 shrink-0" />
+                <span className={`text-sm font-semibold text-green-700 transition-opacity duration-300 ${expanded ? 'opacity-100' : 'opacity-0 md:hidden'}`}>
+                  CENTRAL PALANTEA
+                </span>
+                {/* On desktop collapsed, text hidden. On mobile open, text visible. */}
               </div>
-              <button onClick={() => setExpanded(!expanded)} className="p-1.5 rounded hover:bg-gray-100">
+
+              {/* Desktop Toggle Button */}
+              <button onClick={() => setExpanded(!expanded)} className="hidden md:block p-1.5 rounded hover:bg-gray-100">
                 {expanded ? "←" : "→"}
+              </button>
+              {/* Mobile Close Button */}
+              <button onClick={() => setExpanded(false)} className="md:hidden p-1.5 rounded hover:bg-gray-100">
+                <FiX size={20} />
               </button>
             </div>
 
@@ -267,13 +309,16 @@ export default function Sidebar({ children }) {
               className={`flex items-center cursor-pointer hover:bg-green-50 p-2 rounded-lg transition-colors ${showProfile ? 'bg-green-50' : ''}`}
               onClick={() => setExpanded(true) || setShowProfile(!showProfile)}
             >
-              <img src="/storage/logo/logoo.png" alt="User" className="w-10 h-10 rounded-md border border-gray-100 shadow-sm" />
-              {expanded && (
-                <div className="ml-3 leading-4 flex-1">
-                  <h4 className="font-semibold text-green-800 text-sm">{auth.user?.name || 'Pengguna'}</h4>
-                  <span className="text-xs text-gray-500">{auth.user?.email || 'email@domain.com'}</span>
-                </div>
-              )}
+              <img src="/storage/logo/logoo.png" alt="User" className="w-10 h-10 rounded-md border border-gray-100 shadow-sm shrink-0" />
+              <div className={`ml-3 leading-4 flex-1 transition-opacity duration-300 ${expanded ? 'opacity-100' : 'opacity-0 md:hidden'}`}>
+                {/* On desktop collapsed, hide text. On mobile open, show text. */}
+                {expanded && (
+                  <>
+                    <h4 className="font-semibold text-green-800 text-sm truncate w-32">{auth.user?.name || 'Pengguna'}</h4>
+                    <span className="text-xs text-gray-500 truncate w-32 block">{auth.user?.email || 'email@domain.com'}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </nav>
@@ -281,10 +326,23 @@ export default function Sidebar({ children }) {
 
       {/* === MAIN CONTENT === */}
       <main
-        className={`min-h-screen flex-1 transition-all duration-300 ease-in-out ${expanded ? "ml-64" : "ml-20"
-          }`}
+        className={`min-h-screen flex flex-col transition-all duration-300 ease-in-out
+          ${expanded ? "md:ml-64" : "md:ml-20"}
+          ml-0
+        `}
       >
-        {children}
+        {header && (
+          <div className="sticky top-0 z-20 p-4 md:p-6 bg-white border-b border-gray-200">
+            {/* On mobile, add padding left to account for hamburger if needed, or hamburger is absolute overlay */}
+            <div className="pl-12 md:pl-0">
+              {header}
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1 p-4 md:p-6">
+          {children}
+        </div>
       </main>
     </div>
   );
@@ -305,15 +363,15 @@ function SidebarItem({ icon, text, active, alert, href, method = 'get', as = 'a'
           : "hover:bg-green-200 text-gray-600"
           }`}
       >
-        {icon}
-        <span className={`overflow-hidden transition-all ${expanded ? "w-52 ml-3" : "w-0"}`}>
+        <span className="shrink-0">{icon}</span> {/* Prevent icon shrinking */}
+        <span className={`overflow-hidden transition-all whitespace-nowrap ${expanded ? "w-52 ml-3" : "w-0"}`}>
           {text}
         </span>
 
         {alert && <div className="absolute right-2 w-2 h-2 rounded bg-green-300" />}
 
         {!expanded && (
-          <div className="absolute left-full rounded-sm px-2 py-1 ml-6 bg-green-100 text-green-900 text-sm invisible opacity-0 -translate-x-3 transition-all group-hover:visible group-hover:opacity-100 group-hover:translate-x-0">
+          <div className="absolute z-50 left-full rounded-sm px-2 py-1 ml-6 bg-green-100 text-green-900 text-sm invisible opacity-0 -translate-x-3 transition-all group-hover:visible group-hover:opacity-100 group-hover:translate-x-0 whitespace-nowrap shadow-md">
             {text}
           </div>
         )}

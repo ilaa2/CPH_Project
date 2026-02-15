@@ -2,6 +2,82 @@
 
 ## 15 Februari 2026
 
+### Fix: Ikon ? pada Laporan PDF
+- **Masalah**: Header "TOP TIPE KUNJUNGAN" di laporan PDF menampilkan tanda tanya `?`.
+- **Penyebab**: Penggunaan emoji 🏆 dan 📋 yang tidak didukung oleh generator PDF (DOMPDF).
+- **Solusi**: Menghapus emoji tersebut dari template `pdf.blade.php`.
+### Global Admin Responsiveness & UI Polish
+- **Tujuan**: Menyamakan pengalaman mobile di seluruh halaman admin
+- **Perubahan per Halaman**:
+  - **Produk**: Header responsif (stack ke bawah), form input grid responsif, tabel scrollable.
+  - **Pesanan**: Modal Detail invoice menggunakan grid responsif (1 kolom di HP), header responsif.
+  - **Laporan**: Grid statistik responsif, tabel preview scrollable.
+  - **Pelanggan**: Statistik grid responsif, tabel scrollable.
+  - **Kunjungan**: Tab navigasi scrollable pada mobile, header responsif.
+  - **Ulasan**: Tombol filter wrap (tidak overflow), tabel scrollable.
+  - **Profile**: Mengubah layout `Profile/Edit.jsx` agar menggunakan `Mainbar` (ada sidebar admin) alih-alih layout default Breeze.
+- **Files Modified**: 
+  - `resources/js/Pages/Produk/Index.jsx`
+  - `resources/js/Pages/Pesanan/Index.jsx`
+  - `resources/js/Pages/Laporan/Index.jsx` (verified)
+  - `resources/js/Pages/Pelanggan/Index.jsx` (verified)
+  - `resources/js/Pages/Kunjungan/Jadwal.jsx`
+  - `resources/js/Layouts/KunjunganLayout.jsx`
+  - `resources/js/Pages/Ulasan/Index.jsx`
+  - `resources/js/Pages/Profile/Edit.jsx`
+
+### Fix: Layout Filter Laporan Overflow
+- **Masalah**: Tombol "Terapkan" dan input tanggal pada filter laporan tidak responsif (overflow/keluar dari container) di layar kecil.
+- **Solusi**: Mengubah layout filter tanggal menjadi stack (vertikal) di mobile, dan menambahkan scroll padding pada tombol filter preset.
+- **Files Modified**: `resources/js/Pages/Laporan/Index.jsx`
+
+### Cleanup: Hapus Tabel Unused (cart_items)
+- **Tujuan**: Membersihkan database dari tabel sampah sisa pengembangan awal.
+- **Tindakan**: Membuat migration `drop_cart_items_table` untuk menghapus tabel `cart_items` yang tidak terpakai (sistem menggunakan tabel `carts`).
+- **Files Created**: `database/migrations/2026_02_15_200859_drop_cart_items_table.php`
+
+### Logic Update: Estimasi Waktu Pesanan (Smart Status)
+- **Masalah**: Pesanan lama (kemarin/lusa) masih menampilkan estimasi "Akan diproses besok jam 07:30", padahal sudah lewat berhari-hari.
+- **Solusi**: Menambahkan logika pengecekan tanggal (`isToday`):
+  - **Pesanan Hari Ini**: Tampilkan estimasi waktu detail (30 menit / besok pagi).
+  - **Pesanan Lama**: Tampilkan status umum "Sedang dalam antrian pemrosesan" agar tidak membingungkan customer.
+- **Files Modified**: `resources/js/Pages/Customer/Pesanan/Show.jsx`
+
+### Fix: UI Tertimpa & Rename Kategori
+- **Masalah**:
+  1. Dropdown profil tertimpa search bar (z-index issue).
+  2. Nama kategori tidak konsisten ("Sayuran Daun" vs "Sayur").
+- **Solusi**:
+  1. Menambahkan `z-50` pada dropdown container di `CustomerLayout.jsx`.
+  2. Mengubah label kategori menjadi **"Sayuran"** dan **"Buah-buahan"** di `Belanja.jsx` dan `DashboardCust.jsx`.
+  3. Update database via migration `update_product_category_names` untuk mengubah data lama.
+  4. Update `ProductCategoriesSeeder` untuk instalasi baru.
+- **Files Modified**:
+  - `resources/js/Layouts/CustomerLayout.jsx`
+  - `resources/js/Pages/Customer/Belanja.jsx`
+  - `resources/js/Pages/Customer/DashboardCust.jsx`
+  - `database/seeders/ProductCategoriesSeeder.php`
+- **Files Created**: `database/migrations/2026_02_15_203500_update_product_category_names.php`
+
+### Penyesuaian UI Dashboard & Responsivitas Mobile
+- **Tujuan**: Memperbaiki tampilan nomor pesanan yang berantakan (overflow) dan membuat sidebar responsif di HP.
+- **Perubahan**:
+  - **Dashboard.jsx**: Menambahkan `min-w-0`, `flex-1`, dan `truncate` pada list "Pesanan Pending" dan "Pesanan Baru" agar teks panjang (no. pesanan/nama) otomatis terpotong titik-titik (...) jika tidak muat, bukannya menabrak elemen lain.
+  - **Sidebar.jsx**:
+    - Mode Mobile: Sidebar sekarang menggunakan sistem **Drawer/Overlay**. Tertutup default, muncul saat tombol menu ditekan.
+    - Menambahkan tombol **Hamburger Menu** (garis tiga) yang hanya muncul di mode mobile.
+    - Menambahkan background gelap (overlay) saat sidebar terbuka di HP.
+  - **Mainbar.jsx**: Refactor struktur layout agar `Sidebar` menjadi wrapper utama, sehingga state mobile (buka/tutup) bisa mengatur margin konten dengan benar.
+- **Files Modified**: `resources/js/Pages/Dashboard.jsx`, `resources/js/Components/Bar/Sidebar.jsx`, `resources/js/Components/Bar/Mainbar.jsx`
+
+### Update: Kredensial Admin Diperbarui
+- **Tujuan**: Mengganti username (email) dan password admin default agar lebih sesuai dengan branding
+- **Perubahan**:
+  - Email Admin: `centralpalantea@gmail.com`
+  - Password Admin: `AdminCPH24@`
+- **Konfirmasi**: Diupdate di `DatabaseSeeder.php` dan record database yang ada
+- **Files Modified**: `database/seeders/DatabaseSeeder.php`
+
 ### Fitur: Update Password Admin dari Sidebar
 - **Tujuan**: Admin bisa mengganti password langsung dari panel profil di sidebar
 - **Implementasi**:

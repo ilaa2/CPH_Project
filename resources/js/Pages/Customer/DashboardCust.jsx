@@ -124,8 +124,8 @@ function ImmersiveHero() {
 function CategoryPills() {
     const categories = [
         { name: 'Semua', icon: '✨', link: '/customer/belanja' },
-        { name: 'Sayuran Daun', icon: '🥬', link: '/customer/belanja?cat=sayur' },
-        { name: 'Buah Segar', icon: '🍉', link: '/customer/belanja?cat=buah' },
+        { name: 'Sayuran', icon: '🥬', link: '/customer/belanja?category=1' },
+        { name: 'Buah-buahan', icon: '🍉', link: '/customer/belanja?category=2' },
         { name: 'Outing Class', icon: '🎒', link: '/customer/kunjungan' },
         { name: 'Kunjungan', icon: '🚌', link: '/customer/kunjungan' },
         { name: 'Tentang Kami', icon: '🏡', link: '/tentang-kami' },

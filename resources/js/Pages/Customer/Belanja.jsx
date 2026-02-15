@@ -79,8 +79,8 @@ export default function Belanja({ auth, products, filters }) {
 
                     <div className="flex justify-center items-center gap-4 mb-10 flex-wrap">
                         <FilterButton categoryId="" label="Semua Produk" icon={<VscChecklist size={20} />} />
-                        <FilterButton categoryId="1" label="Sayuran Daun" icon={<GiHerbsBundle size={20} />} />
-                        <FilterButton categoryId="2" label="Sayuran Buah" icon={<GiFruitTree size={20} />} />
+                        <FilterButton categoryId="1" label="Sayuran" icon={<GiHerbsBundle size={20} />} />
+                        <FilterButton categoryId="2" label="Buah-buahan" icon={<GiFruitTree size={20} />} />
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
