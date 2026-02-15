@@ -15,12 +15,12 @@ class ProductCategoriesSeeder extends Seeder
     {
         DB::table('product_categories')->insert([
             [
-                'nama_kategori' => 'Sayur',
+                'nama_kategori' => 'Sayuran',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],
             [
-                'nama_kategori' => 'Buah',
+                'nama_kategori' => 'Buah-buahan',
                 'created_at' => Carbon::now(),
                 'updated_at' => Carbon::now(),
             ],

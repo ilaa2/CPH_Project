@@ -73,7 +73,7 @@
     {{-- TOP VISIT TYPES SECTION (For Kunjungan Report) --}}
     @if(isset($topVisitTypes) && count($topVisitTypes) > 0)
     <div class="top-section">
-        <h3>🏆 TOP TIPE KUNJUNGAN TERFAVORIT</h3>
+        <h3>TOP TIPE KUNJUNGAN TERFAVORIT</h3>
         <table class="top-table">
             <thead>
                 <tr>
@@ -100,7 +100,7 @@
     @endif
 
     {{-- MAIN DATA TABLE --}}
-    <div class="section-title">📋 DETAIL DATA</div>
+    <div class="section-title">DETAIL DATA</div>
     <table>
         <thead>
             <tr>

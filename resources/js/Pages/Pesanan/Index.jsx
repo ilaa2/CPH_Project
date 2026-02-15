@@ -28,14 +28,14 @@ const DetailModal = ({ model, onClose }) => (
       </div>
 
       {/* Info Pelanggan & Tanggal */}
-      <div className="grid grid-cols-2 gap-8 text-sm text-gray-700 mb-8 border-t border-b border-gray-100 py-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-gray-700 mb-8 border-t border-b border-gray-100 py-6">
         <div>
           <p className="text-gray-500 text-xs uppercase font-semibold mb-2">DITAGIHkan KEPADA</p>
           <p className="font-bold text-gray-900 text-base">{model.user?.name || '-'}</p>
           <p className="text-gray-600 mt-1">{model.user?.alamat || 'Alamat tidak tersedia'}</p>
           <p className="text-gray-600">{model.user?.phone || '-'}</p>
         </div>
-        <div className="text-right">
+        <div className="text-left md:text-right mt-4 md:mt-0">
           <div className="mb-3">
             <p className="text-gray-500 text-xs uppercase font-semibold mb-1">TANGGAL PESANAN</p>
             <p className="font-medium text-gray-900">{new Date(model.tanggal).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -71,7 +71,7 @@ const DetailModal = ({ model, onClose }) => (
       </div>
 
       {/* Tabel Item */}
-      <div className="overflow-hidden border border-gray-200 rounded-lg mb-6">
+      <div className="overflow-x-auto border border-gray-200 rounded-lg mb-6">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -180,11 +180,11 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
 
   return (
     <Mainbar header={
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h2 className="text-xl font-semibold text-gray-800">Pesanan</h2>
         <button
           onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105"
+          className="w-full md:w-auto px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 transition-transform transform hover:scale-105"
         >
           + Tambah Pesanan
         </button>

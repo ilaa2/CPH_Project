@@ -19,9 +19,19 @@ class DatabaseSeeder extends Seeder
 
         User::factory()->create([
             'name' => 'Admin CPH',
-            'email' => 'admin@cph.com',
-            'password' => Hash::make('password'),
+            'email' => 'centralpalantea@gmail.com',
+            'password' => Hash::make('AdminCPH24@'),
             'role' => 'admin',
+        ]);
+
+        // Akun testing untuk dokumentasi skripsi
+        User::factory()->create([
+            'name' => 'User Testing',
+            'email' => 'testing@cph.com',
+            'password' => Hash::make('Testing123!'),
+            'role' => 'customer',
+            'phone' => '081234567890',
+            'alamat' => 'Jl. HR. Soebrantas No. 155, Panam, Pekanbaru',
         ]);
 
         $this->call(TipeKunjunganSeeder::class);

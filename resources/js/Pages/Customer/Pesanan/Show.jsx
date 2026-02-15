@@ -622,40 +622,65 @@ export default function Show({ pesanan, auth }) {
                                 const isWithinOperatingHours = currentTimeInMinutes >= openTime && currentTimeInMinutes < closeTime;
                                 const isPickup = pesanan.metode_pengiriman === 'Ambil Sendiri' || pesanan.metode_pengiriman === 'Ambil di Toko';
 
+                                // NEW LOGIC: Check if order date is TODAY
+                                const orderDate = new Date(pesanan.created_at);
+                                const isToday = orderDate.toDateString() === now.toDateString();
+
                                 let noticeTitle, noticeMessage, bgColor, borderColor, textColor, iconColor;
 
-                                if (isPickup) {
-                                    // Pickup mode
-                                    noticeTitle = 'Informasi Penjemputan';
-                                    bgColor = 'bg-blue-50';
+                                if (isToday) {
+                                    // LOGIC FOR FRESH ORDERS (Today)
+                                    if (isPickup) {
+                                        // Pickup mode
+                                        noticeTitle = 'Informasi Penjemputan';
+                                        bgColor = 'bg-blue-50';
+                                        borderColor = 'border-blue-200';
+                                        textColor = 'text-blue-800';
+                                        iconColor = 'text-blue-600';
+
+                                        if (isWithinOperatingHours) {
+                                            noticeMessage = (
+                                                <>Pesanan Anda akan siap diambil dalam waktu <span className="font-bold">15–30 menit</span>.</>
+                                            );
+                                        } else {
+                                            noticeMessage = (
+                                                <>Pesanan Anda akan siap diambil <span className="font-bold">besok mulai pukul 07:30 WIB</span>.</>
+                                            );
+                                        }
+                                    } else {
+                                        // Kurir Lokal / Ekspedisi
+                                        noticeTitle = 'Informasi Pengiriman';
+                                        bgColor = 'bg-green-50';
+                                        borderColor = 'border-green-200';
+                                        textColor = 'text-green-800';
+                                        iconColor = 'text-green-600';
+
+                                        if (isWithinOperatingHours) {
+                                            noticeMessage = (
+                                                <>Pesanan Anda sedang diproses dan akan segera dikirim <span className="font-bold">hari ini</span>.</>
+                                            );
+                                        } else {
+                                            noticeMessage = (
+                                                <>Pesanan Anda akan diproses dan dikirim <span className="font-bold">besok mulai pukul 07:30 WIB</span> (toko tutup pukul 18:00).</>
+                                            );
+                                        }
+                                    }
+                                } else {
+                                    // LOGIC FOR STALE ORDERS (Yesterday or older)
+                                    noticeTitle = 'Status Pesanan';
+                                    bgColor = 'bg-blue-50'; // Neutral Info Color
                                     borderColor = 'border-blue-200';
                                     textColor = 'text-blue-800';
                                     iconColor = 'text-blue-600';
 
-                                    if (isWithinOperatingHours) {
+                                    if (pesanan.status === 'processed') {
                                         noticeMessage = (
-                                            <>Pesanan Anda akan siap diambil dalam waktu <span className="font-bold">15–30 menit</span>.</>
+                                            <>Pesanan Anda sedang dalam <span className="font-bold">antrian pemrosesan</span> oleh admin. Mohon menunggu update status selanjutnya.</>
                                         );
                                     } else {
+                                        // Fallback generic message
                                         noticeMessage = (
-                                            <>Pesanan Anda akan siap diambil <span className="font-bold">besok mulai pukul 07:30 WIB</span>.</>
-                                        );
-                                    }
-                                } else {
-                                    // Kurir Lokal / Ekspedisi
-                                    noticeTitle = 'Informasi Pengiriman';
-                                    bgColor = 'bg-green-50';
-                                    borderColor = 'border-green-200';
-                                    textColor = 'text-green-800';
-                                    iconColor = 'text-green-600';
-
-                                    if (isWithinOperatingHours) {
-                                        noticeMessage = (
-                                            <>Pesanan Anda sedang diproses dan akan segera dikirim <span className="font-bold">hari ini</span>.</>
-                                        );
-                                    } else {
-                                        noticeMessage = (
-                                            <>Pesanan Anda akan diproses dan dikirim <span className="font-bold">besok mulai pukul 07:30 WIB</span> (toko tutup pukul 18:00).</>
+                                            <>Pesanan Anda telah diterima dan sedang menunggu giliran untuk diproses.</>
                                         );
                                     }
                                 }

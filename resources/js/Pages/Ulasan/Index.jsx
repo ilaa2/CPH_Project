@@ -53,7 +53,7 @@ export default function UlasanIndex() {
       <Head title="Ulasan & Feedback" />
 
       <div className="p-6 space-y-6">
-        <div className="flex space-x-2">
+        <div className="flex flex-wrap gap-2">
           <FilterButton filterValue={null}>Semua</FilterButton>
           <FilterButton filterValue="produk">Produk</FilterButton>
           <FilterButton filterValue="kunjungan">Kunjungan</FilterButton>

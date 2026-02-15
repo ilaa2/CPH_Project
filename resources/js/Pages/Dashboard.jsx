@@ -147,12 +147,12 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                 <div className="space-y-3">
                                     {pesananPerluDiproses && pesananPerluDiproses.length > 0 ? (
                                         pesananPerluDiproses.map(p => (
-                                            <div key={p.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-100">
-                                                <div>
-                                                    <div className="font-medium text-gray-800">#{p.kode_pesanan}</div>
-                                                    <div className="text-xs text-gray-500">{p.nama_pelanggan} • {formatCurrency(p.total)}</div>
+                                            <div key={p.id} className="flex items-center justify-between gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="font-medium text-gray-800 truncate" title={p.nomor_pesanan}>#{p.nomor_pesanan}</div>
+                                                    <div className="text-xs text-gray-500 truncate">{p.nama_pelanggan} • {formatCurrency(p.total)}</div>
                                                 </div>
-                                                <Link href={route('admin.pesanan.edit', p.id)} className="px-3 py-1 bg-white text-yellow-700 text-xs font-medium rounded border border-yellow-200 shadow-sm hover:bg-yellow-50">
+                                                <Link href={route('admin.pesanan.edit', p.id)} className="shrink-0 px-3 py-1 bg-white text-yellow-700 text-xs font-medium rounded border border-yellow-200 shadow-sm hover:bg-yellow-50">
                                                     Proses
                                                 </Link>
                                             </div>
@@ -169,15 +169,15 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                 <div className="space-y-3">
                                     {stokMenipis && stokMenipis.length > 0 ? (
                                         stokMenipis.map(p => (
-                                            <div key={p.id} className="flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-100">
-                                                <div className="flex items-center gap-3">
-                                                    <img src={p.gambar ? `/storage/${p.gambar}` : 'https://via.placeholder.com/150'} alt="" className="w-8 h-8 rounded object-cover bg-gray-200" />
-                                                    <div>
-                                                        <div className="font-medium text-gray-800 text-sm line-clamp-1">{p.nama}</div>
+                                            <div key={p.id} className="flex items-center justify-between gap-3 p-3 bg-red-50 rounded-lg border border-red-100">
+                                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                    <img src={p.gambar ? `/storage/${p.gambar}` : 'https://via.placeholder.com/150'} alt="" className="w-8 h-8 rounded object-cover bg-gray-200 shrink-0" />
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="font-medium text-gray-800 text-sm truncate">{p.nama}</div>
                                                         <div className="text-xs text-red-600 font-medium">Sisa: {p.stok} unit</div>
                                                     </div>
                                                 </div>
-                                                <Link href={route('admin.produk.index')} className="text-gray-400 hover:text-gray-600">
+                                                <Link href={route('admin.produk.index')} className="text-gray-400 hover:text-gray-600 shrink-0">
                                                     <FiShoppingCart />
                                                 </Link>
                                             </div>
@@ -261,14 +261,16 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                                 <div className="divide-y divide-gray-50">
                                     {kunjunganHariIni.map((k) => (
                                         <div key={k.id} className="p-4 hover:bg-gray-50 transition">
-                                            <div className="flex justify-between items-start mb-1">
-                                                <span className="font-bold text-gray-800">{k.jam}</span>
-                                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${k.tipe?.nama === 'Outing Class' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
-                                                    }`}>
-                                                    {k.tipe?.nama || 'Umum'}
-                                                </span>
+                                            <div className="flex justify-between items-start mb-1 gap-2">
+                                                <span className="font-bold text-gray-800 shrink-0">{k.jam}</span>
+                                                <div className="flex-1 text-right min-w-0">
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full inline-block truncate max-w-full ${k.tipe?.nama === 'Outing Class' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                                                        }`}>
+                                                        {k.tipe?.nama || 'Umum'}
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div className="text-sm font-medium text-gray-700 block mb-1">{k.nama_pelanggan}</div>
+                                            <div className="text-sm font-medium text-gray-700 block mb-1 truncate">{k.nama_pelanggan}</div>
                                             <div className="text-xs text-gray-500 flex items-center gap-1">
                                                 <FiUsers size={10} /> {k.jumlah_pengunjung} Orang
                                             </div>
@@ -296,17 +298,17 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                         </div>
                         <div className="p-0">
                             {pesananTerbaru && pesananTerbaru.map(p => (
-                                <div key={p.id} className="p-4 border-b last:border-0 border-gray-50 flex items-center justify-between hover:bg-gray-50">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs">
+                                <div key={p.id} className="p-4 border-b last:border-0 border-gray-50 flex items-center justify-between gap-3 hover:bg-gray-50">
+                                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                                        <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-xs shrink-0">
                                             {getInitial(p.nama_pelanggan)}
                                         </div>
-                                        <div>
-                                            <div className="text-sm font-medium text-gray-800 truncate w-32">{p.nama_pelanggan}</div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="text-sm font-medium text-gray-800 truncate">{p.nama_pelanggan}</div>
                                             <div className="text-xs text-gray-500">{format(new Date(p.created_at), 'dd MMM HH:mm')}</div>
                                         </div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="text-right shrink-0">
                                         <div className="text-sm font-bold text-gray-700">{formatCurrency(p.total)}</div>
                                         <span className={`text-[10px] uppercase font-bold ${p.status === 'Selesai' ? 'text-green-600' :
                                             p.status === 'Dibatalkan' ? 'text-red-500' : 'text-yellow-600'

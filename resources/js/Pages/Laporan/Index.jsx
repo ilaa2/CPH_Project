@@ -232,7 +232,7 @@ export default function LaporanIndex({ initialSummary, filters }) {
         <section className="bg-white p-4 rounded-xl shadow-sm border border-gray-200">
           <div className="flex flex-col md:flex-row gap-4 items-center justify-between min-h-[48px]">
             {/* Quick Filter Buttons */}
-            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto">
+            <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2">
               <span className="text-sm font-semibold text-gray-500 whitespace-nowrap mr-1">Filter:</span>
               {[
                 { key: 'today', label: 'Hari Ini' },
@@ -258,30 +258,32 @@ export default function LaporanIndex({ initialSummary, filters }) {
             </div>
 
             {/* Date Range + Apply Button */}
-            <div className="flex items-center gap-2 w-full md:w-auto bg-gray-50 p-1.5 rounded-lg border border-gray-200">
-              <input
-                type="date"
-                value={dateRange.start}
-                onChange={e => {
-                  setActivePreset(null);
-                  setDateRange({ ...dateRange, start: e.target.value });
-                }}
-                className="bg-transparent border-0 text-sm focus:ring-0 p-1 w-[130px]"
-              />
-              <span className="text-gray-400">-</span>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={e => {
-                  setActivePreset(null);
-                  setDateRange({ ...dateRange, end: e.target.value });
-                }}
-                className="bg-transparent border-0 text-sm focus:ring-0 p-1 w-[130px]"
-              />
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full md:w-auto bg-gray-50 p-2 rounded-lg border border-gray-200">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input
+                  type="date"
+                  value={dateRange.start}
+                  onChange={e => {
+                    setActivePreset(null);
+                    setDateRange({ ...dateRange, start: e.target.value });
+                  }}
+                  className="bg-transparent border-0 text-sm focus:ring-0 p-1 flex-1 sm:w-[130px] min-w-0"
+                />
+                <span className="text-gray-400">-</span>
+                <input
+                  type="date"
+                  value={dateRange.end}
+                  onChange={e => {
+                    setActivePreset(null);
+                    setDateRange({ ...dateRange, end: e.target.value });
+                  }}
+                  className="bg-transparent border-0 text-sm focus:ring-0 p-1 flex-1 sm:w-[130px] min-w-0"
+                />
+              </div>
               <button
                 onClick={handleApplyFilter}
                 disabled={loading}
-                className="ml-2 bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-medium shadow-sm transition flex items-center justify-center gap-2 min-w-[100px] disabled:opacity-70"
+                className="bg-green-600 hover:bg-green-700 text-white px-4 py-1.5 rounded-md text-sm font-medium shadow-sm transition flex items-center justify-center gap-2 w-full sm:w-auto disabled:opacity-70"
               >
                 {loading ? (
                   <>

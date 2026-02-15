@@ -21,7 +21,7 @@ export default function KunjunganLayout({ children }) {
       <div className="px-6 pt-2 pb-6">
         <div className="mb-6">
           <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-6" aria-label="Tabs">
+            <nav className="-mb-px flex space-x-6 overflow-x-auto custom-scrollbar pb-2" aria-label="Tabs">
               {tabs.map((tab) => (
                 <Link
                   key={tab.name}

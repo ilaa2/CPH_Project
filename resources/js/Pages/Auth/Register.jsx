@@ -4,6 +4,24 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { useMemo } from 'react';
+
+function PasswordCriteria({ met, label }) {
+    return (
+        <li className={`flex items-center gap-1.5 text-xs ${met ? 'text-green-600' : 'text-red-500'}`}>
+            {met ? (
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+            ) : (
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                </svg>
+            )}
+            <span>{label}</span>
+        </li>
+    );
+}
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -12,6 +30,14 @@ export default function Register() {
         password: '',
         password_confirmation: '',
     });
+
+    const passwordChecks = useMemo(() => ({
+        minLength: data.password.length >= 8,
+        hasUppercase: /[A-Z]/.test(data.password),
+        hasLowercase: /[a-z]/.test(data.password),
+        hasNumber: /[0-9]/.test(data.password),
+        hasSymbol: /[^A-Za-z0-9]/.test(data.password),
+    }), [data.password]);
 
     const submit = (e) => {
         e.preventDefault();
@@ -74,6 +100,15 @@ export default function Register() {
                             onChange={(e) => setData('password', e.target.value)}
                             required
                         />
+                        {data.password.length > 0 && (
+                            <ul className="mt-2 space-y-1 bg-gray-50 rounded-md p-2.5 border border-gray-200">
+                                <PasswordCriteria met={passwordChecks.minLength} label="Minimal 8 karakter" />
+                                <PasswordCriteria met={passwordChecks.hasUppercase} label="Mengandung huruf kapital (A-Z)" />
+                                <PasswordCriteria met={passwordChecks.hasLowercase} label="Mengandung huruf kecil (a-z)" />
+                                <PasswordCriteria met={passwordChecks.hasNumber} label="Mengandung angka (0-9)" />
+                                <PasswordCriteria met={passwordChecks.hasSymbol} label="Mengandung simbol (@, #, !, dll)" />
+                            </ul>
+                        )}
                         <InputError message={errors.password} className="mt-2" />
                     </div>
 

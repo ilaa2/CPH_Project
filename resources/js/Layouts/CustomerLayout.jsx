@@ -121,7 +121,7 @@ export function SiteHeader({ auth, onCartClick }) {
                                         )}
                                     </button>
 
-                                    <div className={`absolute top-full right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg transition-opacity duration-200 ${isProfileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+                                    <div className={`absolute top-full right-0 mt-2 w-56 bg-white border rounded-lg shadow-lg transition-opacity duration-200 z-50 ${isProfileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
                                         <div className="px-4 py-3 border-b">
                                             <p className="text-sm font-semibold truncate">{user.nama || user.name}</p>
                                             <p className="text-xs text-gray-500 truncate">{user.email}</p>

@@ -120,7 +120,7 @@ const ProdukForm = ({ isEditing, model, kategori, onSubmit, onCancel }) => {
               </div>
 
               {/* Harga & Stok (Grid) */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-semibold text-sm text-gray-700 mb-1">Harga (Rp) <span className="text-red-500">*</span></label>
                   <div className="relative">
@@ -346,25 +346,25 @@ export default function ProdukList({ produk, kategori, filters }) {
 
   return (
     <Mainbar header={
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <h2 className="text-xl font-semibold text-gray-800">Produk</h2>
-        <button onClick={() => openModal(false)} className="px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
+        <button onClick={() => openModal(false)} className="w-full md:w-auto px-4 py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-transform transform hover:scale-105">
           + Tambah Produk
         </button>
       </div>
     }>
       <Head title="Daftar Produk" />
-      <div className="p-6 space-y-6">
+      <div className="p-4 md:p-6 space-y-6">
         <div className="bg-white p-4 rounded-xl shadow-md space-y-4">
-          <div className="flex flex-wrap justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <FilterPills kategori={kategori} activeFilter={kategoriFilter} onFilterChange={handleFilterChange} />
-            <div className="relative">
+            <div className="relative w-full md:w-auto">
               <input
                 type="text"
                 value={searchValue}
                 onChange={handleSearchChange}
                 placeholder="Cari nama produk..."
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-green-500 focus:border-green-500"
+                className="w-full md:w-64 pl-10 pr-4 py-2 border border-gray-300 rounded-full focus:ring-green-500 focus:border-green-500"
               />
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
             </div>
@@ -393,26 +393,26 @@ export default function ProdukList({ produk, kategori, filters }) {
                     <img
                       src={item.gambar ? `/storage/${item.gambar}` : 'https://via.placeholder.com/80'}
                       alt={item.nama}
-                      className="w-16 h-16 object-cover rounded-md"
+                      className="w-12 h-12 md:w-16 md:h-16 object-cover rounded-md"
                     />
                   </td>
-                  <td className="px-4 py-2 font-medium text-gray-900">{item.nama}</td>
-                  <td className="px-4 py-2">{item.kategori || '-'}</td>
-                  <td className="px-4 py-2">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.harga)}</td>
+                  <td className="px-4 py-2 font-medium text-gray-900 min-w-[150px]">{item.nama}</td>
+                  <td className="px-4 py-2 whitespace-nowrap">{item.kategori || '-'}</td>
+                  <td className="px-4 py-2 whitespace-nowrap">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.harga)}</td>
                   <td className="px-4 py-2">
                     <div className="flex flex-col">
                       <span className={item.stok < 5 ? 'text-red-600 font-bold' : ''}>
                         {item.stok}
                       </span>
                       {item.stok < 5 && (
-                        <span className="text-[10px] text-red-500 font-semibold bg-red-100 px-2 py-0.5 rounded-full w-max mt-1">
+                        <span className="text-[10px] text-red-500 font-semibold bg-red-100 px-2 py-0.5 rounded-full w-max mt-1 whitespace-nowrap">
                           Stok Menipis!
                         </span>
                       )}
                     </div>
                   </td>
                   <td className="px-4 py-2">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${item.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full whitespace-nowrap ${item.status === 'Aktif' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                       }`}>
                       {item.status}
                     </span>
