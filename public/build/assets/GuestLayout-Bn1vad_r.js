@@ -1,1 +1,0 @@
-import{j as e}from"./app-BQMKpOmJ.js";function t({children:s}){return e.jsx("div",{className:"min-h-screen flex flex-col items-center justify-center bg-gray-100",children:e.jsx("div",{className:"w-full sm:max-w-md px-6 py-8 bg-white shadow-lg rounded-lg",children:s})})}export{t as G};

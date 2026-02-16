@@ -359,11 +359,8 @@ export default function Show({ pesanan, auth }) {
     const handleCheckStatus = () => {
         console.log('handleCheckStatus called');
         setIsProcessing(true);
-        router.reload({
-            onFinish: () => {
-                setIsProcessing(false);
-            }
-        });
+        // FIX 403: Use native reload instead of router.reload() to avoid WAF blocking Inertia headers
+        window.location.reload();
     };
 
     // Tombol utama - pilih action berdasarkan status

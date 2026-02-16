@@ -43,7 +43,8 @@ class OrderController extends Controller
     public function show(Pesanan $pesanan)
     {
         // Security Check: Ensure the order belongs to the logged-in customer
-        if ($pesanan->user_id !== Auth::id()) {
+        // Use intval() to avoid strict type mismatch (string vs int)
+        if (intval($pesanan->user_id) !== intval(Auth::id())) {
             abort(403, 'AKSES DITOLAK');
         }
 
@@ -64,7 +65,8 @@ class OrderController extends Controller
     public function downloadInvoice(Pesanan $pesanan)
     {
         // Security Check: Ensure the order belongs to the logged-in customer
-        if ($pesanan->user_id !== Auth::id()) {
+        // Use intval() to avoid strict type mismatch (string vs int)
+        if (intval($pesanan->user_id) !== intval(Auth::id())) {
             abort(403, 'AKSES DITOLAK');
         }
 
@@ -80,7 +82,8 @@ class OrderController extends Controller
      */
     public function complete(Pesanan $pesanan)
     {
-        if ($pesanan->user_id !== Auth::id()) {
+        // Use intval() to avoid strict type mismatch (string vs int)
+        if (intval($pesanan->user_id) !== intval(Auth::id())) {
             abort(403, 'AKSES DITOLAK');
         }
 
@@ -94,5 +97,40 @@ class OrderController extends Controller
         $pesanan->update(['status' => 'completed']);
 
         return back()->with('success', 'Terima kasih! Pesanan telah diterima dan status diperbarui menjadi Selesai.');
+    }
+
+    /**
+     * Confirm payment from frontend (Snap onSuccess callback).
+     * This is a fallback when Midtrans webhook can't reach the server.
+     */
+    public function confirmPayment(Pesanan $pesanan)
+    {
+        // Use intval() to avoid strict type mismatch (string vs int)
+        if (intval($pesanan->user_id) !== intval(Auth::id())) {
+            abort(403);
+        }
+
+        // Only update if not already paid (idempotent, avoid duplicate with webhook)
+        if ($pesanan->payment_status !== 'paid') {
+            $pesanan->update([
+                'payment_status' => 'paid',
+                'status' => 'processed',
+                'paid_at' => now(),
+            ]);
+
+            // Reduce stock
+            foreach ($pesanan->items as $item) {
+                $produk = \App\Models\Produk::find($item->produk_id);
+                if ($produk && $produk->stok >= $item->jumlah) {
+                    $produk->decrement('stok', $item->jumlah);
+                }
+            }
+
+            \Illuminate\Support\Facades\Log::info('Pesanan payment confirmed via frontend callback', [
+                'pesanan_id' => $pesanan->id,
+            ]);
+        }
+
+        return response()->json(['success' => true]);
     }
 }

@@ -74,9 +74,12 @@ export function SiteHeader({ auth, onCartClick }) {
         <header className="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-green-100">
             <div className="mx-auto max-w-7xl px-4 sm:px-6">
                 <div className="h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                         <Link href="/"><img src="/storage/logo/central_palantea.png" alt="Logo" className="h-14 w-auto flex-shrink-0" /></Link>
-                        <Link href="/"><span className="hidden sm:block text-xl font-extrabold text-green-800">Central Palantea Hidroponik</span></Link>
+                        <Link href="/" className="min-w-0">
+                            <span className="hidden sm:block text-xl font-extrabold text-green-800">Central Palantea Hidroponik</span>
+                            <span className="sm:hidden text-sm font-extrabold text-green-800 leading-tight block">Central Palantea<br />Hidroponik</span>
+                        </Link>
                     </div>
                     <nav className="hidden md:flex items-center gap-8 text-sm text-gray-700">
                         <Link href="/" className={`font-semibold ${currentPath === '/' ? 'text-green-700' : 'hover:text-green-700'}`}>Beranda</Link>

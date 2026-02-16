@@ -211,7 +211,8 @@ class VisitBookingController extends Controller
      */
     public function show(Kunjungan $kunjungan)
     {
-        if ($kunjungan->user_id !== Auth::id()) {
+        // Use intval() to avoid strict type mismatch (string vs int)
+        if (intval($kunjungan->user_id) !== intval(Auth::id())) {
             abort(403, 'AKSES DITOLAK');
         }
 
@@ -227,7 +228,8 @@ class VisitBookingController extends Controller
      */
     public function showPayment(Kunjungan $kunjungan)
     {
-        if ($kunjungan->user_id !== Auth::id()) {
+        // Use intval() to avoid strict type mismatch (string vs int)
+        if (intval($kunjungan->user_id) !== intval(Auth::id())) {
             abort(403, 'AKSES DITOLAK');
         }
 
@@ -327,7 +329,8 @@ class VisitBookingController extends Controller
      */
     public function downloadInvoice(Kunjungan $kunjungan)
     {
-        if ($kunjungan->user_id !== Auth::id()) {
+        // Use intval() to avoid strict type mismatch (string vs int)
+        if (intval($kunjungan->user_id) !== intval(Auth::id())) {
             abort(403, 'Unauthorized');
         }
 
@@ -350,7 +353,8 @@ class VisitBookingController extends Controller
      */
     public function complete(Kunjungan $kunjungan)
     {
-        if ($kunjungan->user_id !== Auth::id()) {
+        // Use intval() to avoid strict type mismatch (string vs int)
+        if (intval($kunjungan->user_id) !== intval(Auth::id())) {
             abort(403, 'Unauthorized');
         }
 
@@ -369,7 +373,8 @@ class VisitBookingController extends Controller
      */
     public function confirmPayment(Kunjungan $kunjungan)
     {
-        if ($kunjungan->user_id !== Auth::id()) {
+        // Use intval() to avoid strict type mismatch (string vs int)
+        if (intval($kunjungan->user_id) !== intval(Auth::id())) {
             abort(403);
         }
 
