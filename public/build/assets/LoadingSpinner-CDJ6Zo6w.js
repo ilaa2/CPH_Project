@@ -1,0 +1,1 @@
+import{j as e}from"./app-BQMKpOmJ.js";function r({text:s="Memuat data..."}){return e.jsxs("div",{className:"flex flex-col items-center justify-center p-8 space-y-4",children:[e.jsx("div",{className:"animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"}),e.jsx("p",{className:"text-gray-500 text-sm animate-pulse",children:s})]})}export{r as L};
