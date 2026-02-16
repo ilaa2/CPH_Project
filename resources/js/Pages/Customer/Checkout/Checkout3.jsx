@@ -19,15 +19,25 @@ export default function Checkout3({ cartItems, subtotal, alamat, pengiriman, aut
     }, []);
 
     const handleBayar = () => {
-        router.post(route('checkout.process'), {}, {
+        // FIX 403: Send non-empty body to avoid WAF blocking empty POST requests
+        router.post(route('checkout.process'), { confirm: true }, {
             onSuccess: (page) => {
                 const { snap_token, redirect_url } = page.props.flash;
 
                 if (snap_token) {
                     window.snap.pay(snap_token, {
                         onSuccess: function (result) {
-                            Swal.fire('Berhasil', 'Pembayaran sukses!', 'success')
-                                .then(() => router.visit(redirect_url));
+                            // Call backend to confirm payment (fallback for webhook)
+                            fetch(redirect_url.replace(/\/pesanan\/(\d+)$/, '/pesanan/$1/confirm-payment'), {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                                },
+                            }).finally(() => {
+                                Swal.fire('Berhasil', 'Pembayaran sukses!', 'success')
+                                    .then(() => window.location.href = redirect_url);
+                            });
                         },
                         onPending: function (result) {
                             Swal.fire('Info', 'Pembayaran Anda tertunda.', 'info')

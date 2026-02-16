@@ -1,5 +1,48 @@
 # Catatan Perubahan
 
+## 16 Februari 2026
+
+### Fix: Nama "Central Palantea Hidroponik" Hilang di HP
+- **Masalah**: Nama website "Central Palantea Hidroponik" tidak muncul di tampilan mobile (HP) karena class `hidden sm:block`.
+- **Solusi**: 
+  - Mengubah layout header di `CustomerLayout.jsx` untuk menampilkan nama site di semua ukuran layar.
+  - Untuk layar kecil (mobile), teks ditampilkan 2 baris ("Central Palantea" & "Hidroponik") agar muat.
+  - Untuk layar besar (tablet/desktop), teks tetap 1 baris.
+- **Files Modified**: `resources/js/Layouts/CustomerLayout.jsx`
+
+### Fix: 403 Forbidden pada Checkout, Pesanan, dan Payment (LiteSpeed WAF)
+- **Masalah**: Beberapa halaman customer menampilkan 403 Forbidden:
+  1. `/customer/pesanan` — Riwayat Pesanan (GET)
+  2. `/customer/checkout/shipping` — Simpan Pilihan Pengiriman (POST)
+  3. `/customer/checkout/process` — Proses Pembayaran (POST)
+  4. `/customer/payment/finish` — Callback Midtrans (GET)
+- **Penyebab**: ModSecurity WAF pada LiteSpeed Web Server memblokir request yang dianggap mencurigakan:
+  - POST request dengan body kosong
+  - Inertia.js partial reload headers
+  - URL pattern tertentu yang match dengan OWASP CRS rules
+- **Solusi (Multi-Layer)**:
+  1. **`.htaccess`**: Menambahkan directive untuk menonaktifkan ModSecurity:
+     - `SecRuleEngine Off` (utama)
+     - `SecRuleRemoveById` untuk rule OWASP umum (fallback)
+     - `SecFilterEngine Off` untuk LiteSpeed bawaan
+  2. **`Checkout3.jsx`**: POST body diisi `{ confirm: true }` (tidak kosong lagi)
+  3. **`Show.jsx`**: `router.reload()` diganti `window.location.reload()` (native)
+  4. **`test_waf.php`**: Script diagnostik untuk verifikasi di server
+- **Catatan**: Jika `.htaccess` tidak cukup, WAF harus dinonaktifkan via **cPanel → ModSecurity**
+- **Files Modified**:
+  - `public/.htaccess`
+  - `resources/js/Pages/Customer/Checkout/Checkout3.jsx`
+  - `resources/js/Pages/Customer/Pesanan/Show.jsx`
+- **Files Created**: `public/test_waf.php` (hapus setelah selesai)
+
+### Fix: 403 Forbidden pada Hapus Produk (LiteSpeed Block DELETE)
+- **Masalah**: LiteSpeed memblokir HTTP verb `DELETE` yang digunakan oleh `router.delete()`
+- **Solusi**:
+  - Route baru: `POST /admin/produk/{id}/delete` (`admin.produk.delete`) di `web.php`
+  - Frontend: `router.post(route('admin.produk.delete', id))` di `Produk/Index.jsx`
+  - Method spoofing `_method: 'delete'` dihapus (pure POST)
+- **Files Modified**: `routes/web.php`, `resources/js/Pages/Produk/Index.jsx`
+
 ## 15 Februari 2026
 
 ### Fix: Ikon ? pada Laporan PDF

@@ -335,7 +335,8 @@ export default function ProdukList({ produk, kategori, filters }) {
       cancelButtonText: 'Batal'
     }).then((result) => {
       if (result.isConfirmed) {
-        router.delete(route('admin.produk.destroy', id), {
+        // FIX 403 & 405: Use PURE POST method. Do NOT use _method='delete' or it will be routed as DELETE.
+        router.post(route('admin.produk.delete', id), {}, {
           onSuccess: () => {
             Swal.fire('Terhapus!', 'Produk berhasil dihapus.', 'success');
           }

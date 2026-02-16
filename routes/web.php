@@ -89,6 +89,7 @@ Route::middleware(['auth', 'verified', 'customer'])->prefix('customer')->group(f
     Route::get('/pesanan/{pesanan}', [CustomerOrderController::class, 'show'])->name('customer.pesanan.show');
     Route::get('/pesanan/{pesanan}/invoice', [CustomerOrderController::class, 'downloadInvoice'])->name('customer.pesanan.invoice');
     Route::post('/pesanan/{pesanan}/complete', [CustomerOrderController::class, 'complete'])->name('customer.pesanan.complete');
+    Route::post('/pesanan/{pesanan}/confirm-payment', [CustomerOrderController::class, 'confirmPayment'])->name('customer.pesanan.confirm-payment');
 
     // --- Ulasan Customer ---
     Route::get('/ulasan/create/{pesanan}', [CustomerReviewController::class, 'create'])->name('customer.ulasan.create');
@@ -139,6 +140,8 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     // --- Produk CRUD ---
     Route::post('/produk/{id}/duplicate', [AdminProductController::class, 'duplicate'])->name('produk.duplicate');
     Route::post('/produk/{id}/restore', [AdminProductController::class, 'restore'])->name('produk.restore');
+    // FIX 403: Use POST for delete to bypass LiteSpeed restriction
+    Route::post('/produk/{id}/delete', [AdminProductController::class, 'destroy'])->name('produk.delete');
     Route::resource('produk', AdminProductController::class)->except(['show']);
 
     // --- Pelanggan (Customer Data) ---
