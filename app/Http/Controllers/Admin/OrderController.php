@@ -18,7 +18,7 @@ class OrderController extends Controller
     {
         $query = Pesanan::with(['user', 'items.produk', 'ulasan.fotos', 'ulasan.user'])
             ->where('status', '!=', 'Dibatalkan')
-            ->orderByDesc('tanggal');
+            ->latest();
 
         if ($request->has('search')) {
             $search = $request->input('search');
@@ -87,10 +87,11 @@ class OrderController extends Controller
         try {
             $subtotal = 0;
             $biaya = $request->biaya_pengiriman ?? 0;
-            $namaMetode = 'Ambil di Toko';
+            $biaya = $request->biaya_pengiriman ?? 0;
+            $namaMetode = 'Ambil Langsung';
             $ekspedisi = null;
             $estimasi = null;
-            $alamat = 'Ambil di Toko';
+            $alamat = 'Ambil Langsung';
 
             if ($request->metode_pengiriman === 'pickup') {
                 $biaya = 0;

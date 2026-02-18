@@ -83,7 +83,7 @@ class ReviewController extends Controller
         }])->findOrFail($id);
         
         // Verify ownership
-        if ($pesanan->user_id !== Auth::id()) {
+        if (intval($pesanan->user_id) !== intval(Auth::id())) {
             abort(403);
         }
 
@@ -118,10 +118,24 @@ class ReviewController extends Controller
             'reviews' => 'required|array',
             'reviews.*.produk_id' => 'required|exists:products,id',
             'reviews.*.rating' => 'required|integer|min:1|max:5',
-            'reviews.*.komentar' => 'nullable|string',
-            'reviews.*.fotos' => 'nullable|array',
-            'reviews.*.fotos.*' => 'image|mimes:jpg,jpeg,png|max:2048',
+            'komentar' => 'nullable|string',
+            'fotos' => 'nullable|array',
+            'fotos.*' => 'image|mimes:jpg,jpeg,png|max:2048',
         ]);
+
+        // Verify ownership
+        $pesanan = Pesanan::findOrFail($request->pesanan_id);
+        if (intval($pesanan->user_id) !== intval(Auth::id())) {
+            abort(403, 'Akses Ditolak');
+        }
+
+        // Process Photos ONCE
+        $fotoPaths = [];
+        if ($request->hasFile('fotos')) {
+            foreach ($request->file('fotos') as $foto) {
+                $fotoPaths[] = $foto->store('ulasan-fotos', 'public');
+            }
+        }
 
         foreach ($request->reviews as $reviewData) {
             $ulasan = Ulasan::create([
@@ -129,18 +143,16 @@ class ReviewController extends Controller
                 'produk_id' => $reviewData['produk_id'],
                 'user_id' => Auth::id(),
                 'rating' => $reviewData['rating'],
-                'komentar' => $reviewData['komentar'] ?? '',
+                'komentar' => $request->komentar ?? '', // Use global comment
                 'tanggal' => now(),
             ]);
 
-            if (isset($reviewData['fotos'])) {
-                foreach ($reviewData['fotos'] as $foto) {
-                    $path = $foto->store('ulasan-fotos', 'public');
-                    UlasanFoto::create([
-                        'ulasan_id' => $ulasan->id,
-                        'foto_path' => $path,
-                    ]);
-                }
+            // Attach global photos to EACH review
+            foreach ($fotoPaths as $path) {
+                UlasanFoto::create([
+                    'ulasan_id' => $ulasan->id,
+                    'foto_path' => $path,
+                ]);
             }
         }
 
@@ -153,7 +165,7 @@ class ReviewController extends Controller
     public function createForKunjungan(Kunjungan $kunjungan)
     {
         // Pastikan hanya user yang bersangkutan yang bisa memberi ulasan
-        if ($kunjungan->user_id !== Auth::id()) {
+        if (intval($kunjungan->user_id) !== intval(Auth::id())) {
             abort(403);
         }
 
@@ -177,7 +189,7 @@ class ReviewController extends Controller
 
         // Cek apakah kunjungan ini milik user yang sedang login
         $kunjungan = Kunjungan::findOrFail($request->kunjungan_id);
-        if ($kunjungan->user_id !== Auth::id()) {
+        if (intval($kunjungan->user_id) !== intval(Auth::id())) {
             abort(403);
         }
 

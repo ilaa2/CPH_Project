@@ -162,6 +162,20 @@ export default function Show({ pesanan, auth }) {
             };
         }
 
+        if (status === 'processed') {
+            return {
+                headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
+                icon: FiRefreshCw,
+                iconColor: 'text-white',
+                title: 'Pesanan Sedang Diproses',
+                subtitle: 'Pesanan Anda sedang dipersiapkan oleh penjual.',
+                badgeColor: 'bg-white/20 text-white border border-white/30',
+                badgeText: 'DIPROSES',
+                showPayButton: false,
+                needsRetry: false,
+            };
+        }
+
         // Fallback ke Payment Status jika belum dikirim/selesai
         switch (paymentStatus) {
             case 'paid':
@@ -186,7 +200,7 @@ export default function Show({ pesanan, auth }) {
                     title: 'Menunggu Pembayaran',
                     subtitle: 'Pembayaran sedang menunggu konfirmasi. Silakan selesaikan pembayaran.',
                     badgeColor: 'bg-yellow-100 text-yellow-700',
-                    badgeText: 'PENDING',
+                    badgeText: 'MENUNGGU PEMBAYARAN',
                     showPayButton: false, // TIDAK tampil tombol bayar
                     needsRetry: false,
                     isPending: true, // Flag khusus pending
@@ -738,15 +752,76 @@ export default function Show({ pesanan, auth }) {
                             </div>
 
                             {/* Reviews Section */}
+                            {/* Reviews Section */}
                             {pesanan.ulasan && pesanan.ulasan.length > 0 ? (
                                 <div className="mt-6">
                                     <h3 className="font-semibold text-lg text-gray-800 flex items-center mb-4">
                                         <FiStar className="mr-2 text-green-500" />
                                         Ulasan Pesanan
                                     </h3>
-                                    {pesanan.ulasan.map((review) => (
-                                        <UlasanCard key={review.id} ulasan={review} />
-                                    ))}
+                                    {/* Aggregated Review Card */}
+                                    {(() => {
+                                        // Calculate Average Rating
+                                        const rawAvg = pesanan.ulasan.reduce((acc, curr) => acc + curr.rating, 0) / pesanan.ulasan.length;
+                                        const avgRating = Math.round(rawAvg);
+                                        // Use the first non-empty comment found (robustness for legacy data)
+                                        const comment = pesanan.ulasan.find(u => u.komentar && u.komentar.trim() !== '')?.komentar || '';
+                                        // Deduplicate photos (based on path)
+                                        const allPhotos = pesanan.ulasan.flatMap(u => u.fotos || []);
+                                        const uniquePhotos = Array.from(new Set(allPhotos.map(p => p.foto_path)))
+                                            .map(path => allPhotos.find(p => p.foto_path === path));
+
+                                        // Check for admin reply (on any of the reviews)
+                                        const reply = pesanan.ulasan.find(u => u.balasan)?.balasan;
+                                        const replyDate = pesanan.ulasan.find(u => u.balasan)?.tanggal_balasan;
+
+                                        return (
+                                            <div className="mt-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                                                <div className="flex flex-col sm:flex-row gap-4">
+                                                    <div className="flex-1">
+                                                        <h3 className="text-base font-semibold text-green-800 mb-2 flex items-center gap-2">
+                                                            <FiStar className="text-yellow-500" />
+                                                            Ulasan Anda <span className="text-sm font-normal text-gray-600">({rawAvg.toFixed(1)} / 5.0)</span>
+                                                        </h3>
+                                                        <div className="flex gap-1 mb-2">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <FiStar key={i} className={`w-4 h-4 ${i < avgRating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                                                            ))}
+                                                        </div>
+                                                        {comment ? (
+                                                            <p className="text-gray-700 text-sm italic">"{comment}"</p>
+                                                        ) : (
+                                                            <p className="text-gray-400 text-sm italic">(Tidak ada komentar tertulis)</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Photo Gallery */}
+                                                    {uniquePhotos.length > 0 && (
+                                                        <div className="flex gap-2 mt-3 sm:mt-0 overflow-x-auto pb-2 sm:pb-0">
+                                                            {uniquePhotos.map((foto, idx) => (
+                                                                <img
+                                                                    key={idx}
+                                                                    src={`/storage/${foto.foto_path}`}
+                                                                    alt="Foto Ulasan"
+                                                                    className="h-20 w-20 object-cover rounded-lg flex-shrink-0 border border-green-100"
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Balasan Admin */}
+                                                {reply && (
+                                                    <div className="mt-4 pl-4 border-l-4 border-green-500 bg-white/70 p-3 rounded-r-lg">
+                                                        <p className="text-xs font-bold text-green-800 mb-1">
+                                                            Balasan Penjual {replyDate && `(${new Date(replyDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })})`}
+                                                        </p>
+                                                        <p className="text-sm text-gray-700">"{reply}"</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             ) : (
                                 ['completed', 'selesai'].includes(pesanan.status?.toLowerCase()) && (

@@ -45,39 +45,8 @@ const CustomerDetailModal = ({ customer, onClose }) => {
           </div>
         </div>
 
-        {/* Kolom Kanan: Detail Info & Stats */}
+        {/* Kolom Kanan: Detail Info & Transaksi */}
         <div className="w-full md:w-2/3 space-y-6">
-          {/* Statistik Utama (Grid 3 Kolom) */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Stat 1: Belanja */}
-            <div className="p-4 bg-green-50 rounded-xl border border-green-100">
-              <div className="flex items-center gap-2 mb-2 text-green-700">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
-                <span className="text-xs font-bold uppercase tracking-wider">Total Belanja</span>
-              </div>
-              <p className="text-lg font-bold text-gray-800">
-                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(customer.total_belanja || 0)}
-              </p>
-            </div>
-
-            {/* Stat 2: Transaksi */}
-            <div className="p-4 bg-blue-50 rounded-xl border border-blue-100 text-center">
-              <div className="flex items-center justify-center gap-2 mb-2 text-blue-700">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /></svg>
-                <span className="text-xs font-bold uppercase tracking-wider">Transaksi</span>
-              </div>
-              <p className="text-lg font-bold text-gray-800">{customer.pesanan_count} <span className="text-xs font-normal text-gray-500">Order</span></p>
-            </div>
-
-            {/* Stat 3: Kunjungan (NEW) */}
-            <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-100 text-center">
-              <div className="flex items-center justify-center gap-2 mb-2 text-indigo-700">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" /></svg>
-                <span className="text-xs font-bold uppercase tracking-wider">Kunjungan</span>
-              </div>
-              <p className="text-lg font-bold text-gray-800">{customer.kunjungan_count || 0} <span className="text-xs font-normal text-gray-500">Kali</span></p>
-            </div>
-          </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 bg-white rounded-xl border border-gray-200 shadow-sm">
@@ -97,6 +66,56 @@ const CustomerDetailModal = ({ customer, onClose }) => {
               </p>
             </div>
           </div>
+
+          {/* Riwayat Transaksi Terakhir */}
+          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+              <h4 className="font-bold text-gray-700">3 Transaksi Terakhir</h4>
+              <Link href={route('admin.pesanan.index', { search: customer.name })} className="text-xs text-green-600 font-bold hover:underline">
+                Lihat Semua Pesanan →
+              </Link>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm text-left">
+                <thead className="bg-white text-gray-500 border-b">
+                  <tr>
+                    <th className="px-4 py-2 font-medium">Tanggal</th>
+                    <th className="px-4 py-2 font-medium">Total</th>
+                    <th className="px-4 py-2 font-medium">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {customer.latest_orders && customer.latest_orders.length > 0 ? (
+                    customer.latest_orders.map(order => (
+                      <tr key={order.id}>
+                        <td className="px-4 py-2 text-gray-600">
+                          {new Date(order.created_at).toLocaleDateString('id-ID')}
+                        </td>
+                        <td className="px-4 py-2 font-semibold text-gray-800">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(order.total)}
+                        </td>
+                        <td className="px-4 py-2">
+                          <span className={`px-2 py-1 rounded text-xs font-bold
+                                            ${order.status === 'completed' || order.status === 'Selesai' ? 'bg-green-100 text-green-800' :
+                              order.status === 'pending' || order.status === 'Menunggu Pembayaran' ? 'bg-orange-100 text-orange-800' :
+                                order.status === 'Dibatalkan' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`}>
+                            {order.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="px-4 py-4 text-center text-gray-400 text-xs italic">
+                        Belum ada transaksi.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
         </div>
       </div>
 

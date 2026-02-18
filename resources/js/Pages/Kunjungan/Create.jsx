@@ -58,8 +58,9 @@ export default function CreateKunjungan() {
 
     let biaya = 0;
     if (selectedTipe.nama_tipe === 'Umum') {
-      const totalOrangBayar = (parseInt(data.jumlah_dewasa, 10) || 0) + (parseInt(data.jumlah_anak, 10) || 0);
-      biaya = totalOrangBayar * 10000;
+      const dewasa = parseInt(data.jumlah_dewasa, 10) || 0;
+      const anak = parseInt(data.jumlah_anak, 10) || 0;
+      biaya = (dewasa * 15000) + (anak * 10000);
     } else if (selectedTipe.nama_tipe === 'Outing Class') {
       const anak = parseInt(data.jumlah_anak, 10) || 0;
       if (anak < 30) {

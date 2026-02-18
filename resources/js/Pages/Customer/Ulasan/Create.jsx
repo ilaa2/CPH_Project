@@ -30,14 +30,12 @@ export default function Create({ auth, pesanan }) {
             nama_produk: item.produk ? item.produk.nama : 'Produk',
             gambar_produk: item.produk ? item.produk.gambar : null,
             rating: 0,
-            komentar: '',
-            fotos: []
-        }))
+        })),
+        komentar: '',
+        fotos: []
     });
 
-    const [previews, setPreviews] = useState(
-        (pesanan.items || []).map(() => [])
-    );
+    const [previews, setPreviews] = useState([]);
 
     const handleReviewChange = (index, field, value) => {
         const newReviews = [...data.reviews];
@@ -45,18 +43,16 @@ export default function Create({ auth, pesanan }) {
         setData('reviews', newReviews);
     };
 
-    const handleFotoChange = (index, e) => {
+    const handleFotoChange = (e) => {
         const files = Array.from(e.target.files);
         if (files.length > 3) {
-            alert('Maksimal 3 foto per produk.');
+            alert('Maksimal 3 foto.');
             return;
         }
-        handleReviewChange(index, 'fotos', files);
+        setData('fotos', files);
 
         // Generate preview
-        const newPreviews = [...previews];
-        newPreviews[index] = files.map(file => URL.createObjectURL(file));
-        setPreviews(newPreviews);
+        setPreviews(files.map(file => URL.createObjectURL(file)));
     };
 
     const submit = (e) => {
@@ -88,89 +84,96 @@ export default function Create({ auth, pesanan }) {
                             </div>
                         ) : (
                             <form onSubmit={submit} className="space-y-8">
-                                {data.reviews.map((review, index) => (
-                                    <div key={review.produk_id} className="space-y-6 pb-6 border-b border-gray-200 last:border-b-0">
-                                        {/* Product Info */}
-                                        <div className="flex items-center gap-4 bg-gray-50 p-3 rounded-lg">
-                                            <div className="w-14 h-14 bg-white rounded-md border overflow-hidden flex-shrink-0">
-                                                {review.gambar_produk ? (
-                                                    <img src={`/storage/${review.gambar_produk}`} alt={review.nama_produk} className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">No Img</div>
+                                {/* List Produk & Rating */}
+                                <div className="space-y-6">
+                                    {data.reviews.map((review, index) => (
+                                        <div key={review.produk_id} className="flex flex-col sm:flex-row sm:items-center gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100">
+                                            {/* Product Info */}
+                                            <div className="flex items-center gap-4 flex-1">
+                                                <div className="w-14 h-14 bg-white rounded-md border overflow-hidden flex-shrink-0">
+                                                    {review.gambar_produk ? (
+                                                        <img src={`/storage/${review.gambar_produk}`} alt={review.nama_produk} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <div className="w-full h-full bg-gray-200 flex items-center justify-center text-xs text-gray-500">No Img</div>
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-semibold text-gray-800">{review.nama_produk}</h3>
+                                                    <p className="text-sm text-gray-500">Bagaimana kualitas produk ini?</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Rating Stars */}
+                                            <div className="flex flex-col sm:items-end">
+                                                <StarRating
+                                                    rating={review.rating}
+                                                    setRating={(rating) => handleReviewChange(index, 'rating', rating)}
+                                                />
+                                                {errors[`reviews.${index}.rating`] && (
+                                                    <p className="text-sm text-red-600 mt-1">{errors[`reviews.${index}.rating`]}</p>
                                                 )}
                                             </div>
-                                            <div>
-                                                <h3 className="font-semibold text-gray-800">{review.nama_produk}</h3>
-                                                <p className="text-sm text-gray-500">Bagaimana kualitas produk ini?</p>
-                                            </div>
                                         </div>
+                                    ))}
+                                </div>
 
-                                        {/* Rating Stars */}
-                                        <div>
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">Rating Anda</label>
-                                            <StarRating
-                                                rating={review.rating}
-                                                setRating={(rating) => handleReviewChange(index, 'rating', rating)}
-                                            />
-                                            {errors[`reviews.${index}.rating`] && (
-                                                <p className="text-sm text-red-600 mt-2">{errors[`reviews.${index}.rating`]}</p>
-                                            )}
-                                        </div>
+                                {/* Global Comment & Photos */}
+                                <div className="bg-white border-t pt-6 space-y-6">
+                                    <h2 className="text-lg font-semibold text-gray-800">Ceritakan Pengalaman Anda</h2>
 
-                                        {/* Komentar */}
-                                        <div>
-                                            <label htmlFor={`komentar-${index}`} className="block text-sm font-medium text-gray-700">
-                                                Komentar
-                                            </label>
-                                            <textarea
-                                                id={`komentar-${index}`}
-                                                value={review.komentar}
-                                                onChange={(e) => handleReviewChange(index, 'komentar', e.target.value)}
-                                                rows="4"
-                                                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
-                                                placeholder={`Ceritakan pengalaman Anda menggunakan ${review.nama_produk}...`}
-                                            ></textarea>
-                                            {errors[`reviews.${index}.komentar`] && (
-                                                <p className="text-sm text-red-600 mt-2">{errors[`reviews.${index}.komentar`]}</p>
-                                            )}
-                                        </div>
-
-                                        {/* Foto Upload */}
-                                        <div>
-                                            <label htmlFor={`foto-${index}`} className="block text-sm font-medium text-gray-700">
-                                                Unggah Foto (Opsional, Max 3)
-                                            </label>
-                                            <input
-                                                type="file"
-                                                id={`foto-${index}`}
-                                                multiple
-                                                accept="image/*"
-                                                onChange={(e) => handleFotoChange(index, e)}
-                                                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
-                                            />
-                                            {previews[index] && previews[index].length > 0 && (
-                                                <div className="mt-4">
-                                                    <p className="font-medium text-sm text-gray-700 mb-2">Pratinjau Gambar:</p>
-                                                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
-                                                        {previews[index].map((url, i) => (
-                                                            <img
-                                                                key={i}
-                                                                src={url}
-                                                                alt={`Preview ${i + 1}`}
-                                                                className="w-full h-24 object-cover rounded-lg border"
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
-                                            {errors[`reviews.${index}.fotos`] && (
-                                                <p className="text-sm text-red-600 mt-2">{errors[`reviews.${index}.fotos`]}</p>
-                                            )}
-                                        </div>
+                                    {/* Komentar Global */}
+                                    <div>
+                                        <label htmlFor="komentar" className="block text-sm font-medium text-gray-700">
+                                            Komentar untuk seluruh pesanan
+                                        </label>
+                                        <textarea
+                                            id="komentar"
+                                            value={data.komentar}
+                                            onChange={(e) => setData('komentar', e.target.value)}
+                                            rows="4"
+                                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
+                                            placeholder="Ceritakan pengalaman belanja Anda secara umum..."
+                                        ></textarea>
+                                        {errors.komentar && (
+                                            <p className="text-sm text-red-600 mt-2">{errors.komentar}</p>
+                                        )}
                                     </div>
-                                ))}
 
-                                <div className="flex justify-end gap-3 pt-4">
+                                    {/* Foto Upload Global */}
+                                    <div>
+                                        <label htmlFor="fotos" className="block text-sm font-medium text-gray-700">
+                                            Unggah Foto (Opsional, Max 3)
+                                        </label>
+                                        <input
+                                            type="file"
+                                            id="fotos"
+                                            multiple
+                                            accept="image/*"
+                                            onChange={handleFotoChange}
+                                            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-green-50 file:text-green-700 hover:file:bg-green-100"
+                                        />
+                                        {previews.length > 0 && (
+                                            <div className="mt-4">
+                                                <p className="font-medium text-sm text-gray-700 mb-2">Pratinjau Gambar:</p>
+                                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                                                    {previews.map((url, i) => (
+                                                        <img
+                                                            key={i}
+                                                            src={url}
+                                                            alt={`Preview ${i + 1}`}
+                                                            className="w-full h-24 object-cover rounded-lg border"
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {errors.fotos && (
+                                            <p className="text-sm text-red-600 mt-2">{errors.fotos}</p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="flex justify-end gap-3 pt-4 border-t">
                                     <Link
                                         href={route('customer.pesanan.index')}
                                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition font-medium"
@@ -178,7 +181,7 @@ export default function Create({ auth, pesanan }) {
                                         Batal
                                     </Link>
                                     <PrimaryButton disabled={processing}>
-                                        {processing ? 'Mengirim...' : data.reviews.length > 1 ? 'Kirim Semua Ulasan' : 'Kirim Ulasan'}
+                                        {processing ? 'Mengirim...' : 'Kirim Ulasan'}
                                     </PrimaryButton>
                                 </div>
                             </form>

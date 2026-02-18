@@ -20,7 +20,7 @@ const PesananProdukCard = ({ pesanan }) => {
     // Normalize status text
     const statusLabel = pesanan.status === 'completed' ? 'Selesai' :
         pesanan.status === 'shipped' ? 'Dikirim' :
-            pesanan.status === 'pending' ? 'Menunggu' : pesanan.status;
+            pesanan.status === 'pending' ? 'Menunggu Pembayaran' : pesanan.status;
 
     return (
         <div className="block bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-lg hover:border-green-500 transition-all duration-300 overflow-hidden group">

@@ -29,7 +29,7 @@ class DashboardController extends Controller
         // 2. Data Widget Tambahan
         $stokMenipis = Produk::where('stok', '<', 5)->take(5)->get();
         $pesananPerluDiproses = Pesanan::with('user')
-            ->whereIn('status', ['Diproses', 'pending'])
+            ->whereIn('status', ['Diproses', 'processed']) // Hanya yang sudah bayar perlu diproses
             ->orderBy('created_at', 'asc') // Urutkan dari yang terlama agar segera diproses
             ->take(5)
             ->get();
@@ -91,7 +91,8 @@ class DashboardController extends Controller
         // 5. Ambil Aktivitas Terbaru
         $pesananTerbaru = Pesanan::with('user')
             ->where('status', '!=', 'Dibatalkan')
-            ->orderBy('created_at', 'desc')
+            ->where('status', '!=', 'pending') // Item 11: Jangan tampilkan pending
+            ->latest()
             ->take(5)
             ->get()
             ->map(function ($p) {

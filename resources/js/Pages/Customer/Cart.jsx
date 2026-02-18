@@ -60,7 +60,7 @@ export default function Cart({ auth }) {
 
     // Kalkulasi subtotal hanya untuk item yang dipilih
     const subtotal = itemsToCalculate.reduce((total, item) => total + item.product.harga * item.quantity, 0);
-    const formattedSubtotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(subtotal);
+    const formattedSubtotal = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(subtotal);
 
     // Fungsi untuk melanjutkan ke checkout
     const handleCheckout = () => {
@@ -111,15 +111,25 @@ export default function Cart({ auth }) {
                                         <img src={`/storage/${item.product.gambar}`} alt={item.product.nama} className="w-20 h-20 rounded-md object-cover border" />
                                         <div className="flex-grow">
                                             <p className="font-semibold text-gray-800">{item.product.nama}</p>
-                                            <p className="text-sm text-gray-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.product.harga)}</p>
+                                            <p className="text-sm text-gray-500">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(item.product.harga)}</p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <button onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)} className="w-8 h-8 border rounded-md text-gray-600 hover:bg-gray-50">-</button>
+                                            <button
+                                                onClick={() => handleUpdateQuantity(item.id, parseInt(item.quantity) - 1)}
+                                                className="w-8 h-8 border rounded-md text-gray-600 hover:bg-gray-50 flex items-center justify-center"
+                                            >
+                                                -
+                                            </button>
                                             <span className="w-10 text-center font-semibold">{item.quantity}</span>
-                                            <button onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)} className="w-8 h-8 border rounded-md text-gray-600 hover:bg-gray-50">+</button>
+                                            <button
+                                                onClick={() => handleUpdateQuantity(item.id, parseInt(item.quantity) + 1)}
+                                                className="w-8 h-8 border rounded-md text-gray-600 hover:bg-gray-50 flex items-center justify-center"
+                                            >
+                                                +
+                                            </button>
                                         </div>
                                         <div className="text-right w-24">
-                                            <p className="font-bold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.product.harga * item.quantity)}</p>
+                                            <p className="font-bold">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(item.product.harga * item.quantity)}</p>
                                         </div>
                                         <button onClick={() => handleRemoveItem(item.id)} className="text-red-500 hover:text-red-700 p-2">
                                             <FiTrash2 />

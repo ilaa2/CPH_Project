@@ -5,7 +5,7 @@ import { id } from 'date-fns/locale';
 export default function DetailModal({ item, onClose, onEdit, onViewReview }) {
     if (!item) return null;
 
-    const totalVisitors = (item.jumlah_dewasa || 0) + (item.jumlah_anak || 0) + (item.jumlah_balita || 0);
+    const totalVisitors = Number(item.jumlah_dewasa || 0) + Number(item.jumlah_anak || 0) + Number(item.jumlah_balita || 0);
 
     return (
         <Modal show={true} onClose={onClose} maxWidth="lg">

@@ -1,5 +1,53 @@
 # Catatan Perubahan
 
+## 18 Februari 2026
+
+### Fix: UI/UX & Standardisasi Bahasa
+- **Fitur Baru**:
+  - **Show Password**: Menambahkan tombol intip password (toggle eye icon) di halaman Login & Register.
+  - **Admin Customer**: Modal detail profil pelanggan kini menampilkan **3 Transaksi Terakhir** dan tombol "Lihat Semua Pesanan", menggantikan statistik ringkas yang kurang relevan.
+  - **Checkout**: Konsisten menggunakan istilah "Ambil Langsung" di seluruh alur (UI & Backend).
+- **Perbaikan & Standardisasi**:
+  - **Ambil Langsung**: Mengubah label "Ambil di Toko" menjadi "Ambil Langsung" di Checkout dan Backend Order.
+  - **Filter Dashboard**: Menyembunyikan pesanan status 'pending' (belum bayar) dari widget "Pesanan Baru" dan "Perlu Diproses" di Dashboard Admin agar admin fokus pada pesanan masuk yang sudah valid.
+  - **Status Bahasa**: Memastikan status pesanan di riwayat customer menggunakan Bahasa Indonesia ("Menunggu Pembayaran", "Diproses", "Dikirim", "Selesai").
+  - **Harga Kunjungan**: 
+    - Landing Page & Form Admin kini menampilkan "Mulai dari Rp 10.000".
+    - Logika Kalkulasi: Dewasa Rp 15.000, Anak Rp 10.000 (di Admin Manual & Customer Booking).
+- **Files Modified**:
+  - `resources/js/Pages/Auth/Login.jsx`
+  - `resources/js/Pages/Auth/Register.jsx`
+  - `resources/js/Pages/Customer/Checkout/Checkout3.jsx`
+  - `resources/js/Pages/Customer/Checkout/CheckoutMethod.jsx`
+  - `app/Http/Controllers/Customer/CheckoutController.php`
+  - `resources/js/Pages/Pelanggan/Index.jsx`
+  - `resources/js/Pages/Customer/Pesanan/Riwayat.jsx`
+  - `resources/js/Pages/Customer/Pesanan/Show.jsx`
+  - `app/Http/Controllers/Admin/OrderController.php`
+  - `app/Http/Controllers/Admin/DashboardController.php`
+  - `app/Http/Controllers/Admin/CustomerController.php`
+  - `resources/js/Pages/Kunjungan/Partials/KunjunganFormModal.jsx`
+  - `resources/js/Pages/Customer/KunjunganLanding.jsx`
+  - `resources/js/Pages/Customer/Kunjungan.jsx`
+  - `resources/js/Pages/Kunjungan/Create.jsx`
+  - `resources/js/Pages/Auth/ResetPassword.jsx`
+  - `app/Http/Controllers/Admin/VisitBookingController.php`
+
+### Update Feedback (18 Feb 2026 - Part 2)
+- **Show Password**: Menambahkan toggle (ikon mata) di halaman **Reset Password** agar user bisa melihat password baru yang diketik.
+- **Sorting Admin**:
+  - **Jadwal Kunjungan**: Diurutkan berdasarkan tanggal kunjungan terbaru (Descending).
+  - **Riwayat Kunjungan**: Diurutkan berdasarkan tanggal kunjungan terbaru (Descending).
+- **Booking Text**: Mengubah indikator slot penuh dari "(Penuh)" menjadi **"(Sudah Dipesan)"** di form booking customer.
+- **Fix Authorization**:
+  - `CartController` dan `ReviewController`: Mengganti `$this->authorize()` dengan manual check `if ($user_id != Auth::id()) abort(403)` untuk mengatasi masalah policy gate yang mungkin missmatch tipe data (int vs string) atau register policy yang tidak valid.
+- **Fix UI Status Pesanan**:
+  - `Pesanan/Show.jsx`: Menambahkan handler khusus untuk status `processed` agar menampilkan "Pesanan Sedang Diproses" (hijau) alih-alih fallback ke "Menunggu Pembayaran".
+- **Fix Detail Kunjungan**:
+  - `Kunjungan/Show.jsx`: 
+    - Memperbaiki perhitungan rincian pembayaran tipe "Umum".
+    - Menambahkan logika **Legacy Pricing Detection**: Jika total biaya booking lama (10k/pax), tampilan akan menyesuaikan (Dewasa 10k). Jika booking baru, tampilan menggunakan harga baru (Dewasa 15k, Anak 10k). Ini mengatasi isu "Total tidak sesuai" pada data lama.
+
 ## 16 Februari 2026
 
 ### Fix: Nama "Central Palantea Hidroponik" Hilang di HP
@@ -9,6 +57,14 @@
   - Untuk layar kecil (mobile), teks ditampilkan 2 baris ("Central Palantea" & "Hidroponik") agar muat.
   - Untuk layar besar (tablet/desktop), teks tetap 1 baris.
 - **Files Modified**: `resources/js/Layouts/CustomerLayout.jsx`
+
+### Fix: Tampilan Subtotal & Ongkir di Detail Pesanan Admin Berantakan
+- **Masalah**: Subtotal tampil sebagai deretan angka panjang (concat string) seperti `Rp 04500055000...` dan Ongkir minus triliunan.
+- **Penyebab**: Javascript menganggap harga (`subtotal`) sebagai string saat dijumlahkan dalam `reduce`, sehingga terjadi penggabungan teks alih-alih penjumlahan matematika.
+- **Solusi**:
+  - Update `Index.jsx` (Admin Pesanan) menambahkan `Number()` pada `item.subtotal` dan `model.total` sebelum melakukan operasi matematika.
+  - Memastikan format angka (`toLocaleString`) bekerja pada tipe data number.
+- **Files Modified**: `resources/js/Pages/Pesanan/Index.jsx`
 
 ### Fix: 403 Forbidden pada Checkout, Pesanan, dan Payment (LiteSpeed WAF)
 - **Masalah**: Beberapa halaman customer menampilkan 403 Forbidden:

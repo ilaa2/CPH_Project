@@ -86,8 +86,8 @@ const DetailModal = ({ model, onClose }) => (
               <tr key={item.id}>
                 <td className="p-4 text-gray-800 font-medium">{item.produk?.nama}</td>
                 <td className="p-4 text-center text-gray-600">{item.jumlah}</td>
-                <td className="p-4 text-right text-gray-600">Rp {(item.subtotal / item.jumlah).toLocaleString('id-ID')}</td>
-                <td className="p-4 text-right text-gray-900 font-medium">Rp {item.subtotal.toLocaleString('id-ID')}</td>
+                <td className="p-4 text-right text-gray-600">Rp {(Number(item.subtotal) / item.jumlah).toLocaleString('id-ID')}</td>
+                <td className="p-4 text-right text-gray-900 font-medium">Rp {Number(item.subtotal).toLocaleString('id-ID')}</td>
               </tr>
             ))}
           </tbody>
@@ -99,11 +99,11 @@ const DetailModal = ({ model, onClose }) => (
         <div className="w-full max-w-xs space-y-3">
           <div className="flex justify-between text-gray-600">
             <span className="font-medium">Subtotal</span>
-            <span>Rp {model.items.reduce((acc, item) => acc + item.subtotal, 0).toLocaleString('id-ID')}</span>
+            <span>Rp {model.items.reduce((acc, item) => acc + Number(item.subtotal), 0).toLocaleString('id-ID')}</span>
           </div>
           <div className="flex justify-between text-gray-600">
             <span className="font-medium">Ongkos Kirim</span>
-            <span>Rp {(model.total - model.items.reduce((acc, item) => acc + item.subtotal, 0)).toLocaleString('id-ID')}</span>
+            <span>Rp {(Number(model.total) - model.items.reduce((acc, item) => acc + Number(item.subtotal), 0)).toLocaleString('id-ID')}</span>
           </div>
           <div className="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t border-gray-300">
             <span>Total Tagihan</span>

@@ -308,8 +308,8 @@ class VisitBookingController extends Controller
         $jumlah_anak = $data['jumlah_anak'] ?? 0;
 
         if ($tipe->nama_tipe === 'Umum') {
-            $totalOrangBayar = $jumlah_dewasa + $jumlah_anak;
-            $biaya = $totalOrangBayar * 10000;
+            // Dewasa 15.000, Anak 10.000, Balita Gratis
+            $biaya = ($jumlah_dewasa * 15000) + ($jumlah_anak * 10000);
         } elseif ($tipe->nama_tipe === 'Outing Class') {
             if ($jumlah_anak < 30) {
                 $biaya = 300000;
@@ -317,8 +317,9 @@ class VisitBookingController extends Controller
                 $biaya = $jumlah_anak * 10000;
             }
         } else {
-            $totalPengunjung = $jumlah_dewasa + $jumlah_anak + ($data['jumlah_balita'] ?? 0);
-            $biaya = $totalPengunjung * ($tipe->biaya ?? 0);
+            // Tipe lain default harga tiket per orang (Dewasa+Anak), Balita Gratis
+            $totalPengunjung = $jumlah_dewasa + $jumlah_anak;
+            $biaya = $totalPengunjung * ($tipe->harga_tiket ?? $tipe->biaya ?? 0);
         }
 
         return $biaya;
