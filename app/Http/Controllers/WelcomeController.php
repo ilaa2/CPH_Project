@@ -40,6 +40,7 @@ class WelcomeController extends Controller
         $latestProducts = Cache::remember('latest_products', 30 * 60, function () {
             return Produk::with('kategori')
                 ->where('status', 'Tersedia')
+                ->where('stok', '>', 0)
                 ->latest()
                 ->take(8)
                 ->get();
@@ -49,6 +50,7 @@ class WelcomeController extends Controller
         $flashSaleProducts = Cache::remember('flash_sale_products', 15 * 60, function () {
             return Produk::with('kategori')
                 ->where('status', 'Tersedia')
+                ->where('stok', '>', 0)
                 ->inRandomOrder()
                 ->take(6)
                 ->get()

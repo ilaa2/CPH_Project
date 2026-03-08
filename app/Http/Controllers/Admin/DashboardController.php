@@ -93,7 +93,7 @@ class DashboardController extends Controller
             ->where('status', '!=', 'Dibatalkan')
             ->where('status', '!=', 'pending') // Item 11: Jangan tampilkan pending
             ->latest()
-            ->take(5)
+            ->take(3)
             ->get()
             ->map(function ($p) {
                 $p->nama_pelanggan = $p->user ? ($p->user->name ?? 'Guest') : 'Guest';

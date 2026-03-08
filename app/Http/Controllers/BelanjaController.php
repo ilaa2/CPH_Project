@@ -14,10 +14,10 @@ class BelanjaController extends Controller
         $kategoriFilter = $request->query('category');
         $searchFilter = $request->query('search');
 
-        // Query produk yang statusnya Aktif
-        // TAMBAHKAN with('kategori') DI SINI
+        // Query produk yang statusnya Aktif dan stok > 0
         $products = Produk::with('kategori')
             ->where('status', 'Aktif')
+            ->where('stok', '>', 0)
             // Filter berdasarkan kategori jika ada
             ->when($kategoriFilter, function ($query, $kategori) {
                 return $query->where('id_kategori', $kategori);

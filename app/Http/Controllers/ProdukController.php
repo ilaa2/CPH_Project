@@ -51,7 +51,7 @@ class ProdukController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'id_kategori' => 'required|exists:product_categories,id',
-            'deskripsi' => 'nullable|string',
+            'deskripsi' => 'required|string',
             'harga' => 'required|integer|min:1', // Harga minimal 1
             'stok' => 'required|integer|min:0', // Stok minimal 0
             'gambar' => 'required|image|mimes:jpeg,png,jpg|max:2048', // Max 2MB
@@ -91,7 +91,7 @@ class ProdukController extends Controller
         $request->validate([
             'nama' => 'required|string|max:255',
             'id_kategori' => 'required|exists:product_categories,id',
-            'deskripsi' => 'nullable|string',
+            'deskripsi' => 'required|string',
             'harga' => 'required|integer|min:1',
             'stok' => 'required|integer|min:0',
             'gambar' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',

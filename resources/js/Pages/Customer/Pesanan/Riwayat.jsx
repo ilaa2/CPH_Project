@@ -18,8 +18,9 @@ const PesananProdukCard = ({ pesanan }) => {
     };
 
     // Normalize status text
+    const isPickup = ['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(pesanan.metode_pengiriman);
     const statusLabel = pesanan.status === 'completed' ? 'Selesai' :
-        pesanan.status === 'shipped' ? 'Dikirim' :
+        pesanan.status === 'shipped' ? (isPickup ? 'Siap Diambil' : 'Dikirim') :
             pesanan.status === 'pending' ? 'Menunggu Pembayaran' : pesanan.status;
 
     return (

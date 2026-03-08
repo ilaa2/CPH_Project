@@ -31,13 +31,18 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
+            'nama' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'phone' => 'nullable|string|max:15',
+            'telepon' => 'nullable|string|max:15',
             'alamat' => 'nullable|string',
         ]);
 
-        $user->fill($validated);
+        $user->fill([
+            'name' => $validated['nama'],
+            'email' => $validated['email'],
+            'phone' => $validated['telepon'],
+            'alamat' => $validated['alamat']
+        ]);
 
         if ($user->isDirty('email')) {
             $user->email_verified_at = null;

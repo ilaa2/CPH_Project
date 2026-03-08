@@ -1,4 +1,4 @@
-@tailwind base;
+﻿@tailwind base;
 @tailwind components;
 @tailwind utilities;
 
@@ -145,3 +145,5 @@ a:focus-visible {
 ::-webkit-scrollbar-thumb:hover {
     @apply bg-green-500;
 }
+
+

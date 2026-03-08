@@ -144,7 +144,7 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                             {/* Pesanan Pending */}
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500 mb-3 uppercase tracking-wider">Pesanan Pending ({pesananPerluDiproses?.length || 0})</h4>
-                                <div className="space-y-3">
+                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                                     {pesananPerluDiproses && pesananPerluDiproses.length > 0 ? (
                                         pesananPerluDiproses.map(p => (
                                             <div key={p.id} className="flex items-center justify-between gap-3 p-3 bg-yellow-50 rounded-lg border border-yellow-100">
@@ -166,7 +166,7 @@ export default function Dashboard({ auth, stats, pesananTerbaru, pelangganTerbar
                             {/* Stok Menipis */}
                             <div>
                                 <h4 className="text-sm font-medium text-gray-500 mb-3 uppercase tracking-wider">Stok Menipis ({stokMenipis?.length || 0})</h4>
-                                <div className="space-y-3">
+                                <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
                                     {stokMenipis && stokMenipis.length > 0 ? (
                                         stokMenipis.map(p => (
                                             <div key={p.id} className="flex items-center justify-between gap-3 p-3 bg-red-50 rounded-lg border border-red-100">

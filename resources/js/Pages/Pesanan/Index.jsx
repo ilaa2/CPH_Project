@@ -12,7 +12,7 @@ import PesananFormModal from './Partials/PesananFormModal'; // Import Component 
 // Komponen Detail Modal (Tetap Pertahankan)
 const DetailModal = ({ model, onClose }) => (
   <Modal show={true} onClose={onClose} maxWidth="2xl">
-    <div className="p-4 sm:p-6 lg:p-8 bg-white rounded-lg shadow-xl">
+    <div className="p-4 sm:p-6 lg:p-8 bg-white rounded-lg shadow-xl max-h-[85vh] overflow-y-auto">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
@@ -54,8 +54,9 @@ const DetailModal = ({ model, onClose }) => (
                 label = 'Diproses';
                 color = 'bg-blue-100 text-blue-800';
               } else if (s === 'shipped' || s === 'dikirim') {
-                label = 'Dikirim';
-                color = 'bg-purple-100 text-purple-800';
+                const isPickup = ['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(model.metode_pengiriman);
+                label = isPickup ? 'Siap Diambil' : 'Dikirim';
+                color = isPickup ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800';
               } else if (s === 'pending' || s === 'menunggu pembayaran') {
                 label = 'Menunggu';
                 color = 'bg-yellow-100 text-yellow-800';
@@ -65,6 +66,18 @@ const DetailModal = ({ model, onClose }) => (
               }
 
               return <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${color}`}>{label}</span>;
+            })()}
+          </div>
+          {/* Metode Pengiriman */}
+          <div className="mt-3">
+            <p className="text-gray-500 text-xs uppercase font-semibold mb-1">METODE</p>
+            {(() => {
+              const isPickup = ['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(model.metode_pengiriman);
+              return (
+                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${isPickup ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
+                  {isPickup ? 'Ambil Langsung' : (model.metode_pengiriman || 'Pengiriman')}
+                </span>
+              );
             })()}
           </div>
         </div>
@@ -102,7 +115,7 @@ const DetailModal = ({ model, onClose }) => (
             <span>Rp {model.items.reduce((acc, item) => acc + Number(item.subtotal), 0).toLocaleString('id-ID')}</span>
           </div>
           <div className="flex justify-between text-gray-600">
-            <span className="font-medium">Ongkos Kirim</span>
+            <span className="font-medium">{['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(model.metode_pengiriman) ? 'Ongkos Kirim (Gratis)' : 'Ongkos Kirim'}</span>
             <span>Rp {(Number(model.total) - model.items.reduce((acc, item) => acc + Number(item.subtotal), 0)).toLocaleString('id-ID')}</span>
           </div>
           <div className="flex justify-between text-xl font-bold text-gray-900 pt-3 border-t border-gray-300">
@@ -227,14 +240,31 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
                     <td className="px-4 py-2">{item.tanggal}</td>
                     <td className="px-4 py-2">Rp {Number(item.total).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</td>
                     <td className="px-4 py-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.status === 'Selesai' ? 'bg-green-100 text-green-800' :
-                        item.status === 'Dibatalkan' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-                        }`}>{item.status}</span>
+                      {(() => {
+                        const s = (item.status || '').toLowerCase();
+                        const isPickup = ['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(item.metode_pengiriman);
+                        let label = item.status;
+                        let color = 'bg-gray-100 text-gray-800';
+                        if (s === 'pending' || s === 'menunggu pembayaran') { label = 'Menunggu Pembayaran'; color = 'bg-yellow-100 text-yellow-800'; }
+                        else if (s === 'processed' || s === 'diproses') { label = 'Diproses'; color = 'bg-blue-100 text-blue-800'; }
+                        else if (s === 'shipped' || s === 'dikirim') { label = isPickup ? 'Siap Diambil' : 'Dikirim'; color = isPickup ? 'bg-green-100 text-green-800' : 'bg-purple-100 text-purple-800'; }
+                        else if (s === 'completed' || s === 'selesai') { label = 'Selesai'; color = 'bg-green-100 text-green-800'; }
+                        else if (s === 'cancelled' || s === 'dibatalkan') { label = 'Dibatalkan'; color = 'bg-red-100 text-red-800'; }
+                        return <span className={`px-2 py-1 rounded-full text-xs font-semibold ${color}`}>{label}</span>;
+                      })()}
                     </td>
                     <td className="px-4 py-2">
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => openModal('detail', item)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-all shadow-sm active:scale-95" title="Lihat Detail">👁️</button>
-                        <Link href={route('admin.pesanan.edit', item.id)} className="p-2 bg-blue-100 hover:bg-blue-200 rounded-full transition-all shadow-sm active:scale-95" title="Edit Pesanan">✏️</Link>
+                        <a
+                          href={route('admin.pesanan.invoice', item.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full transition-all shadow-sm active:scale-95"
+                          title="Download Invoice Pesanan"
+                        >
+                          📄
+                        </a>
+                        <Link href={route('admin.pesanan.edit', item.id)} className="p-2 bg-gray-100 hover:bg-gray-200 rounded-full transition-all shadow-sm active:scale-95" title="Edit Pesanan">✏️</Link>
                         <button
                           onClick={() => item.ulasan?.length > 0 ? openModal('ulasan', item) : null}
                           className={`p-2 rounded-full transition-all shadow-sm active:scale-95 ${item.ulasan?.length > 0
@@ -264,22 +294,57 @@ export default function PesananIndex({ pesanan, filters, pelangganList, produkLi
 
       {/* Modal Ulasan */}
       {modalState.type === 'ulasan' && (
-        <Modal show={true} onClose={closeModal} maxWidth="lg">
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-bold text-gray-800">Ulasan Pesanan</h2>
-              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">✕</button>
+        <Modal show={true} onClose={closeModal} maxWidth="2xl">
+          <div className="p-6 max-h-[85vh] overflow-y-auto">
+            {/* Header */}
+            <div className="flex justify-between items-start mb-5">
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">Ulasan Pesanan</h2>
+                <p className="text-sm text-gray-500 mt-0.5">
+                  #{modalState.model?.nomor_pesanan || modalState.model?.kode_pesanan || `ORD-${modalState.model?.id}`}
+                </p>
+              </div>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-xl">✕</button>
             </div>
-            {modalState.model?.ulasan?.map((review) => (
-              <UlasanPreview
-                key={review.id}
-                ulasan={review}
-                pelanggan={review.user || modalState.model?.user}
-                isAdmin={true}
-              />
-            ))}
-            <div className="mt-6 text-right">
-              <button onClick={closeModal} className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition">Tutup</button>
+
+            {/* Ringkasan Rating */}
+            {(() => {
+              const reviews = modalState.model?.ulasan || [];
+              const avg = reviews.length > 0 ? (reviews.reduce((a, r) => a + Number(r.rating), 0) / reviews.length).toFixed(1) : 0;
+              return (
+                <div className="flex items-center gap-4 bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200 rounded-xl p-4 mb-5">
+                  <div className="text-center">
+                    <p className="text-3xl font-bold text-yellow-600">{avg}</p>
+                    <div className="flex justify-center mt-1">
+                      {[...Array(5)].map((_, i) => (
+                        <svg key={i} className={`w-4 h-4 ${i < Math.round(avg) ? 'text-yellow-400' : 'text-gray-300'}`} fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.39 2.46a1 1 0 00-.364 1.118l1.286 3.966c.3.922-.755 1.688-1.54 1.118l-3.39-2.46a1 1 0 00-1.175 0l-3.39 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.045 9.394c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.287-3.967z" />
+                        </svg>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="border-l border-yellow-300 pl-4">
+                    <p className="text-sm text-gray-700"><span className="font-semibold">{reviews.length}</span> ulasan dari <span className="font-semibold">{modalState.model?.user?.name || 'Pelanggan'}</span></p>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Daftar Ulasan - Compact */}
+            <div className="space-y-3">
+              {modalState.model?.ulasan?.map((review) => (
+                <UlasanPreview
+                  key={review.id}
+                  ulasan={review}
+                  pelanggan={review.user || modalState.model?.user}
+                  isAdmin={true}
+                />
+              ))}
+            </div>
+
+            {/* Footer */}
+            <div className="mt-5 pt-4 border-t border-gray-100 text-right">
+              <button onClick={closeModal} className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition font-medium">Tutup</button>
             </div>
           </div>
         </Modal>

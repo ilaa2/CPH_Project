@@ -13,6 +13,18 @@ class Produk extends Model
 
     protected $fillable = ['nama', 'id_kategori', 'harga', 'stok', 'gambar', 'status', 'deskripsi', 'berat'];
 
+    protected static function boot()
+    {
+        parent::boot();
+
+        // Auto non-aktifkan produk jika stok habis
+        static::saving(function ($produk) {
+            if ($produk->stok <= 0) {
+                $produk->status = 'Tidak Aktif';
+            }
+        });
+    }
+
     public function kategori()
     {
         // Lihat baris ini

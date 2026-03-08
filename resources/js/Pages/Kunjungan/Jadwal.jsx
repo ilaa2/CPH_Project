@@ -67,6 +67,48 @@ export default function JadwalKunjungan({ kunjungan, filters, pelangganList, tip
     });
   };
 
+  const handleComplete = (item) => {
+    Swal.fire({
+      title: 'Selesaikan Kunjungan?',
+      text: `Kunjungan ${item.user?.name || 'Guest'} akan ditandai selesai.`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#059669',
+      confirmButtonText: 'Ya, Selesaikan',
+      cancelButtonText: 'Batal',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Send PUT request with only the actual database fields required by validation
+        router.put(route('admin.kunjungan.update', item.id), {
+          pelanggan_id: item.user_id,
+          tipe_id: item.tipe_id,
+          tanggal: item.tanggal,
+          jam: item.jam,
+          jumlah_dewasa: item.jumlah_dewasa,
+          jumlah_anak: item.jumlah_anak,
+          jumlah_balita: item.jumlah_balita,
+          total_biaya: item.total_biaya,
+          status: 'Selesai'
+        }, {
+          onSuccess: () => {
+            setSelected(null); // Close the detail modal
+            Swal.fire({
+              icon: 'success',
+              title: 'Berhasil!',
+              text: 'Status kunjungan berhasil diubah menjadi Selesai.',
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          },
+          onError: (errors) => {
+            console.error(errors);
+            Swal.fire('Gagal', 'Gagal menyelesaikan kunjungan. Periksa form atau muat ulang halaman.', 'error');
+          }
+        });
+      }
+    });
+  };
+
   const getStatusInfo = (item) => {
     const today = startOfDay(new Date());
     const visitDate = startOfDay(new Date(item.tanggal));
@@ -177,7 +219,7 @@ export default function JadwalKunjungan({ kunjungan, filters, pelangganList, tip
         <Pagination links={links} />
       </div>
 
-      {selected && <DetailModal item={selected} onClose={() => setSelected(null)} />}
+      {selected && <DetailModal item={selected} onClose={() => setSelected(null)} onEdit={handleComplete} />}
 
       {/* Modal Create Baru */}
       <KunjunganFormModal

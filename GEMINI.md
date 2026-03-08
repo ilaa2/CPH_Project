@@ -1,5 +1,132 @@
 # Catatan Perubahan
 
+## 8 Maret 2026
+
+### Fix: Toggle Lihat Password pada Konfirmasi Password (Register)
+- **Masalah**: Field "Konfirmasi Password" di halaman Register tidak memiliki tombol intip password (eye icon), padahal field "Password" sudah memilikinya.
+- **Solusi**: Menambahkan toggle eye icon pada field Konfirmasi Password dengan state `showConfirmPassword` terpisah dari `showPassword`.
+- **Files Modified**: `resources/js/Pages/Auth/Register.jsx`
+
+### Fix: Info Pengiriman Salah untuk Metode "Ambil Langsung"
+- **Masalah**: Pesanan dengan metode "Ambil Langsung" menampilkan info "Pesanan Anda sedang diproses dan akan segera dikirim **hari ini**", padahal pesanan ini tidak dikirim melainkan diambil sendiri oleh customer.
+- **Penyebab**: Variabel `isPickup` tidak mencakup nilai `'Ambil Langsung'` (hanya `'Ambil Sendiri'` dan `'Ambil di Toko'`), sehingga pesanan pickup masuk ke branch pengiriman.
+- **Solusi**: 
+  - Menambahkan `'Ambil Langsung'` ke pengecekan `isPickup` di `Show.jsx`
+  - **Status "shipped" → "Siap Diambil"**: Header, badge, dan teks konfirmasi menyesuaikan untuk pesanan pickup
+  - **Riwayat**: Status label di daftar riwayat menampilkan "Siap Diambil" (bukan "Dikirim") untuk pesanan pickup
+  - **Admin Invoice Modal**: Status label di modal invoice admin juga menampilkan "Siap Diambil" untuk pesanan pickup
+  - **Confirm Button**: Tombol konfirmasi berubah dari "Pesanan Diterima?" menjadi "Pesanan Sudah Diambil?" untuk pickup
+  - **Stale Order**: Pesanan pickup yang sudah lewat hari menampilkan pesan "sedang disiapkan" (bukan "antrian pemrosesan")
+- **Files Modified**: 
+  - `resources/js/Pages/Customer/Pesanan/Show.jsx`
+  - `resources/js/Pages/Customer/Pesanan/Riwayat.jsx`
+  - `resources/js/Pages/Pesanan/Index.jsx`
+
+### Fix: Icon Keranjang Tidak Bisa Diklik di Halaman Checkout
+- **Masalah**: Di halaman pilihan metode pengiriman (dan halaman checkout lainnya), icon keranjang di header tidak merespons saat diklik, padahal icon profil bisa.
+- **Penyebab**: Halaman checkout menggunakan `SiteHeader` langsung (bukan `CustomerLayout`), sehingga `onCartClick` tidak di-pass ke header. Saat `onCartClick` bernilai `undefined`, klik tombol memanggil `action()` dimana action = undefined → error silent.
+- **Solusi**: Menambahkan `CartPanel` internal di `SiteHeader` — jika `onCartClick` tidak tersedia, `SiteHeader` render `CartPanel` sendiri sehingga keranjang bisa dibuka dari halaman mana pun.
+- **Files Modified**: `resources/js/Layouts/CustomerLayout.jsx`
+
+### Update: Admin Invoice & Detail Pesanan untuk Metode Pickup
+- **Invoice Modal** (`Index.jsx`):
+  - Menambahkan badge **METODE** (Ambil Langsung / Kurir Lokal / Ekspedisi) di bawah STATUS
+  - Label "Ongkos Kirim" berubah menjadi "Ongkos Kirim (Gratis)" untuk pesanan pickup
+- **Detail & Edit Pesanan** (`Edit.jsx`):
+  - Status label "Dikirim" → **"Siap Diambil"** untuk pesanan pickup
+  - Tombol "🚚 Kirim Pesanan" → **"✅ Siap Diambil"** tanpa prompt input resi
+  - Info text: tidak menyebutkan resi untuk pesanan pickup
+  - Metode detection: menambahkan `'Ambil Langsung'` ke semua pengecekan pickup
+  - **Resi display**: Dipindahkan keluar dari blok ekspedisi saja → sekarang tampil sebagai section tersendiri untuk semua pesanan non-pickup yang sudah shipped
+- **Files Modified**:
+  - `resources/js/Pages/Pesanan/Index.jsx`
+  - `resources/js/Pages/Pesanan/Edit.jsx`
+
+### Update: PesananSeeder Data Lebih Realistis
+- **Perubahan**:
+  - `'Ambil di Toko'` → **`'Ambil Langsung'`** (konsisten dengan sistem)
+  - Menambahkan `nomor_resi` untuk pesanan shipped/completed non-pickup (format: `JNE1234567890`, `KRL...`, `POS...`, `TKI...`)
+  - Menambahkan `ekspedisi` dan `estimasi` untuk pesanan ekspedisi (JNE REG, JNE YES, POS Reguler, TIKI REG)
+  - Alamat pickup → `'AMBIL LANGSUNG'`
+- **Files Modified**: `database/seeders/PesananSeeder.php`
+
+### Fix: Tombol "Selesaikan" Kunjungan Tidak Berfungsi
+- **Masalah**: Tombol "✅ Selesaikan" di modal detail kunjungan admin tidak merespons saat diklik.
+- **Penyebab**: `Jadwal.jsx` tidak meneruskan `onEdit` prop ke `DetailModal`, sehingga `onEdit` bernilai `undefined`.
+- **Solusi**: 
+  - Menambahkan fungsi `handleComplete` di `Jadwal.jsx` dengan SweetAlert konfirmasi
+  - Meneruskan `handleComplete` sebagai `onEdit` prop ke `DetailModal`
+  - Status kunjungan diubah ke "Selesai" via `router.put`
+- **Files Modified**: `resources/js/Pages/Kunjungan/Jadwal.jsx`
+
+### Fix: Status Pesanan Admin Tampil Bahasa Inggris
+- **Masalah**: Status pesanan di tabel admin menampilkan nilai mentah dari database (`shipped`, `pending`, `processed`, `completed`) alih-alih bahasa Indonesia.
+- **Solusi**: Menambahkan fungsi mapping status di tabel pesanan admin:
+  - `pending` → **Menunggu Pembayaran** (kuning)
+  - `processed` → **Diproses** (biru)
+  - `shipped` → **Dikirim** (ungu) / **Siap Diambil** (hijau, untuk pickup)
+  - `completed` → **Selesai** (hijau)
+  - `cancelled` → **Dibatalkan** (merah)
+- **Files Modified**: `resources/js/Pages/Pesanan/Index.jsx`
+
+## 24 Februari 2026
+
+### Class Diagram UML - Sistem Informasi CPH
+- **File Source**: `class_diagram.puml` (PlantUML, editable)
+- **File Export**: `class_diagram.png` (289 KB, rendered via PlantUML server)
+- **Entitas (10 class)**: User, Produk, ProductCategory, Pesanan, PesananItem, Cart, Kunjungan, TipeKunjungan, Ulasan, UlasanFoto
+- **Controller (5 class)**: AuthController, ProductController, OrderController, CheckoutController, VisitBookingController
+- **Fix Revisi**: Menambahkan atribut `biaya : int` pada `TipeKunjungan` yang hilang dari model `$fillable` tapi ada di database (migrasi `add_biaya_to_tipe_kunjungan_table.php`)
+- **Notasi UML Lengkap**:
+  - 3-compartment (ClassName + Attribute + Method)
+  - Visibility: `-private` (atribut), `+public` (method)
+  - Stereotype: `<<Entity>>`, `<<Controller>>`
+  - Multiplicity: `1`, `0..*`, `1..*`, `0..1`
+  - Relationship: Association (garis biasa), Aggregation (diamond kosong: Pesanan-PesananItem), Composition (diamond isi: Ulasan-UlasanFoto), Dependency (garis putus-putus: Controller→Entity)
+  - Relationship name: "places", "books", "writes", "contains", "categorizes", "classifies", dll.
+- **Sumber Data**: Seluruh atribut & method diambil dari 12 file model aktual (`app/Models/*.php`) dan 5 controller (`app/Http/Controllers/**/*.php`)
+
+### Verifikasi & Format Tabel Blackbox Testing Customer
+- **File Artifact**: `blackbox_testing_customer.md`
+- **Total Skenario**: 46 skenario customer (diverifikasi satu per satu terhadap kode aktual)
+- **Kode yang Di-cross-check**: 18+ file sumber (Login.jsx, Register.jsx, ForgotPassword.jsx, CustomerLayout.jsx, Belanja.jsx, BelanjaDetail.jsx, Cart.jsx, CheckoutMethod.jsx, Riwayat.jsx, Show.jsx (Pesanan & Kunjungan), Kunjungan.jsx, KunjunganLanding.jsx, Profile.jsx, Ulasan/Create.jsx, Ulasan/CreateForKunjungan.jsx, AuthenticatedSessionController.php)
+- **Koreksi Penting vs Dokumen Awal**:
+  - **Skenario 4**: Pesan error login customer sama: "Email atau password salah." (dari `AuthenticatedSessionController`)
+  - **Skenario 5**: Tombol ForgotPassword = "Kirim Link Reset Password" (bukan "Kirim")
+  - **Skenario 8**: Filter kategori = "Semua Produk" / "Sayuran" / "Buah-buahan" (bukan "Sayuran Daun" / "Sayuran Buah")
+  - **Skenario 11**: Detail produk memiliki 2 tombol: "Beli Langsung" dan "Tambah Keranjang"
+  - **Skenario 17**: Label metode checkout = "Ambil Langsung" (bukan "Ambil di Toko"), "Kurir Lokal", "Ekspedisi"
+  - **Skenario 24**: Judul halaman riwayat = "Riwayat Transaksi Saya" (bukan "Pesanan Saya")
+  - **Skenario 28**: Tombol konfirmasi = "Konfirmasi Diterima" dengan SweetAlert "Pesanan Diterima?"
+  - **Skenario 31**: Tombol submit booking = "Lanjut ke Konfirmasi" (bukan "Bayar")
+  - **Skenario 32**: Slot penuh bertuliskan "(Sudah Dipesan)" (bukan "(Penuh)")
+  - **Skenario 35**: Tombol selesai kunjungan = "Selesaikan Kunjungan" dengan SweetAlert "Selesaikan Kunjungan?"
+  - **Skenario 40**: Profile punya 4 kartu: Foto Profil, Informasi Profil, Ubah Password, Hapus Akun
+  - **Skenario 42**: Field edit profil = Nama, Email, Nomor Telepon, Alamat; tombol "Simpan"
+- **Format Dokumen**: Times New Roman 11pt, istilah teknis *italic*, bahasa akademik natural siap copy-paste ke Word
+
+### Verifikasi & Format Tabel Blackbox Testing Admin
+- **File Artifact**: `blackbox_testing_admin.md`
+- **Total Skenario**: 44 skenario admin (diverifikasi satu per satu terhadap kode aktual)
+- **Koreksi Penting (12+ poin)**:
+  - **Kredensial Admin**: Diperbarui ke `centralpalantea@gmail.com` / `AdminCPH24@`
+  - **Skenario 2**: Pesan error login dikoreksi menjadi "Email atau password salah." (bukan generik)
+  - **Skenario 5**: Widget "Pesanan Pending" dengan tombol "Proses"
+  - **Skenario 7**: Judul grafik "Pendapatan (7 Hari)"
+  - **Skenario 8**: Label grafik "Tren Jumlah Pengunjung"
+  - **Skenario 10**: Widget "Pesanan Baru" (bukan "pesanan terbaru")
+  - **Skenario 11**: 8 kolom tabel produk: No, Gambar, Nama Produk, Kategori, Harga, Stok, Status, Aksi
+  - **Skenario 13/21/30/34**: Placeholder pencarian dicocokkan exact ("Cari nama produk...", "Cari nama pelanggan...", "Cari nama atau email...")
+  - **Skenario 19**: Kolom pertama menampilkan nomor pesanan
+  - **Skenario 24-25**: Update status via tombol aksi cepat (*Quick Action*) + input resi via *SweetAlert*
+  - **Skenario 26**: Tombol "+ Tambah Pesanan" (bukan "+ Tambah Pesanan Baru")
+  - **Skenario 28**: 7 kolom tabel kunjungan: No, Pelanggan, Waktu Kunjungan, Tipe, Peserta, Status, Aksi
+  - **Skenario 32**: Tombol "+ Buat Kunjungan Baru"
+  - **Skenario 33**: Stats widget: Total Customer, Total Kunjungan, Total Ulasan. Kolom tabel: #, Customer Profile, Kontak, Statistik, Aksi
+  - **Skenario 35**: Judul modal "Profil Lengkap Customer" + 3 Transaksi Terakhir
+  - **Skenario 36**: Halaman "Pusat Laporan & Analitik", widget: Total Pendapatan, Total Transaksi, Total Kunjungan, Produk Terlaris
+- **Format Dokumen**: Times New Roman 11pt, istilah teknis *italic*, bahasa akademik natural siap copy-paste ke Word
+
 ## 18 Februari 2026
 
 ### Fix: UI/UX & Standardisasi Bahasa

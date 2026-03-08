@@ -187,7 +187,7 @@ class VisitBookingController extends Controller
         
         $kunjungan->update($data);
 
-        return redirect()->route('admin.kunjungan.jadwal')->with('success', 'Data kunjungan berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data kunjungan berhasil diperbarui.');
     }
 
     public function destroy($id)
@@ -196,5 +196,19 @@ class VisitBookingController extends Controller
         $kunjungan->delete();
 
         return redirect()->route('admin.kunjungan.jadwal')->with('success', 'Kunjungan berhasil dihapus.');
+    }
+
+    /**
+     * Download Invoice Kunjungan (PDF) untuk Admin.
+     */
+    public function invoice($id)
+    {
+        $kunjungan = Kunjungan::with(['tipe', 'user'])->findOrFail($id);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice_kunjungan', [
+            'kunjungan' => $kunjungan
+        ]);
+
+        return $pdf->stream('invoice-kunjungan-' . $kunjungan->id . '.pdf');
     }
 }

@@ -15,6 +15,7 @@ export default function Edit({ pesanan }) {
   };
 
   const currentStatus = normalizeStatus(pesanan.status);
+  const isPickup = ['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(pesanan.metode_pengiriman);
 
   const { data, setData, put, processing, errors } = useForm({
     status: currentStatus,
@@ -48,8 +49,8 @@ export default function Edit({ pesanan }) {
       onSuccess: () => {
         Swal.fire({
           icon: 'success',
-          title: 'Berhasil Dikirim!',
-          text: `Status diubah menjadi Dikirim. Resi: ${resi}`,
+          title: isPickup ? 'Siap Diambil!' : 'Berhasil Dikirim!',
+          text: isPickup ? 'Status diubah menjadi Siap Diambil.' : `Status diubah menjadi Dikirim. Resi: ${resi}`,
           timer: 2000,
           showConfirmButton: false
         });
@@ -158,7 +159,7 @@ export default function Edit({ pesanan }) {
                       const labels = {
                         pending: 'Menunggu Pembayaran',
                         processed: 'Diproses',
-                        shipped: 'Dikirim',
+                        shipped: isPickup ? 'Siap Diambil' : 'Dikirim',
                         completed: 'Selesai'
                       };
                       return labels[s] || pesanan.status;
@@ -205,13 +206,13 @@ export default function Edit({ pesanan }) {
               <div>
                 <label className="text-xs text-gray-500 uppercase font-semibold">Metode</label>
                 <div className="font-semibold text-gray-800">
-                  {['Ambil di Toko', 'Ambil Sendiri', 'Kurir Lokal'].includes(pesanan.metode_pengiriman)
+                  {['Ambil di Toko', 'Ambil Sendiri', 'Ambil Langsung', 'Kurir Lokal'].includes(pesanan.metode_pengiriman)
                     ? pesanan.metode_pengiriman
                     : 'Ekspedisi'}
                 </div>
 
                 {/* Hide Ekspedisi/Estimasi for Pickup AND Local Courier (redundant) */}
-                {!['Ambil di Toko', 'Ambil Sendiri', 'Kurir Lokal'].includes(pesanan.metode_pengiriman) && (
+                {!['Ambil di Toko', 'Ambil Sendiri', 'Ambil Langsung', 'Kurir Lokal'].includes(pesanan.metode_pengiriman) && (
                   <div className="mt-3">
                     <label className="text-xs text-gray-500 uppercase font-semibold">Ekspedisi / Estimasi</label>
                     <div className="text-gray-800">
@@ -249,14 +250,16 @@ export default function Edit({ pesanan }) {
                         );
                       })()}
                     </div>
-                    {pesanan.nomor_resi && (
-                      <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
-                        <label className="text-xs text-gray-500 uppercase font-bold">No. Resi</label>
-                        <div className="font-mono font-bold text-indigo-600 bg-indigo-50 inline-block px-2 py-1 rounded text-sm mt-1">
-                          {pesanan.nomor_resi}
-                        </div>
-                      </div>
-                    )}
+                  </div>
+                )}
+
+                {/* Nomor Resi - Show for non-pickup orders when resi exists */}
+                {pesanan.nomor_resi && pesanan.nomor_resi !== '-' && !isPickup && (
+                  <div className="mt-3 pt-3 border-t border-dashed border-gray-200">
+                    <label className="text-xs text-gray-500 uppercase font-bold">No. Resi</label>
+                    <div className="font-mono font-bold text-indigo-600 bg-indigo-50 inline-block px-3 py-1.5 rounded text-sm mt-1">
+                      📦 {pesanan.nomor_resi}
+                    </div>
                   </div>
                 )}
               </div>
@@ -297,39 +300,59 @@ export default function Edit({ pesanan }) {
                 )}
 
                 {data.status === 'processed' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      Swal.fire({
-                        title: 'Input Nomor Resi',
-                        input: 'text',
-                        inputLabel: 'Masukkan nomor resi pengiriman:',
-                        inputPlaceholder: 'Contoh: JNE12345678',
-                        showCancelButton: true,
-                        confirmButtonText: 'Kirim Pesanan',
-                        cancelButtonText: 'Batal',
-                        inputValidator: (value) => {
-                          if (!value) {
-                            return 'Nomor resi wajib diisi!';
+                  isPickup ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        Swal.fire({
+                          title: 'Pesanan Siap Diambil?',
+                          text: 'Pastikan pesanan sudah disiapkan dan siap untuk diambil oleh pelanggan.',
+                          icon: 'question',
+                          showCancelButton: true,
+                          confirmButtonColor: '#059669',
+                          confirmButtonText: 'Ya, Siap Diambil',
+                          cancelButtonText: 'Batal',
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            handleQuickShip('-');
                           }
-                        }
-                      }).then((result) => {
-                        if (result.isConfirmed) {
-                          setData(data => ({ ...data, status: 'shipped', nomor_resi: result.value }));
-                          // Small delay to ensure state update before submit implies race condition, 
-                          // better to call submit directly with manual data but Inertia useForm is reactive.
-                          // We will trigger manual submit in useEffect or just use helper command.
-                          // Alternative: Since setData is async-like in batching, we cannot immediately submit.
-                          // We will use a dedicated handler for this action.
-                          handleQuickShip(result.value);
-                        }
-                      });
-                    }}
-                    disabled={processing}
-                    className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
-                  >
-                    <span>🚚</span> Kirim Pesanan
-                  </button>
+                        });
+                      }}
+                      disabled={processing}
+                      className="w-full py-3 px-4 bg-green-600 hover:bg-green-700 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
+                    >
+                      <span>✅</span> Siap Diambil
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        Swal.fire({
+                          title: 'Input Nomor Resi',
+                          input: 'text',
+                          inputLabel: 'Masukkan nomor resi pengiriman:',
+                          inputPlaceholder: 'Contoh: JNE12345678',
+                          showCancelButton: true,
+                          confirmButtonText: 'Kirim Pesanan',
+                          cancelButtonText: 'Batal',
+                          inputValidator: (value) => {
+                            if (!value) {
+                              return 'Nomor resi wajib diisi!';
+                            }
+                          }
+                        }).then((result) => {
+                          if (result.isConfirmed) {
+                            setData(data => ({ ...data, status: 'shipped', nomor_resi: result.value }));
+                            handleQuickShip(result.value);
+                          }
+                        });
+                      }}
+                      disabled={processing}
+                      className="w-full py-3 px-4 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-bold shadow-md flex items-center justify-center gap-2 transition-all transform hover:scale-[1.02]"
+                    >
+                      <span>🚚</span> Kirim Pesanan
+                    </button>
+                  )
                 )}
 
                 {data.status === 'shipped' && (
@@ -389,8 +412,8 @@ export default function Edit({ pesanan }) {
               <div key={s} className={`p-4 rounded-lg text-sm border font-medium ${getStatusColor(s).replace('text-', 'border-').replace('100', '200')}`}>
                 ℹ️ Info: {
                   s === 'pending' ? 'Pesanan menunggu pembayaran. Item tidak dapat diubah.' :
-                    s === 'processed' ? 'Pesanan sedang disiapkan. Silakan input resi jika tersedia.' :
-                      s === 'shipped' ? 'Pesanan dikirim. Pastikan resi valid.' :
+                    s === 'processed' ? (isPickup ? 'Pesanan sedang disiapkan untuk diambil pelanggan.' : 'Pesanan sedang disiapkan. Silakan input resi jika tersedia.') :
+                      s === 'shipped' ? (isPickup ? 'Pesanan siap diambil oleh pelanggan.' : 'Pesanan dikirim. Pastikan resi valid.') :
                         'Pesanan selesai. Data terkunci permanen.'
                 }
               </div>

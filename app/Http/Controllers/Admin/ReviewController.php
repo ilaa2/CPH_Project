@@ -11,7 +11,23 @@ class ReviewController extends Controller
 {
     public function index(Request $request)
     {
-        $filter = $request->input('filter'); // 'produk' atau 'kunjungan'
+        $filter = $request->input('filter', 'belum_dibalas'); // Default ke belum dibalas
+
+        // Ambil SEMUA ulasan untuk menghitung statistik keseluruhan (mengabaikan filter tabel)
+        $allUlasan = Ulasan::all();
+        $totalUlasan = $allUlasan->count();
+        $rataRating = $totalUlasan > 0 ? number_format($allUlasan->avg('rating'), 1) : 0;
+        $belumDibalas = $allUlasan->where('balasan', null)->where('balasan', '')->count();
+        // alternative count for belum dibalas because of empty string vs null
+        $belumDibalas = $allUlasan->filter(function($q) { return empty($q->balasan); })->count();
+        $ratingRendah = $allUlasan->where('rating', '<=', 3)->count();
+
+        $stats = [
+            'total' => $totalUlasan,
+            'rata_rating' => $rataRating,
+            'belum_dibalas' => $belumDibalas,
+            'rating_rendah' => $ratingRendah,
+        ];
 
         $ulasanQuery = Ulasan::with([
             'user:id,name,avatar',
@@ -25,6 +41,12 @@ class ReviewController extends Controller
             })
             ->when($filter === 'kunjungan', function ($query) {
                 $query->whereNotNull('kunjungan_id');
+            })
+            ->when($filter === 'belum_dibalas', function ($query) {
+                $query->whereNull('balasan')->orWhere('balasan', '');
+            })
+            ->when($filter === 'rating_rendah', function ($query) {
+                $query->where('rating', '<=', 3);
             })
             ->when($request->input('kunjungan_id'), function ($query, $id) {
                 $query->where('kunjungan_id', $id);
@@ -69,6 +91,7 @@ class ReviewController extends Controller
         return Inertia::render('Ulasan/Index', [
             'ulasanList' => $ulasan,
             'currentFilter' => $filter,
+            'stats' => $stats,
         ]);
     }
 

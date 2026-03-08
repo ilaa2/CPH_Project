@@ -128,6 +128,9 @@ export default function Show({ pesanan, auth }) {
 
     const subtotal = pesanan.items?.reduce((acc, item) => acc + parseFloat(item.subtotal), 0) || 0;
 
+    // Check if this order is a pickup order
+    const isPickupOrder = ['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(pesanan.metode_pengiriman);
+
     // Status configuration
     const getStatusConfig = () => {
         // Prioritas status: Complete > Shipped > Paid > Pending
@@ -149,6 +152,19 @@ export default function Show({ pesanan, auth }) {
         }
 
         if (status === 'shipped') {
+            if (isPickupOrder) {
+                return {
+                    headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
+                    icon: FiCheckCircle,
+                    iconColor: 'text-white',
+                    title: 'Pesanan Siap Diambil',
+                    subtitle: 'Pesanan Anda sudah siap! Silakan datang ke toko untuk mengambil pesanan.',
+                    badgeColor: 'bg-white/20 text-white border border-white/30',
+                    badgeText: 'SIAP DIAMBIL',
+                    showPayButton: false,
+                    needsRetry: false,
+                };
+            }
             return {
                 headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
                 icon: FiTruck,
@@ -261,19 +277,24 @@ export default function Show({ pesanan, auth }) {
         window.snap.pay(token, {
             onSuccess: (result) => {
                 console.log('Payment Success:', result);
-                router.reload();
+                window.axios.post(route('customer.pesanan.confirm-payment', pesanan.id), {
+                    transaction_status: result.transaction_status || 'settlement'
+                }).finally(() => {
+                    window.location.reload();
+                });
             },
             onPending: (result) => {
                 console.log('Payment Pending:', result);
-                router.reload();
+                window.location.reload();
             },
             onError: (result) => {
                 console.log('Payment Error:', result);
-                router.reload();
+                window.location.reload();
             },
             onClose: () => {
                 console.log('Payment popup closed');
-                // User menutup popup tanpa selesaikan pembayaran
+                // User menutup popup — reload untuk cek status terbaru
+                window.location.reload();
             }
         });
     };
@@ -571,7 +592,7 @@ export default function Show({ pesanan, auth }) {
                                         <div className="mt-2 pt-2 border-t border-dashed border-gray-200 flex justify-between items-end">
                                             {/* Resi Section (Left) */}
                                             <div>
-                                                {pesanan.nomor_resi && (() => {
+                                                {pesanan.nomor_resi && pesanan.nomor_resi !== '-' && !['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(pesanan.metode_pengiriman) && (() => {
                                                     const [copied, setCopied] = React.useState(false);
                                                     const handleCopy = () => {
                                                         navigator.clipboard.writeText(pesanan.nomor_resi);
@@ -631,7 +652,7 @@ export default function Show({ pesanan, auth }) {
                                 const closeTime = 18 * 60; // 18:00
 
                                 const isWithinOperatingHours = currentTimeInMinutes >= openTime && currentTimeInMinutes < closeTime;
-                                const isPickup = pesanan.metode_pengiriman === 'Ambil Sendiri' || pesanan.metode_pengiriman === 'Ambil di Toko';
+                                const isPickup = pesanan.metode_pengiriman === 'Ambil Sendiri' || pesanan.metode_pengiriman === 'Ambil di Toko' || pesanan.metode_pengiriman === 'Ambil Langsung';
 
                                 // NEW LOGIC: Check if order date is TODAY
                                 const orderDate = new Date(pesanan.created_at);
@@ -678,21 +699,38 @@ export default function Show({ pesanan, auth }) {
                                     }
                                 } else {
                                     // LOGIC FOR STALE ORDERS (Yesterday or older)
-                                    noticeTitle = 'Status Pesanan';
-                                    bgColor = 'bg-blue-50'; // Neutral Info Color
-                                    borderColor = 'border-blue-200';
-                                    textColor = 'text-blue-800';
-                                    iconColor = 'text-blue-600';
+                                    if (isPickup) {
+                                        noticeTitle = 'Informasi Penjemputan';
+                                        bgColor = 'bg-blue-50';
+                                        borderColor = 'border-blue-200';
+                                        textColor = 'text-blue-800';
+                                        iconColor = 'text-blue-600';
 
-                                    if (pesanan.status === 'processed') {
-                                        noticeMessage = (
-                                            <>Pesanan Anda sedang dalam <span className="font-bold">antrian pemrosesan</span> oleh admin. Mohon menunggu update status selanjutnya.</>
-                                        );
+                                        if (pesanan.status === 'processed') {
+                                            noticeMessage = (
+                                                <>Pesanan Anda <span className="font-bold">sedang disiapkan</span>. Kami akan segera mengabari saat pesanan siap diambil.</>
+                                            );
+                                        } else {
+                                            noticeMessage = (
+                                                <>Pesanan Anda telah diterima dan sedang menunggu giliran untuk disiapkan.</>
+                                            );
+                                        }
                                     } else {
-                                        // Fallback generic message
-                                        noticeMessage = (
-                                            <>Pesanan Anda telah diterima dan sedang menunggu giliran untuk diproses.</>
-                                        );
+                                        noticeTitle = 'Status Pesanan';
+                                        bgColor = 'bg-blue-50';
+                                        borderColor = 'border-blue-200';
+                                        textColor = 'text-blue-800';
+                                        iconColor = 'text-blue-600';
+
+                                        if (pesanan.status === 'processed') {
+                                            noticeMessage = (
+                                                <>Pesanan Anda sedang dalam <span className="font-bold">antrian pemrosesan</span> oleh admin. Mohon menunggu update status selanjutnya.</>
+                                            );
+                                        } else {
+                                            noticeMessage = (
+                                                <>Pesanan Anda telah diterima dan sedang menunggu giliran untuk diproses.</>
+                                            );
+                                        }
                                     }
                                 }
 
@@ -762,7 +800,7 @@ export default function Show({ pesanan, auth }) {
                                     {/* Aggregated Review Card */}
                                     {(() => {
                                         // Calculate Average Rating
-                                        const rawAvg = pesanan.ulasan.reduce((acc, curr) => acc + curr.rating, 0) / pesanan.ulasan.length;
+                                        const rawAvg = pesanan.ulasan.reduce((acc, curr) => acc + Number(curr.rating), 0) / pesanan.ulasan.length;
                                         const avgRating = Math.round(rawAvg);
                                         // Use the first non-empty comment found (robustness for legacy data)
                                         const comment = pesanan.ulasan.find(u => u.komentar && u.komentar.trim() !== '')?.komentar || '';
@@ -850,20 +888,26 @@ export default function Show({ pesanan, auth }) {
                                         <div className="flex items-center gap-2 text-blue-800">
                                             <FiCheckCircle className="w-5 h-5 flex-shrink-0" />
                                             <div className="text-sm text-left">
-                                                <p className="font-semibold">Pesanan Diterima?</p>
-                                                <p className="text-xs text-blue-600 mt-0.5">Konfirmasi jika pesanan sudah Anda terima dengan baik.</p>
+                                                <p className="font-semibold">{isPickupOrder ? 'Pesanan Sudah Diambil?' : 'Pesanan Diterima?'}</p>
+                                                <p className="text-xs text-blue-600 mt-0.5">
+                                                    {isPickupOrder
+                                                        ? 'Konfirmasi jika Anda sudah mengambil pesanan di toko.'
+                                                        : 'Konfirmasi jika pesanan sudah Anda terima dengan baik.'}
+                                                </p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => {
                                                 Swal.fire({
-                                                    title: 'Pesanan Diterima?',
-                                                    text: "Pastikan barang sudah Anda terima dengan baik. Status pesanan akan diubah menjadi Selesai.",
+                                                    title: isPickupOrder ? 'Pesanan Sudah Diambil?' : 'Pesanan Diterima?',
+                                                    text: isPickupOrder
+                                                        ? "Pastikan Anda sudah mengambil pesanan di toko. Status pesanan akan diubah menjadi Selesai."
+                                                        : "Pastikan barang sudah Anda terima dengan baik. Status pesanan akan diubah menjadi Selesai.",
                                                     icon: 'question',
                                                     showCancelButton: true,
                                                     confirmButtonColor: '#059669',
                                                     cancelButtonColor: '#d33',
-                                                    confirmButtonText: 'Ya, Sudah Diterima',
+                                                    confirmButtonText: isPickupOrder ? 'Ya, Sudah Diambil' : 'Ya, Sudah Diterima',
                                                     cancelButtonText: 'Batal'
                                                 }).then((result) => {
                                                     if (result.isConfirmed) {

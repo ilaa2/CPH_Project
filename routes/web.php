@@ -148,6 +148,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::resource('pelanggan', AdminCustomerController::class)->except('show');
 
     // --- Pesanan (Orders) - TANPA DELETE (histori tidak boleh dihapus)
+    Route::get('/pesanan/{pesanan}/invoice', [AdminOrderController::class, 'invoice'])->name('pesanan.invoice');
     Route::resource('pesanan', AdminOrderController::class)->except(['destroy']);
 
     // --- Kunjungan (Visit Bookings) ---
@@ -158,6 +159,7 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     Route::get('/kunjungan/create', [AdminVisitBookingController::class, 'create'])->name('kunjungan.create');
     Route::post('/kunjungan', [AdminVisitBookingController::class, 'store'])->name('kunjungan.store');
     Route::get('/kunjungan/{kunjungan}/edit', [AdminVisitBookingController::class, 'edit'])->name('kunjungan.edit');
+    Route::get('/kunjungan/{kunjungan}/invoice', [AdminVisitBookingController::class, 'invoice'])->name('kunjungan.invoice');
     Route::put('/kunjungan/{kunjungan}', [AdminVisitBookingController::class, 'update'])->name('kunjungan.update');
     Route::delete('/kunjungan/{kunjungan}', [AdminVisitBookingController::class, 'destroy'])->name('kunjungan.destroy');
 
