@@ -40,7 +40,14 @@ class PesananSeeder extends Seeder
         }
 
         $statuses = ['pending', 'processed', 'shipped', 'completed'];
-        $metodePengiriman = ['Ambil di Toko', 'Kurir Lokal', 'JNE - REG'];
+        $metodePengiriman = ['Ambil Langsung', 'Kurir Lokal', 'JNE - REG'];
+        $ekspedisiOptions = [
+            ['ekspedisi' => 'JNE - REG', 'estimasi' => '2-3 Hari'],
+            ['ekspedisi' => 'JNE - YES', 'estimasi' => '1 Hari'],
+            ['ekspedisi' => 'POS - Reguler', 'estimasi' => '3-5 Hari'],
+            ['ekspedisi' => 'TIKI - REG', 'estimasi' => '2-4 Hari'],
+        ];
+        $resiPrefixes = ['JNE' => 'JNE', 'POS' => 'POS', 'TIKI' => 'TKI', 'Kurir Lokal' => 'KRL'];
 
         // Buat pesanan untuk setiap customer
         foreach ($customers as $index => $customerId) {
@@ -50,9 +57,25 @@ class PesananSeeder extends Seeder
             for ($p = 0; $p < $jumlahPesanan; $p++) {
                 $status = $statuses[array_rand($statuses)];
                 $metode = $metodePengiriman[array_rand($metodePengiriman)];
-                $ongkir = $metode === 'Ambil di Toko' ? 0 : rand(10000, 30000);
+                $isPickup = $metode === 'Ambil Langsung';
+                $isEkspedisi = !in_array($metode, ['Ambil Langsung', 'Kurir Lokal']);
+                $ongkir = $isPickup ? 0 : rand(10000, 30000);
                 $tanggalPesan = Carbon::now()->subDays(rand(1, 30));
                 $nomorPesanan = 'CPH-' . $tanggalPesan->format('Ymd') . '-' . str_pad($index * 2 + $p + 1, 4, '0', STR_PAD_LEFT);
+
+                // Ekspedisi detail (hanya untuk metode ekspedisi)
+                $ekspedisiDetail = $isEkspedisi ? $ekspedisiOptions[array_rand($ekspedisiOptions)] : null;
+
+                // Generate nomor resi untuk pesanan yang sudah shipped/completed (bukan pickup)
+                $nomorResi = null;
+                if (in_array($status, ['shipped', 'completed']) && !$isPickup) {
+                    if ($metode === 'Kurir Lokal') {
+                        $nomorResi = 'KRL' . strtoupper(substr(md5(rand()), 0, 10));
+                    } elseif ($ekspedisiDetail) {
+                        $prefix = explode(' ', $ekspedisiDetail['ekspedisi'])[0];
+                        $nomorResi = strtoupper(substr($prefix, 0, 3)) . rand(1000000000, 9999999999);
+                    }
+                }
 
                 // Pilih 1-3 produk acak untuk pesanan ini
                 $selectedProducts = $products->random(rand(1, 3));
@@ -81,9 +104,12 @@ class PesananSeeder extends Seeder
                     'total' => $subtotal + $ongkir,
                     'biaya_pengiriman' => $ongkir,
                     'status' => $status,
-                    'metode_pengiriman' => $metode,
-                    'alamat_pengiriman' => $metode === 'Ambil di Toko'
-                        ? 'Ambil di Toko'
+                    'metode_pengiriman' => $isEkspedisi ? ($ekspedisiDetail['ekspedisi'] ?? $metode) : $metode,
+                    'ekspedisi' => $ekspedisiDetail['ekspedisi'] ?? null,
+                    'estimasi' => $ekspedisiDetail['estimasi'] ?? null,
+                    'nomor_resi' => $nomorResi,
+                    'alamat_pengiriman' => $isPickup
+                        ? 'AMBIL LANGSUNG'
                         : DB::table('users')->where('id', $customerId)->value('alamat') ?? 'Jl. Contoh No. ' . rand(1, 100),
                     'payment_status' => $status === 'pending' ? 'unpaid' : 'paid',
                     'paid_at' => $status !== 'pending' ? $tanggalPesan->copy()->addMinutes(rand(5, 60)) : null,

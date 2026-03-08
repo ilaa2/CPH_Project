@@ -74,7 +74,7 @@ export default function Checkout3({ cartItems, subtotal, alamat, pengiriman, aut
 
     const ongkosKirim = pengiriman?.price || 0;
     const totalPembayaran = subtotal + ongkosKirim;
-    const isPickup = pengiriman?.name === 'Ambil di Toko' || pengiriman?.service === 'PICKUP';
+    const isPickup = pengiriman?.name === 'Ambil di Toko' || pengiriman?.name === 'Ambil Langsung' || pengiriman?.service === 'PICKUP';
 
     return (
         <>
@@ -174,7 +174,7 @@ export default function Checkout3({ cartItems, subtotal, alamat, pengiriman, aut
                                             <h3 className="font-bold text-gray-800">Metode Pengiriman</h3>
                                         </div>
                                         <p className="font-semibold text-gray-800">
-                                            {isPickup ? 'Ambil di Toko' : (pengiriman?.code === 'LOCAL' ? 'Kurir Lokal' : 'Ekspedisi')}
+                                            {isPickup ? 'Ambil Langsung' : (pengiriman?.code === 'LOCAL' ? 'Kurir Lokal' : 'Ekspedisi')}
                                         </p>
                                         <p className="text-sm text-gray-600">{pengiriman?.description}</p>
                                         {isPickup ? (

@@ -43,8 +43,7 @@ export default function UlasanPreview({ ulasan, pelanggan, tipe, isAdmin = false
     const hasBalasan = localBalasan || ulasan.balasan;
 
     return (
-        <div className="bg-white border text-left border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
-            <h4 className="font-semibold text-gray-800 mb-4 border-b pb-2">Detail Ulasan</h4>
+        <div className="bg-white border text-left border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
 
             <div className="flex items-start gap-4">
                 {/* Avatar Pelanggan */}

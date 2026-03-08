@@ -128,6 +128,9 @@ export default function Show({ pesanan, auth }) {
 
     const subtotal = pesanan.items?.reduce((acc, item) => acc + parseFloat(item.subtotal), 0) || 0;
 
+    // Check if this order is a pickup order
+    const isPickupOrder = ['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(pesanan.metode_pengiriman);
+
     // Status configuration
     const getStatusConfig = () => {
         // Prioritas status: Complete > Shipped > Paid > Pending
@@ -149,6 +152,19 @@ export default function Show({ pesanan, auth }) {
         }
 
         if (status === 'shipped') {
+            if (isPickupOrder) {
+                return {
+                    headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
+                    icon: FiCheckCircle,
+                    iconColor: 'text-white',
+                    title: 'Pesanan Siap Diambil',
+                    subtitle: 'Pesanan Anda sudah siap! Silakan datang ke toko untuk mengambil pesanan.',
+                    badgeColor: 'bg-white/20 text-white border border-white/30',
+                    badgeText: 'SIAP DIAMBIL',
+                    showPayButton: false,
+                    needsRetry: false,
+                };
+            }
             return {
                 headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
                 icon: FiTruck,
@@ -157,6 +173,20 @@ export default function Show({ pesanan, auth }) {
                 subtitle: 'Paket Anda sedang dalam perjalanan ke alamat tujuan.',
                 badgeColor: 'bg-white/20 text-white border border-white/30',
                 badgeText: 'DIKIRIM',
+                showPayButton: false,
+                needsRetry: false,
+            };
+        }
+
+        if (status === 'processed') {
+            return {
+                headerBg: 'bg-gradient-to-r from-green-600 to-teal-600',
+                icon: FiRefreshCw,
+                iconColor: 'text-white',
+                title: 'Pesanan Sedang Diproses',
+                subtitle: 'Pesanan Anda sedang dipersiapkan oleh penjual.',
+                badgeColor: 'bg-white/20 text-white border border-white/30',
+                badgeText: 'DIPROSES',
                 showPayButton: false,
                 needsRetry: false,
             };
@@ -186,7 +216,7 @@ export default function Show({ pesanan, auth }) {
                     title: 'Menunggu Pembayaran',
                     subtitle: 'Pembayaran sedang menunggu konfirmasi. Silakan selesaikan pembayaran.',
                     badgeColor: 'bg-yellow-100 text-yellow-700',
-                    badgeText: 'PENDING',
+                    badgeText: 'MENUNGGU PEMBAYARAN',
                     showPayButton: false, // TIDAK tampil tombol bayar
                     needsRetry: false,
                     isPending: true, // Flag khusus pending
@@ -247,19 +277,24 @@ export default function Show({ pesanan, auth }) {
         window.snap.pay(token, {
             onSuccess: (result) => {
                 console.log('Payment Success:', result);
-                router.reload();
+                window.axios.post(route('customer.pesanan.confirm-payment', pesanan.id), {
+                    transaction_status: result.transaction_status || 'settlement'
+                }).finally(() => {
+                    window.location.reload();
+                });
             },
             onPending: (result) => {
                 console.log('Payment Pending:', result);
-                router.reload();
+                window.location.reload();
             },
             onError: (result) => {
                 console.log('Payment Error:', result);
-                router.reload();
+                window.location.reload();
             },
             onClose: () => {
                 console.log('Payment popup closed');
-                // User menutup popup tanpa selesaikan pembayaran
+                // User menutup popup — reload untuk cek status terbaru
+                window.location.reload();
             }
         });
     };
@@ -557,7 +592,7 @@ export default function Show({ pesanan, auth }) {
                                         <div className="mt-2 pt-2 border-t border-dashed border-gray-200 flex justify-between items-end">
                                             {/* Resi Section (Left) */}
                                             <div>
-                                                {pesanan.nomor_resi && (() => {
+                                                {pesanan.nomor_resi && pesanan.nomor_resi !== '-' && !['Ambil Sendiri', 'Ambil di Toko', 'Ambil Langsung'].includes(pesanan.metode_pengiriman) && (() => {
                                                     const [copied, setCopied] = React.useState(false);
                                                     const handleCopy = () => {
                                                         navigator.clipboard.writeText(pesanan.nomor_resi);
@@ -617,7 +652,7 @@ export default function Show({ pesanan, auth }) {
                                 const closeTime = 18 * 60; // 18:00
 
                                 const isWithinOperatingHours = currentTimeInMinutes >= openTime && currentTimeInMinutes < closeTime;
-                                const isPickup = pesanan.metode_pengiriman === 'Ambil Sendiri' || pesanan.metode_pengiriman === 'Ambil di Toko';
+                                const isPickup = pesanan.metode_pengiriman === 'Ambil Sendiri' || pesanan.metode_pengiriman === 'Ambil di Toko' || pesanan.metode_pengiriman === 'Ambil Langsung';
 
                                 // NEW LOGIC: Check if order date is TODAY
                                 const orderDate = new Date(pesanan.created_at);
@@ -664,21 +699,38 @@ export default function Show({ pesanan, auth }) {
                                     }
                                 } else {
                                     // LOGIC FOR STALE ORDERS (Yesterday or older)
-                                    noticeTitle = 'Status Pesanan';
-                                    bgColor = 'bg-blue-50'; // Neutral Info Color
-                                    borderColor = 'border-blue-200';
-                                    textColor = 'text-blue-800';
-                                    iconColor = 'text-blue-600';
+                                    if (isPickup) {
+                                        noticeTitle = 'Informasi Penjemputan';
+                                        bgColor = 'bg-blue-50';
+                                        borderColor = 'border-blue-200';
+                                        textColor = 'text-blue-800';
+                                        iconColor = 'text-blue-600';
 
-                                    if (pesanan.status === 'processed') {
-                                        noticeMessage = (
-                                            <>Pesanan Anda sedang dalam <span className="font-bold">antrian pemrosesan</span> oleh admin. Mohon menunggu update status selanjutnya.</>
-                                        );
+                                        if (pesanan.status === 'processed') {
+                                            noticeMessage = (
+                                                <>Pesanan Anda <span className="font-bold">sedang disiapkan</span>. Kami akan segera mengabari saat pesanan siap diambil.</>
+                                            );
+                                        } else {
+                                            noticeMessage = (
+                                                <>Pesanan Anda telah diterima dan sedang menunggu giliran untuk disiapkan.</>
+                                            );
+                                        }
                                     } else {
-                                        // Fallback generic message
-                                        noticeMessage = (
-                                            <>Pesanan Anda telah diterima dan sedang menunggu giliran untuk diproses.</>
-                                        );
+                                        noticeTitle = 'Status Pesanan';
+                                        bgColor = 'bg-blue-50';
+                                        borderColor = 'border-blue-200';
+                                        textColor = 'text-blue-800';
+                                        iconColor = 'text-blue-600';
+
+                                        if (pesanan.status === 'processed') {
+                                            noticeMessage = (
+                                                <>Pesanan Anda sedang dalam <span className="font-bold">antrian pemrosesan</span> oleh admin. Mohon menunggu update status selanjutnya.</>
+                                            );
+                                        } else {
+                                            noticeMessage = (
+                                                <>Pesanan Anda telah diterima dan sedang menunggu giliran untuk diproses.</>
+                                            );
+                                        }
                                     }
                                 }
 
@@ -738,15 +790,76 @@ export default function Show({ pesanan, auth }) {
                             </div>
 
                             {/* Reviews Section */}
+                            {/* Reviews Section */}
                             {pesanan.ulasan && pesanan.ulasan.length > 0 ? (
                                 <div className="mt-6">
                                     <h3 className="font-semibold text-lg text-gray-800 flex items-center mb-4">
                                         <FiStar className="mr-2 text-green-500" />
                                         Ulasan Pesanan
                                     </h3>
-                                    {pesanan.ulasan.map((review) => (
-                                        <UlasanCard key={review.id} ulasan={review} />
-                                    ))}
+                                    {/* Aggregated Review Card */}
+                                    {(() => {
+                                        // Calculate Average Rating
+                                        const rawAvg = pesanan.ulasan.reduce((acc, curr) => acc + Number(curr.rating), 0) / pesanan.ulasan.length;
+                                        const avgRating = Math.round(rawAvg);
+                                        // Use the first non-empty comment found (robustness for legacy data)
+                                        const comment = pesanan.ulasan.find(u => u.komentar && u.komentar.trim() !== '')?.komentar || '';
+                                        // Deduplicate photos (based on path)
+                                        const allPhotos = pesanan.ulasan.flatMap(u => u.fotos || []);
+                                        const uniquePhotos = Array.from(new Set(allPhotos.map(p => p.foto_path)))
+                                            .map(path => allPhotos.find(p => p.foto_path === path));
+
+                                        // Check for admin reply (on any of the reviews)
+                                        const reply = pesanan.ulasan.find(u => u.balasan)?.balasan;
+                                        const replyDate = pesanan.ulasan.find(u => u.balasan)?.tanggal_balasan;
+
+                                        return (
+                                            <div className="mt-6 p-5 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border border-green-200">
+                                                <div className="flex flex-col sm:flex-row gap-4">
+                                                    <div className="flex-1">
+                                                        <h3 className="text-base font-semibold text-green-800 mb-2 flex items-center gap-2">
+                                                            <FiStar className="text-yellow-500" />
+                                                            Ulasan Anda <span className="text-sm font-normal text-gray-600">({rawAvg.toFixed(1)} / 5.0)</span>
+                                                        </h3>
+                                                        <div className="flex gap-1 mb-2">
+                                                            {[...Array(5)].map((_, i) => (
+                                                                <FiStar key={i} className={`w-4 h-4 ${i < avgRating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                                                            ))}
+                                                        </div>
+                                                        {comment ? (
+                                                            <p className="text-gray-700 text-sm italic">"{comment}"</p>
+                                                        ) : (
+                                                            <p className="text-gray-400 text-sm italic">(Tidak ada komentar tertulis)</p>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Photo Gallery */}
+                                                    {uniquePhotos.length > 0 && (
+                                                        <div className="flex gap-2 mt-3 sm:mt-0 overflow-x-auto pb-2 sm:pb-0">
+                                                            {uniquePhotos.map((foto, idx) => (
+                                                                <img
+                                                                    key={idx}
+                                                                    src={`/storage/${foto.foto_path}`}
+                                                                    alt="Foto Ulasan"
+                                                                    className="h-20 w-20 object-cover rounded-lg flex-shrink-0 border border-green-100"
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Balasan Admin */}
+                                                {reply && (
+                                                    <div className="mt-4 pl-4 border-l-4 border-green-500 bg-white/70 p-3 rounded-r-lg">
+                                                        <p className="text-xs font-bold text-green-800 mb-1">
+                                                            Balasan Penjual {replyDate && `(${new Date(replyDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })})`}
+                                                        </p>
+                                                        <p className="text-sm text-gray-700">"{reply}"</p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
                                 </div>
                             ) : (
                                 ['completed', 'selesai'].includes(pesanan.status?.toLowerCase()) && (
@@ -775,20 +888,26 @@ export default function Show({ pesanan, auth }) {
                                         <div className="flex items-center gap-2 text-blue-800">
                                             <FiCheckCircle className="w-5 h-5 flex-shrink-0" />
                                             <div className="text-sm text-left">
-                                                <p className="font-semibold">Pesanan Diterima?</p>
-                                                <p className="text-xs text-blue-600 mt-0.5">Konfirmasi jika pesanan sudah Anda terima dengan baik.</p>
+                                                <p className="font-semibold">{isPickupOrder ? 'Pesanan Sudah Diambil?' : 'Pesanan Diterima?'}</p>
+                                                <p className="text-xs text-blue-600 mt-0.5">
+                                                    {isPickupOrder
+                                                        ? 'Konfirmasi jika Anda sudah mengambil pesanan di toko.'
+                                                        : 'Konfirmasi jika pesanan sudah Anda terima dengan baik.'}
+                                                </p>
                                             </div>
                                         </div>
                                         <button
                                             onClick={() => {
                                                 Swal.fire({
-                                                    title: 'Pesanan Diterima?',
-                                                    text: "Pastikan barang sudah Anda terima dengan baik. Status pesanan akan diubah menjadi Selesai.",
+                                                    title: isPickupOrder ? 'Pesanan Sudah Diambil?' : 'Pesanan Diterima?',
+                                                    text: isPickupOrder
+                                                        ? "Pastikan Anda sudah mengambil pesanan di toko. Status pesanan akan diubah menjadi Selesai."
+                                                        : "Pastikan barang sudah Anda terima dengan baik. Status pesanan akan diubah menjadi Selesai.",
                                                     icon: 'question',
                                                     showCancelButton: true,
                                                     confirmButtonColor: '#059669',
                                                     cancelButtonColor: '#d33',
-                                                    confirmButtonText: 'Ya, Sudah Diterima',
+                                                    confirmButtonText: isPickupOrder ? 'Ya, Sudah Diambil' : 'Ya, Sudah Diterima',
                                                     cancelButtonText: 'Batal'
                                                 }).then((result) => {
                                                     if (result.isConfirmed) {

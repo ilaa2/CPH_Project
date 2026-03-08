@@ -14,7 +14,7 @@ function QuantityInput({ item }) {
     };
 
     const handleDecrement = () => {
-        if (item.quantity === 1) {
+        if (parseInt(item.quantity) === 1) {
             // Konfirmasi hapus jika qty = 1
             Swal.fire({
                 title: 'Hapus Produk?',
@@ -31,7 +31,7 @@ function QuantityInput({ item }) {
                 }
             });
         } else {
-            updateQuantity(item.quantity - 1);
+            updateQuantity(parseInt(item.quantity) - 1);
         }
     };
 
@@ -39,7 +39,7 @@ function QuantityInput({ item }) {
         <div className="flex items-center border border-gray-200 rounded">
             <button onClick={handleDecrement} className="px-2 py-1 text-gray-600 hover:bg-gray-100">-</button>
             <span className="px-3 text-sm">{item.quantity}</span>
-            <button onClick={() => updateQuantity(item.quantity + 1)} className="px-2 py-1 text-gray-600 hover:bg-gray-100">+</button>
+            <button onClick={() => updateQuantity(parseInt(item.quantity) + 1)} className="px-2 py-1 text-gray-600 hover:bg-gray-100">+</button>
         </div>
     );
 }
@@ -132,7 +132,7 @@ export default function CartPanel({ open, setOpen, cartItems = [] }) {
                                                                             <div>
                                                                                 <div className="flex justify-between text-base font-medium text-gray-900">
                                                                                     <h3><Link href={`/customer/belanja/${item.product.id}`}>{item.product.nama}</Link></h3>
-                                                                                    <p className="ml-4">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.product.harga * item.quantity)}</p>
+                                                                                    <p className="ml-4">{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(item.product.harga * item.quantity)}</p>
                                                                                 </div>
                                                                             </div>
                                                                             <div className="flex flex-1 items-end justify-between text-sm mt-2">
@@ -158,7 +158,7 @@ export default function CartPanel({ open, setOpen, cartItems = [] }) {
                                         <div className="border-t border-gray-200 px-4 py-6 sm:px-6">
                                             <div className="flex justify-between text-base font-medium text-gray-900">
                                                 <p>Subtotal</p>
-                                                <p>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(subtotal)}</p>
+                                                <p>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(subtotal)}</p>
                                             </div>
                                             <p className="mt-0.5 text-sm text-gray-500">Hanya untuk produk yang dipilih.</p>
                                             <div className="mt-6">

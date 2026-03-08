@@ -38,6 +38,15 @@ const ProdukForm = ({ isEditing, model, kategori, onSubmit, onCancel }) => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      if (file.size > 2 * 1024 * 1024) { // 2MB
+        Swal.fire({
+          icon: 'error',
+          title: 'File Terlalu Besar!',
+          text: 'Ukuran foto maksimal adalah 2MB. Silakan pilih foto dengan ukuran lebih kecil.',
+        });
+        e.target.value = null; // Reset input
+        return;
+      }
       setData('gambar', file);
       setPreview(URL.createObjectURL(file));
     }
@@ -45,6 +54,26 @@ const ProdukForm = ({ isEditing, model, kategori, onSubmit, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validasi Manual
+    if (!data.nama || !data.id_kategori || !data.harga || data.stok === '' || !data.deskripsi) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Data Belum Lengkap!',
+        text: 'Pastikan nama produk, kategori, harga, stok, dan deskripsi sudah terisi.',
+      });
+      return;
+    }
+
+    if (!isEditing && !data.gambar) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Foto Belum Diupload!',
+        text: 'Anda harus mengupload foto produk saat menambah produk baru.',
+      });
+      return;
+    }
+
     const url = isEditing ? route('admin.produk.update', model.id) : route('admin.produk.store');
     post(url, {
       onSuccess: () => {
@@ -200,20 +229,23 @@ const ProdukForm = ({ isEditing, model, kategori, onSubmit, onCancel }) => {
                       <span>{data.gambar ? 'Ganti Foto' : 'Upload Foto'}</span>
                       <input type="file" onChange={handleImageChange} className="hidden" accept="image/*" />
                     </label>
+                    <p className="text-[10px] text-gray-500 mt-1.5">Maks 2MB, format JPG/PNG</p>
                   </div>
                 </div>
               </div>
 
               {/* Deskripsi Short */}
               <div>
-                <label className="block font-semibold text-sm text-gray-700 mb-1">Deskripsi Singkat</label>
+                <label className="block font-semibold text-sm text-gray-700 mb-1">Deskripsi Singkat <span className="text-red-500">*</span></label>
                 <textarea
                   value={data.deskripsi}
                   onChange={e => setData('deskripsi', e.target.value)}
                   rows="4"
                   className="w-full border-gray-300 rounded-lg focus:ring-green-500 focus:border-green-500 text-sm resize-none"
                   placeholder="Deskripsi produk..."
+                  required
                 ></textarea>
+                <InputError message={errors.deskripsi} className="mt-1" />
               </div>
 
             </div>

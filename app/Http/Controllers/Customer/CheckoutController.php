@@ -392,7 +392,7 @@ class CheckoutController extends Controller
         if ($method === 'pickup') {
             // For pickup, use store address
             $pengiriman = [
-                'name' => 'Ambil di Toko',
+                'name' => 'Ambil Langsung',
                 'price' => 0,
                 'description' => 'Ambil langsung di lokasi',
                 'service' => 'PICKUP'
@@ -449,12 +449,12 @@ class CheckoutController extends Controller
 
                 if ($method === 'pickup') {
                     $alamat = [
-                        'full_address_string' => 'AMBIL DI TOKO',
+                        'full_address_string' => 'AMBIL LANGSUNG',
                         'nama' => $user->name,
                         'telepon' => $user->phone,
                     ];
                     $pengiriman = [
-                        'name' => 'Ambil Sendiri',
+                        'name' => 'Ambil Langsung',
                         'price' => 0,
                     ];
                 } else {

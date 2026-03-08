@@ -27,7 +27,7 @@ class OrderController extends Controller
         // Fetch all visit history for this customer
         $pesananKunjungan = Kunjungan::with(['tipe', 'ulasan'])
             ->where('user_id', $userId)
-            ->orderByDesc('tanggal')
+            ->latest()
             ->get();
 
         return Inertia::render('Customer/Pesanan/Riwayat', [

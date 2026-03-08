@@ -91,7 +91,7 @@ export default function KunjunganLanding() {
                                 <div className="flex items-center justify-between border-t pt-6 mt-auto">
                                     <div>
                                         <span className="text-sm text-gray-500">Mulai dari</span>
-                                        <div className="text-2xl font-extrabold text-green-700">Rp 15.000<span className="text-sm font-normal text-gray-500">/orang</span></div>
+                                        <div className="text-2xl font-extrabold text-green-700">Rp 10.000<span className="text-sm font-normal text-gray-500">/orang</span></div>
                                     </div>
                                     <Link
                                         href="/customer/kunjungan/form?type=umum"

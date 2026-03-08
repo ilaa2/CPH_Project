@@ -6,13 +6,11 @@ import LoadingSpinner from '@/Components/LoadingSpinner'; // Import LoadingSpinn
 import { useState, useEffect, useCallback } from 'react'; // Import useEffect
 import { debounce } from 'lodash';
 import FilterHeader from '@/Components/FilterHeader';
-import DetailModal from './DetailModal';
 
 export default function RiwayatKunjungan() {
   const { props } = usePage();
   const riwayat = props.riwayat || [];
   const filters = props.filters || {};
-  const [selected, setSelected] = useState(null);
   const [ulasanModalState, setUlasanModalState] = useState({ isOpen: false, item: null });
   const [tipeFilter, setTipeFilter] = useState(filters.tipe || 'Semua');
   const [searchValue, setSearchValue] = useState(filters.search || '');
@@ -119,13 +117,15 @@ export default function RiwayatKunjungan() {
                     <td className="px-4 py-2 capitalize">{item.status}</td>
                     <td className="px-4 py-2">
                       <div className="flex items-center justify-center gap-2">
-                        <button
-                          onClick={() => setSelected(item)}
-                          className="p-2 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded-full transition-all shadow-sm active:scale-95"
-                          title="Lihat Detail Kunjungan"
+                        <a
+                          href={route('admin.kunjungan.invoice', item.id)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full transition-all shadow-sm active:scale-95"
+                          title="Download Invoice Kunjungan"
                         >
-                          👁️
-                        </button>
+                          📄
+                        </a>
 
                         <button
                           onClick={() => item.ulasan ? openUlasanModal(item) : null}
@@ -151,43 +151,35 @@ export default function RiwayatKunjungan() {
           </table>
         </div>
 
-        {/* Modal Detail Kunjungan */}
-        {selected && (
-          <DetailModal
-            item={selected}
-            onClose={() => setSelected(null)}
-            onViewReview={openUlasanModal}
-          />
-        )}
-
-        {/* Modal Ulasan */}
-        {ulasanModalState.isOpen && (
-          <Modal show={true} onClose={closeUlasanModal} maxWidth="lg">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-bold text-gray-800">Ulasan Kunjungan</h2>
-                <button onClick={closeUlasanModal} className="text-gray-400 hover:text-gray-600">✕</button>
-              </div>
-
-              <UlasanPreview
-                ulasan={ulasanModalState.item?.ulasan}
-                pelanggan={ulasanModalState.item?.user}
-                tipe={ulasanModalState.item?.tipe?.nama_tipe}
-                isAdmin={true}
-              />
-
-              <div className="mt-6 text-right">
-                <button
-                  onClick={closeUlasanModal}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
-                >
-                  Tutup
-                </button>
-              </div>
-            </div>
-          </Modal>
-        )}
       </div>
+
+      {/* Modal Ulasan */}
+      {ulasanModalState.isOpen && (
+        <Modal show={true} onClose={closeUlasanModal} maxWidth="lg">
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-bold text-gray-800">Ulasan Kunjungan</h2>
+              <button onClick={closeUlasanModal} className="text-gray-400 hover:text-gray-600">✕</button>
+            </div>
+
+            <UlasanPreview
+              ulasan={ulasanModalState.item?.ulasan}
+              pelanggan={ulasanModalState.item?.user}
+              tipe={ulasanModalState.item?.tipe?.nama_tipe}
+              isAdmin={true}
+            />
+
+            <div className="mt-6 text-right">
+              <button
+                onClick={closeUlasanModal}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

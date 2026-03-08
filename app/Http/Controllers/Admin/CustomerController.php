@@ -31,6 +31,12 @@ class CustomerController extends Controller
 
         $pelanggan = $query->paginate(10)->withQueryString();
 
+        // Load latest 3 orders for each customer
+        $pelanggan->getCollection()->transform(function ($user) {
+            $user->setRelation('latest_orders', $user->pesanan()->latest()->take(3)->get());
+            return $user;
+        });
+
         // Statistik ringkas
         $totalCustomers = User::where('role', 'customer')->count();
         $totalKunjungan = \App\Models\Kunjungan::whereHas('user', function($q) {

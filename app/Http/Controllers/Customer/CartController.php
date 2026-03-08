@@ -78,7 +78,9 @@ class CartController extends Controller
      */
     public function update(Request $request, Cart $cart)
     {
-        $this->authorize('update', $cart);
+        if ($cart->user_id != Auth::id()) {
+            abort(403);
+        }
 
         $validated = $request->validate([
             'quantity' => 'required|integer|min:1',
@@ -94,7 +96,9 @@ class CartController extends Controller
      */
     public function destroy(Cart $cart)
     {
-        $this->authorize('delete', $cart);
+        if ($cart->user_id != Auth::id()) {
+            abort(403);
+        }
         $cart->delete();
         return redirect()->back();
     }

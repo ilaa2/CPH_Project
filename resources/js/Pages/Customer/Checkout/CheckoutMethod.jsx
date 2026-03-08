@@ -13,7 +13,7 @@ export default function CheckoutMethod({ auth }) {
     const methods = [
         {
             id: 'pickup',
-            title: 'Ambil di Toko',
+            title: 'Ambil Langsung',
             icon: FiMapPin,
             iconBg: 'bg-green-100',
             iconColor: 'text-green-600',

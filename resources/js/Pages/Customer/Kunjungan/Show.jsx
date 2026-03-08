@@ -303,24 +303,39 @@ export default function KunjunganShow({ auth, kunjungan }) {
                                         </>
                                     ) : kunjungan.tipe?.nama_tipe === 'Umum' ? (
                                         <>
-                                            {kunjungan.jumlah_dewasa > 0 && (
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600">Dewasa ({kunjungan.jumlah_dewasa} × {formatCurrency(10000)})</span>
-                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_dewasa * 10000)}</span>
-                                                </div>
-                                            )}
-                                            {kunjungan.jumlah_anak > 0 && (
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600">Anak-anak ({kunjungan.jumlah_anak} × {formatCurrency(10000)})</span>
-                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_anak * 10000)}</span>
-                                                </div>
-                                            )}
-                                            {kunjungan.jumlah_balita > 0 && (
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600">Balita ({kunjungan.jumlah_balita} Orang)</span>
-                                                    <span className="text-green-600 font-medium">Gratis</span>
-                                                </div>
-                                            )}
+                                            <>
+                                                {(() => {
+                                                    // Check if this uses legacy pricing (10k flat)
+                                                    // New pricing: 15k adult, 10k child
+                                                    // Old pricing: 10k adult, 10k child
+                                                    const expectedNewTotal = (kunjungan.jumlah_dewasa * 15000) + (kunjungan.jumlah_anak * 10000);
+                                                    const isLegacyPricing = parseInt(kunjungan.total_biaya) !== expectedNewTotal;
+                                                    const adultPrice = isLegacyPricing ? 10000 : 15000;
+
+                                                    return (
+                                                        <>
+                                                            {kunjungan.jumlah_dewasa > 0 && (
+                                                                <div className="flex justify-between">
+                                                                    <span className="text-gray-600">Dewasa ({kunjungan.jumlah_dewasa} × {formatCurrency(adultPrice)})</span>
+                                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_dewasa * adultPrice)}</span>
+                                                                </div>
+                                                            )}
+                                                            {kunjungan.jumlah_anak > 0 && (
+                                                                <div className="flex justify-between">
+                                                                    <span className="text-gray-600">Anak-anak ({kunjungan.jumlah_anak} × {formatCurrency(10000)})</span>
+                                                                    <span className="text-gray-800">{formatCurrency(kunjungan.jumlah_anak * 10000)}</span>
+                                                                </div>
+                                                            )}
+                                                            {kunjungan.jumlah_balita > 0 && (
+                                                                <div className="flex justify-between">
+                                                                    <span className="text-gray-600">Balita ({kunjungan.jumlah_balita} Orang)</span>
+                                                                    <span className="text-green-600 font-medium">Gratis</span>
+                                                                </div>
+                                                            )}
+                                                        </>
+                                                    );
+                                                })()}
+                                            </>
                                         </>
                                     ) : (
                                         <>

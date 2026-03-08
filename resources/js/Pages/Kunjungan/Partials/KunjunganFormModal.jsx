@@ -56,7 +56,9 @@ export default function KunjunganFormModal({ isOpen, onClose, pelangganList, tip
 
     const tipeOptions = safeTipeList.map(t => ({
         value: t.id,
-        label: `${t.nama_tipe} - Rp ${(t.harga_tiket || 0).toLocaleString('id-ID')}`
+        label: t.nama_tipe === 'Umum'
+            ? `${t.nama_tipe} - Mulai dari Rp 10.000`
+            : `${t.nama_tipe} - Rp ${(t.harga_tiket || 0).toLocaleString('id-ID')}`
     }));
 
     return (

@@ -17,10 +17,10 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
 
     // Form untuk update informasi profil
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
-        nama: auth.pelanggan.nama,
-        email: auth.pelanggan.email,
-        telepon: auth.pelanggan.telepon || '',
-        alamat: auth.pelanggan.alamat || '',
+        nama: auth.pelanggan?.name || '',
+        email: auth.pelanggan?.email || '',
+        telepon: auth.pelanggan?.phone || '',
+        alamat: auth.pelanggan?.alamat || '',
     });
 
     // Form untuk update password
@@ -131,7 +131,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                         </header>
                         <div className="mt-6">
                             <img
-                                src={auth.pelanggan.avatar ? `/storage/${auth.pelanggan.avatar}` : `https://ui-avatars.com/api/?name=${auth.pelanggan.nama}&color=7F9CF5&background=EBF4FF`}
+                                src={auth.pelanggan?.avatar ? `/storage/${auth.pelanggan.avatar}` : `https://ui-avatars.com/api/?name=${auth.pelanggan?.name || 'User'}&color=7F9CF5&background=EBF4FF`}
                                 alt="Foto Profil"
                                 className="w-24 h-24 rounded-full object-cover"
                             />
@@ -189,7 +189,9 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                                 <InputError message={errors.alamat} className="mt-2" />
                             </div>
                             <div className="flex items-center gap-4">
-                                <PrimaryButton disabled={processing}>Simpan</PrimaryButton>
+                                <PrimaryButton disabled={processing}>
+                                    {data.nama && data.email && data.telepon && data.alamat ? 'Update' : 'Simpan'}
+                                </PrimaryButton>
                             </div>
                         </form>
                     </div>

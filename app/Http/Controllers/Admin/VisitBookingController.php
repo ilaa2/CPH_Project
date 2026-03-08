@@ -36,7 +36,7 @@ class VisitBookingController extends Controller
             return $q->where('tipe_kunjungan.nama_tipe', request('tipe'));
         });
 
-        $data = $query->orderBy('tanggal', 'asc')->paginate(10)->withQueryString();
+        $data = $query->orderBy('kunjungan.tanggal', 'desc')->paginate(10)->withQueryString();
 
         return Inertia::render('Kunjungan/Jadwal', [
             'kunjungan' => $data,
@@ -61,10 +61,25 @@ class VisitBookingController extends Controller
 
         $tipe = TipeKunjungan::findOrFail($request->tipe_id);
         
-        // Kalkulasi Total Biaya (Dewasa + Anak) * Harga Tiket
-        // Balita gratis (asumsi bisnis)
-        $totalPerson = $request->jumlah_dewasa + $request->jumlah_anak;
-        $totalBiaya = $totalPerson * $tipe->harga_tiket;
+        // Kalkulasi Total Biaya (Dewasa 15k, Anak 10k, Balita Gratis)
+        $biaya = 0;
+        if ($tipe->nama_tipe === 'Umum') {
+            $biaya = ($request->jumlah_dewasa * 15000) + ($request->jumlah_anak * 10000);
+        } elseif ($tipe->nama_tipe === 'Outing Class') {
+             // Logic Outing Class (Tetap/Sesuaikan jika perlu, asumsi logic customer)
+             if ($request->jumlah_anak < 30) {
+                $biaya = 300000;
+             } else {
+                $biaya = $request->jumlah_anak * 10000;
+             }
+        } else {
+            // Default use tipe price for all valid attributes (or apply split if needed)
+            // Asumsi tipe lain mengikuti harga tiket flat per orang (kecuali balita)
+            $totalPerson = $request->jumlah_dewasa + $request->jumlah_anak;
+            $biaya = $totalPerson * $tipe->harga_tiket;
+        }
+        
+        $totalBiaya = $biaya;
 
         Kunjungan::create([
             'user_id' => $request->user_id,
@@ -104,7 +119,7 @@ class VisitBookingController extends Controller
             });
         });
 
-        $data = $query->get();
+        $data = $query->orderBy('tanggal', 'desc')->get();
 
         return Inertia::render('Kunjungan/Riwayat', [
             'riwayat' => $data,
@@ -172,7 +187,7 @@ class VisitBookingController extends Controller
         
         $kunjungan->update($data);
 
-        return redirect()->route('admin.kunjungan.jadwal')->with('success', 'Data kunjungan berhasil diperbarui.');
+        return redirect()->back()->with('success', 'Data kunjungan berhasil diperbarui.');
     }
 
     public function destroy($id)
@@ -181,5 +196,19 @@ class VisitBookingController extends Controller
         $kunjungan->delete();
 
         return redirect()->route('admin.kunjungan.jadwal')->with('success', 'Kunjungan berhasil dihapus.');
+    }
+
+    /**
+     * Download Invoice Kunjungan (PDF) untuk Admin.
+     */
+    public function invoice($id)
+    {
+        $kunjungan = Kunjungan::with(['tipe', 'user'])->findOrFail($id);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.invoice_kunjungan', [
+            'kunjungan' => $kunjungan
+        ]);
+
+        return $pdf->stream('invoice-kunjungan-' . $kunjungan->id . '.pdf');
     }
 }

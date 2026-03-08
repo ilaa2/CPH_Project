@@ -11,6 +11,8 @@ import { id } from 'date-fns/locale';
 import DetailModal from './DetailModal';
 import EditModal from './EditModal';
 import UlasanPreview from '@/Components/UlasanPreview';
+import Swal from 'sweetalert2';
+import { router } from '@inertiajs/react';
 
 // Konstanta Styles
 const STATUS_STYLES = {
@@ -67,7 +69,7 @@ export default function Kalender({ kunjungan = [] }) {
 
       return {
         id: k.id,
-        title: k.pelanggan?.nama || 'Unknown',
+        title: k.user?.name || k.pelanggan?.nama || 'Unknown',
         start: `${k.tanggal}T${k.jam || '09:00:00'}`,
         allDay: false,
         extendedProps: {
@@ -82,6 +84,49 @@ export default function Kalender({ kunjungan = [] }) {
 
   const handleEventClick = (info) => {
     setSelectedItem(info.event.extendedProps);
+  };
+
+  const handleComplete = (item) => {
+    Swal.fire({
+      title: 'Selesaikan Kunjungan?',
+      text: "Pastikan kunjungan telah selesai dan pembayaran sudah diterima. Status akan diubah menjadi 'Selesai'.",
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10B981',
+      cancelButtonColor: '#6B7280',
+      confirmButtonText: 'Ya, Selesaikan',
+      cancelButtonText: 'Batal'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        // Send PUT request with only the actual database fields required by validation
+        router.put(route('admin.kunjungan.update', item.id), {
+          pelanggan_id: item.user_id,
+          tipe_id: item.tipe_id,
+          tanggal: item.tanggal,
+          jam: item.jam,
+          jumlah_dewasa: item.jumlah_dewasa,
+          jumlah_anak: item.jumlah_anak,
+          jumlah_balita: item.jumlah_balita,
+          total_biaya: item.total_biaya,
+          status: 'Selesai'
+        }, {
+          onSuccess: () => {
+            setSelectedItem(null); // Close the detail modal
+            Swal.fire({
+              icon: 'success',
+              title: 'Berhasil!',
+              text: 'Status kunjungan berhasil diubah menjadi Selesai.',
+              timer: 1500,
+              showConfirmButton: false,
+            });
+          },
+          onError: (errors) => {
+            console.error(errors);
+            Swal.fire('Gagal', 'Gagal menyelesaikan kunjungan. Periksa form atau muat ulang halaman.', 'error');
+          }
+        });
+      }
+    });
   };
 
   return (
@@ -139,7 +184,7 @@ export default function Kalender({ kunjungan = [] }) {
         <DetailModal
           item={selectedItem}
           onClose={() => setSelectedItem(null)}
-          onEdit={() => setEditingItem(selectedItem)}
+          onEdit={() => handleComplete(selectedItem)}
           onViewReview={() => setReviewingItem(selectedItem)}
         />
       )}

@@ -150,10 +150,16 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
 
         // Menggunakan nama_tipe untuk logika, ini harus konsisten dengan data di database
         if (selectedTipe.nama_tipe === 'Umum') {
-            const totalOrangBayar = data.jumlah_dewasa + data.jumlah_anak;
-            biaya = totalOrangBayar * 10000; // Rp 10.000 per orang (dewasa + anak > 2th)
+            const biayaDewasa = data.jumlah_dewasa * 15000;
+            const biayaAnak = data.jumlah_anak * 10000;
+            biaya = biayaDewasa + biayaAnak;
+
+            let deskripsiParts = [];
+            if (data.jumlah_dewasa > 0) deskripsiParts.push(`${data.jumlah_dewasa} Dewasa x ${formatCurrency(15000)}`);
+            if (data.jumlah_anak > 0) deskripsiParts.push(`${data.jumlah_anak} Anak x ${formatCurrency(10000)}`);
+
             rincian = {
-                deskripsi: `${totalOrangBayar} Orang x ${formatCurrency(10000)}`,
+                deskripsi: deskripsiParts.join(' + '),
                 catatan: `Termasuk sound system. Balita (0-2 thn) gratis. Tidak dapat buket sayur.`
             };
         } else if (selectedTipe.nama_tipe === 'Outing Class') {
@@ -305,7 +311,7 @@ export default function Kunjungan({ auth, tipeKunjungan }) {
                                                         disabled={unavailableSlots.includes(slot.value)}
                                                         className={unavailableSlots.includes(slot.value) ? "text-gray-400 bg-gray-100" : ""}
                                                     >
-                                                        {slot.label} {unavailableSlots.includes(slot.value) ? "(Penuh)" : ""}
+                                                        {slot.label} {unavailableSlots.includes(slot.value) ? "(Sudah Dipesan)" : ""}
                                                     </option>
                                                 ))}
                                             </select>

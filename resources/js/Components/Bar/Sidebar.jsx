@@ -2,7 +2,8 @@ import { Link, usePage, useForm } from '@inertiajs/react';
 import { createContext, useContext, useState, useMemo, useEffect } from "react";
 import {
   FiHome, FiShoppingBag, FiCalendar, FiSettings,
-  FiHelpCircle, FiFileText, FiLogOut, FiUser, FiX, FiLock, FiCheck, FiAlertCircle, FiMenu
+  FiHelpCircle, FiFileText, FiLogOut, FiUser, FiX, FiLock, FiCheck, FiAlertCircle, FiMenu, FiStar,
+  FiChevronLeft, FiChevronRight
 } from "react-icons/fi";
 import { BsBoxSeam, BsPeople } from "react-icons/bs";
 
@@ -90,19 +91,22 @@ export default function Sidebar({ header, children }) {
         <nav className="h-full flex flex-col justify-between">
           <div>
             {/* LOGO & TOGGLE */}
-            <div className="flex items-center justify-between p-4">
+            <div className={`p-4 flex ${expanded ? 'items-center justify-between' : 'flex-col items-center gap-4'} mb-2`}>
               <div className="flex items-center gap-2 overflow-hidden">
                 <img src="/storage/logo/logoo.png" alt="Logo" className="w-8 h-8 shrink-0" />
                 <span className={`text-sm font-semibold text-green-700 transition-opacity duration-300 ${expanded ? 'opacity-100' : 'opacity-0 md:hidden'}`}>
                   CENTRAL PALANTEA
                 </span>
-                {/* On desktop collapsed, text hidden. On mobile open, text visible. */}
               </div>
 
               {/* Desktop Toggle Button */}
-              <button onClick={() => setExpanded(!expanded)} className="hidden md:block p-1.5 rounded hover:bg-gray-100">
-                {expanded ? "←" : "→"}
+              <button
+                onClick={() => setExpanded(!expanded)}
+                className="hidden md:flex p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-green-700 items-center justify-center transition-colors"
+              >
+                {expanded ? <FiChevronLeft size={20} /> : <FiChevronRight size={20} />}
               </button>
+
               {/* Mobile Close Button */}
               <button onClick={() => setExpanded(false)} className="md:hidden p-1.5 rounded hover:bg-gray-100">
                 <FiX size={20} />
@@ -118,6 +122,7 @@ export default function Sidebar({ header, children }) {
                 <SidebarItem icon={<FiFileText size={20} />} text="Laporan" href="/admin/laporan" active={route().current('admin.laporan.index')} />
                 <SidebarItem icon={<BsPeople size={20} />} text="Customer" href="/admin/pelanggan" active={route().current('admin.pelanggan.index')} />
                 <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/admin/kunjungan" active={route().current('admin.kunjungan.index')} />
+                <SidebarItem icon={<FiStar size={20} />} text="Ulasan" href="/admin/ulasan" active={route().current('admin.ulasan.index')} />
 
                 {/* LOGOUT */}
                 <SidebarItem
@@ -314,8 +319,8 @@ export default function Sidebar({ header, children }) {
                 {/* On desktop collapsed, hide text. On mobile open, show text. */}
                 {expanded && (
                   <>
-                    <h4 className="font-semibold text-green-800 text-sm truncate w-32">{auth.user?.name || 'Pengguna'}</h4>
-                    <span className="text-xs text-gray-500 truncate w-32 block">{auth.user?.email || 'email@domain.com'}</span>
+                    <h4 className="font-semibold text-green-800 text-sm truncate">{auth.user?.name || 'Pengguna'}</h4>
+                    <span className="text-xs text-gray-500 truncate block">{auth.user?.email || 'email@domain.com'}</span>
                   </>
                 )}
               </div>

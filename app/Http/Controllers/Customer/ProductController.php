@@ -17,7 +17,8 @@ class ProductController extends Controller
     {
         $query = Produk::query()
             ->with('kategori')
-            ->where('status', 'Aktif');
+            ->where('status', 'Aktif')
+            ->where('stok', '>', 0);
 
         // Filter pencarian nama
         if ($request->has('search')) {

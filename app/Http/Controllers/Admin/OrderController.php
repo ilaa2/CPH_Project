@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderController extends Controller
 {
@@ -18,7 +19,7 @@ class OrderController extends Controller
     {
         $query = Pesanan::with(['user', 'items.produk', 'ulasan.fotos', 'ulasan.user'])
             ->where('status', '!=', 'Dibatalkan')
-            ->orderByDesc('tanggal');
+            ->latest();
 
         if ($request->has('search')) {
             $search = $request->input('search');
@@ -87,10 +88,11 @@ class OrderController extends Controller
         try {
             $subtotal = 0;
             $biaya = $request->biaya_pengiriman ?? 0;
-            $namaMetode = 'Ambil di Toko';
+            $biaya = $request->biaya_pengiriman ?? 0;
+            $namaMetode = 'Ambil Langsung';
             $ekspedisi = null;
             $estimasi = null;
-            $alamat = 'Ambil di Toko';
+            $alamat = 'Ambil Langsung';
 
             if ($request->metode_pengiriman === 'pickup') {
                 $biaya = 0;
@@ -114,7 +116,11 @@ class OrderController extends Controller
             }
             $grandTotal = $subtotal + $biaya;
 
+            // Generate nomor_pesanan format: ORD-[RANDOM]-[TIMESTAMP]
+            $orderNumber = 'ORD-' . strtoupper(substr(uniqid(), -8)) . '-' . time();
+
             $pesanan = Pesanan::create([
+                'nomor_pesanan' => $orderNumber,
                 'user_id' => $request->pelanggan_id,
                 'tanggal' => $request->tanggal,
                 'biaya_pengiriman' => $biaya,
@@ -240,4 +246,12 @@ class OrderController extends Controller
 
     // Method destroy() DIHAPUS - Pesanan tidak boleh dihapus
     // Pesanan adalah histori transaksi yang harus tetap ada
+
+    public function invoice($id)
+    {
+        $pesanan = Pesanan::with(['items.produk', 'user'])->findOrFail($id);
+
+        $pdf = Pdf::loadView('pdf.invoice', ['pesanan' => $pesanan]);
+        return $pdf->stream('Invoice-' . str_replace('/', '-', $pesanan->nomor_pesanan) . '.pdf');
+    }
 }
