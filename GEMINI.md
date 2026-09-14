@@ -1,5 +1,31 @@
 # Catatan Perubahan
 
+## 17 April 2026
+
+### Panduan Jawaban Catatan Revisi PA
+- **File Artifact**: `panduan_jawaban_revisi.md`
+- **Isi Dokumen**:
+  - **Revisi 01**: Pengujian Keberhasilan Hasil Akhir (Manfaat) — tabel mapping Manfaat → Fitur → Bukti Keberhasilan, rekomendasi sub-bab baru di Bab 4
+  - **Revisi 02**: Use Case + Peran Midtrans (Aktor?) — penjelasan Midtrans sebagai aktor external system, daftar interaksi, dan aktor tambahan (Biteship)
+  - **Revisi 03**: Manfaat Detail (Efisiensi, Memudahkan, Jangkauan Pasar, Jadwal) — narasi jawaban lengkap per poin manfaat dengan bukti kuantitatif
+  - **Revisi 04**: Abstraksi → Capaian & Keberhasilan — contoh kalimat capaian untuk ditambahkan di akhir abstrak
+  - **Revisi 05**: Lampiran (Format Penulisan) & Data Dukungan — checklist format PA dan daftar lampiran yang perlu disertakan
+- **Tujuan**: Membantu menjawab 5 poin catatan revisi dari dosen penguji pada sesi revisi PA
+
+## 2 April 2026
+
+### Persiapan Sidang Akhir - Defense Briefing Kit
+- **File Artifact**: `defense_briefing.md`
+- **Isi Dokumen**:
+  - Ringkasan arsitektur sistem (Laravel 11 + Inertia.js + React + Midtrans + Biteship)
+  - Struktur database (10 entitas, relasi lengkap, evolusi pelanggans→users)
+  - 3 alur bisnis kritis: Checkout (3 metode), Pembayaran Midtrans (webhook + retry), Booking Kunjungan
+  - Penjelasan fix Profile Data Binding (field name mapping: nama→name, telepon→phone)
+  - Penjelasan fix ERD vs Database verification (diskrepansi biaya TipeKunjungan, dll)
+  - 18 prediksi pertanyaan dosen penguji + jawaban teknis (arsitektur, database, payment, security, testing, fitur)
+  - Quick reference cheat sheet (jumlah tabel, controller, halaman, API)
+- **Tujuan**: Membantu persiapan sidang akhir PA dengan referensi cepat dan simulasi Q&A
+
 ## 8 Maret 2026
 
 ### Fix: Toggle Lihat Password pada Konfirmasi Password (Register)
