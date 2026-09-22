@@ -3,7 +3,7 @@ import { createContext, useContext, useState, useMemo, useEffect } from "react";
 import {
   FiHome, FiShoppingBag, FiCalendar, FiSettings,
   FiHelpCircle, FiFileText, FiLogOut, FiUser, FiX, FiLock, FiCheck, FiAlertCircle, FiMenu, FiStar,
-  FiChevronLeft, FiChevronRight
+  FiChevronLeft, FiChevronRight, FiCoffee, FiTv, FiGrid, FiTrendingUp
 } from "react-icons/fi";
 import { BsBoxSeam, BsPeople } from "react-icons/bs";
 
@@ -88,58 +88,91 @@ export default function Sidebar({ header, children }) {
           ${expanded ? "translate-x-0 w-64" : "-translate-x-full w-64 md:translate-x-0 md:w-20"}
         `}
       >
-        <nav className="h-full flex flex-col justify-between">
-          <div>
-            {/* LOGO & TOGGLE */}
-            <div className={`p-4 flex ${expanded ? 'items-center justify-between' : 'flex-col items-center gap-4'} mb-2`}>
-              <div className="flex items-center gap-2 overflow-hidden">
-                <img src="/storage/logo/logoo.png" alt="Logo" className="w-8 h-8 shrink-0" />
-                <span className={`text-sm font-semibold text-green-700 transition-opacity duration-300 ${expanded ? 'opacity-100' : 'opacity-0 md:hidden'}`}>
-                  CENTRAL PALANTEA
-                </span>
-              </div>
-
-              {/* Desktop Toggle Button */}
-              <button
-                onClick={() => setExpanded(!expanded)}
-                className="hidden md:flex p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-green-700 items-center justify-center transition-colors"
-              >
-                {expanded ? <FiChevronLeft size={20} /> : <FiChevronRight size={20} />}
-              </button>
-
-              {/* Mobile Close Button */}
-              <button onClick={() => setExpanded(false)} className="md:hidden p-1.5 rounded hover:bg-gray-100">
-                <FiX size={20} />
-              </button>
+        <nav className="h-full flex flex-col justify-between overflow-hidden">
+          {/* LOGO & TOGGLE (Fixed Top) */}
+          <div className={`p-4 flex ${expanded ? 'items-center justify-between' : 'flex-col items-center gap-4'} mb-1 shrink-0 border-b border-gray-100`}>
+            <div className="flex items-center gap-2 overflow-hidden">
+              <img src="/storage/logo/logoo.png" alt="Logo" className="w-8 h-8 shrink-0" />
+              <span className={`text-sm font-semibold text-green-700 transition-opacity duration-300 ${expanded ? 'opacity-100' : 'opacity-0 md:hidden'}`}>
+                CENTRAL PALANTEA
+              </span>
             </div>
 
-            {/* MENU */}
-            <SidebarContext.Provider value={{ expanded }}>
-              <ul className="px-3 space-y-1">
-                <SidebarItem icon={<FiHome size={20} />} text="Dashboard" href="/admin" active={route().current('admin.dashboard')} />
-                <SidebarItem icon={<BsBoxSeam size={20} />} text="Produk" href="/admin/produk" active={route().current('admin.produk.index')} />
-                <SidebarItem icon={<FiShoppingBag size={20} />} text="Pesanan" href="/admin/pesanan" active={route().current('admin.pesanan.index')} />
-                <SidebarItem icon={<FiFileText size={20} />} text="Laporan" href="/admin/laporan" active={route().current('admin.laporan.index')} />
-                <SidebarItem icon={<BsPeople size={20} />} text="Customer" href="/admin/pelanggan" active={route().current('admin.pelanggan.index')} />
-                <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/admin/kunjungan" active={route().current('admin.kunjungan.index')} />
-                <SidebarItem icon={<FiStar size={20} />} text="Ulasan" href="/admin/ulasan" active={route().current('admin.ulasan.index')} />
+            {/* Desktop Toggle Button */}
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="hidden md:flex p-1.5 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-green-700 items-center justify-center transition-colors"
+            >
+              {expanded ? <FiChevronLeft size={20} /> : <FiChevronRight size={20} />}
+            </button>
 
-                {/* LOGOUT */}
-                <SidebarItem
-                  icon={<FiLogOut size={20} />}
-                  text="Logout"
-                  href={route('logout')}
-                  method="post"
-                  as="button"
-                  active={false}
-                />
-              </ul>
-            </SidebarContext.Provider>
-
+            {/* Mobile Close Button */}
+            <button onClick={() => setExpanded(false)} className="md:hidden p-1.5 rounded hover:bg-gray-100">
+              <FiX size={20} />
+            </button>
           </div>
 
-          {/* USER INFO */}
-          <div className="relative border-t p-3">
+          {/* MENU (Scrollable list only) */}
+          <div className="flex-1 overflow-y-auto min-h-0 py-2 custom-scrollbar">
+            <SidebarContext.Provider value={{ expanded }}>
+              <ul className="px-3 space-y-1">
+                
+                {/* SECTION 1: HIDROPONIK & SPACE (FITUR WEBSITE UTAMA) */}
+                {auth.user?.role === 'admin' && (
+                  <>
+                    <div className="pt-3 pb-1 px-3 text-[10px] font-bold text-green-600 uppercase tracking-wider border-t mt-3">
+                      {expanded && "HIDROPONIK & SPACE"}
+                    </div>
+                    <SidebarItem icon={<FiHome size={20} />} text="Dashboard" href="/admin" active={route().current('admin.dashboard')} />
+                    <SidebarItem icon={<BsBoxSeam size={20} />} text="Produk Online" href="/admin/produk" active={route().current('admin.produk.*')} />
+                    <SidebarItem icon={<FiShoppingBag size={20} />} text="Pesanan Online" href="/admin/pesanan" active={route().current('admin.pesanan.*')} />
+                    <SidebarItem icon={<FiFileText size={20} />} text="Laporan" href="/admin/laporan" active={route().current('admin.laporan.*')} />
+                    <SidebarItem icon={<BsPeople size={20} />} text="Customer" href="/admin/pelanggan" active={route().current('admin.pelanggan.*')} />
+                    <SidebarItem icon={<FiCalendar size={20} />} text="Kunjungan" href="/admin/kunjungan" active={route().current('admin.kunjungan.*')} />
+                    <SidebarItem icon={<FiStar size={20} />} text="Ulasan" href="/admin/ulasan" active={route().current('admin.ulasan.*')} />
+                  </>
+                )}
+
+                {/* SECTION 2: KANTIN & POS (FITUR KASIR & DAPUR INTERNAL) */}
+                {(auth.user?.role === 'admin' || auth.user?.role === 'kasir' || auth.user?.role === 'dapur') && (
+                  <>
+                    <div className="pt-4 pb-1 px-3 text-[10px] font-bold text-green-600 uppercase tracking-wider border-t mt-4">
+                      {expanded && "KANTIN"}
+                    </div>
+
+                    {(auth.user?.role === 'admin' || auth.user?.role === 'kasir') && (
+                      <SidebarItem icon={<FiCoffee size={20} />} text="Sistem POS Kasir" href="/order" active={route().current('pos.kasir')} />
+                    )}
+                    {(auth.user?.role === 'admin' || auth.user?.role === 'dapur') && (
+                      <SidebarItem icon={<FiTv size={20} />} text="Kitchen Display" href="/kitchen" active={route().current('pos.kitchen')} />
+                    )}
+                    {(auth.user?.role === 'admin' || auth.user?.role === 'kasir') && (
+                      <>
+                        <SidebarItem icon={<FiCoffee size={20} />} text="Menu Makanan" href="/admin/pos-foods" active={route().current('admin.pos.foods.*')} />
+                        <SidebarItem icon={<FiGrid size={20} />} text="Nomor Antrian" href="/admin/pos-tables" active={route().current('admin.pos.tables.*')} />
+                        <SidebarItem icon={<FiTrendingUp size={20} />} text="Laporan & Penghasilan" href="/admin/pos-reports" active={route().current('admin.pos.reports.*')} />
+                      </>
+                    )}
+                  </>
+                )}
+
+                {/* LOGOUT */}
+                <div className="pt-3 border-t mt-4">
+                  <SidebarItem
+                    icon={<FiLogOut size={20} />}
+                    text="Logout"
+                    href={route('logout')}
+                    method="post"
+                    as="button"
+                    active={false}
+                  />
+                </div>
+              </ul>
+            </SidebarContext.Provider>
+          </div>
+
+          {/* USER INFO (Fixed Bottom) */}
+          <div className="relative border-t p-3 shrink-0 bg-white z-10">
             {showProfile && expanded && (
               <div className="absolute bottom-full left-3 mb-2 w-72 bg-white rounded-xl shadow-2xl border border-green-100 overflow-hidden z-50 animate-fade-in-up">
                 {/* Header */}

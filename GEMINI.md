@@ -1,5 +1,547 @@
 # Catatan Perubahan
 
+## 22 September 2026 (Update Logo Struk Kasir ke logoo.png)
+
+### Penyesuaian Logo Struk Kasir (`Receipt.jsx`):
+- **Penggantian File Logo**:
+  - Mengubah sumber gambar logo pada bagian header struk customer dari `/storage/logo/central_palantea.png` menjadi **`/storage/logo/logoo.png`**.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Penyederhanaan Alur Cetak Struk Kasir & Penggabungan Tombol Cetak)
+
+### Penyesuaian Alur & UI Kasir (`Kasir.jsx`):
+- **Penggabungan Tombol Cetak Struk**:
+  - Tombol terpisah `Cetak Struk Customer` dan `Ticket Dapur` pada panel kanan nomor meja telah digabung menjadi 1 tombol hijau tunggal: **`🖨️ Cetak Struk`**.
+- **Alur Langsung Tanpa Popup Perantara**:
+  - Saat menekan **"Kirim Pesanan ke Dapur"**, memproses pembayaran, atau menekan tombol **"Cetak Struk"** di meja, sistem **langsung membuka modal preview & cetak struk** (default mode 2 lembar terpisah auto-cut).
+  - Mengeliminasi popup pertanyaan centang perantara sehingga kasir bisa langsung klik `Print Sekarang` / `Enter`.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Penyesuaian Sidebar: Penyelarasan Warna Header HIDROPONIK & SPACE)
+
+### Penyelarasan Judul Kategori Sidebar (`Sidebar.jsx`):
+- **Warna Header Diseragamkan**: Mengubah warna teks judul kategori **`HIDROPONIK & SPACE`** dari abu-abu (`text-gray-400`) menjadi hijau (`text-green-600`), sehingga seragam dan konsisten dengan header kategori **`KANTIN`**.
+- **Files Modified**:
+  - `resources/js/Components/Bar/Sidebar.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Optimasi Auto-Cut & Layout Cetak Struk Ganda Thermal 80mm)
+
+### Perbaikan CSS Print & Pemotong Kertas Otomatis (`Receipt.jsx`):
+- **Perbaikan CSS `@media print`**:
+  - Mengubah `.pos-receipt-printable-wrap` dari `position: fixed` menjadi `position: static`, sehingga browser tidak mengabaikan *page break* atau membuat dua struk menumpuk saat dicetak.
+  - Menambahkan jarak jeda kertas (`padding-bottom: 16px` & `margin-bottom: 10mm`) sebelum pemotongan halaman agar pisau *auto-cutter* printer thermal melewati area cetak teks secara bersih.
+- **Setelan Driver Windows untuk Auto-Cut**:
+  - Agar printer thermal (Blueprint POS 80 / POS-80) memotong kertas secara otomatis di setiap halaman/lembar, pastikan pengaturan driver printer di Windows set ke **`Page Cut`** atau **`Doc & Page Cut`**.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Penyesuaian Sidebar: Rename TOKO ONLINE → HIDROPONIK & SPACE, Dashboard Dipindahkan)
+
+### Penyesuaian Label & Posisi Menu Sidebar (`Sidebar.jsx`):
+- **Rename Label Section**: `TOKO ONLINE` diubah menjadi **`HIDROPONIK & SPACE`**.
+- **Dashboard Dipindahkan**: Menu `Dashboard` dipindahkan ke dalam section **HIDROPONIK & SPACE** (bukan di atas section lagi).
+- **Files Modified**:
+  - `resources/js/Components/Bar/Sidebar.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fitur Cetak 2 Struk Otomatis Terpisah / Auto-Cut Dual Receipts)
+
+### Otomatisasi Cetak Struk Customer + Ticket Dapur Sekaligus (`Receipt.jsx` & `Kasir.jsx`):
+- **Popup Konfirmasi Cepat Setelah Kirim Pesanan / Bayar (`Kasir.jsx`)**:
+  - Setelah pesanan dikirim ke dapur atau pembayaran diproses, sistem memunculkan dialog ringkas:
+    * `[☑️] Struk Pembayaran Customer` (Default Tercentang)
+    * `[☑️] Ticket Pesanan Dapur` (Default Tercentang)
+  - Kasir cukup menekan tombol **`🖨️ Cetak Struk`** 1 kali (atau `Enter`).
+- **Pemisahan Lembar Otomatis / Auto-Cut (`Receipt.jsx`)**:
+  - Menambahkan dukungan mode `type="both"` dengan CSS Print `@page { size: portrait; margin: 0mm; }` dan `.receipt-page-cut { page-break-after: always !important; break-after: page !important; }`.
+  - Printer thermal 80mm yang memiliki fitur Auto-Cutter akan otomatis mencetak Struk Customer ➡️ **memotong kertas secara otomatis (Auto Cut)** ➡️ melanjutkan cetak Ticket Dapur ➡️ **memotong kertas kembali (Auto Cut)**.
+  - Menghasilkan 2 lembar kertas terpisah yang rapi tanpa perlu menggunting manual.
+- **Tab Pemilih di Preview Struk (`Kasir.jsx`)**:
+  - Pada modal preview struk kasir, disediakan tombol tab cepat: **`✂️ Keduanya (2 Lembar)`**, **`🖨️ Customer Saja`**, dan **`🍳 Dapur Saja`**.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fitur Dashboard & Laporan Penghasilan Kantin POS)
+
+### Pembuatan Modul Dashboard & Laporan Keuangan Kantin (`ReportIndex.jsx`, `PosReportController.php`, `web.php`, `Sidebar.jsx`):
+- **Menu Baru di Sidebar KANTIN (`Sidebar.jsx`)**:
+  - Menambahkan menu **`📊 Laporan & Penghasilan`** (`/admin/pos-reports`) di bawah Nomor Antrian untuk role `admin` dan `kasir`.
+- **Backend Controller & Laporan Keuangan (`PosReportController.php`)**:
+  - Menyediakan ringkasan finansial: Omzet Hari Ini, Omzet Bulan Ini, Omzet Terpilih, Transaksi Selesai, Rekap Cash (uang laci), Rekap QRIS (saldo bank), dan Tagihan Aktif Belum Bayar.
+  - Perhitungan **Top 5 Menu Paling Laris (Best Seller)** berdasarkan porsi terjual dan total omzet.
+  - Analisis **Peak Hours (Jam Sibuk)** dari pukul 08:00 sampai 22:00.
+  - Filter fleksibel: *Hari Ini*, *Kemarin*, *7 Hari Terakhir*, *Bulan Ini*, *Bulan Lalu*, *Semua Waktu*, atau *Pilih Rentang Tanggal Manual*.
+  - Ekspor data transaksi ke file format **CSV/Excel** UTF-8 (`exportCsv`).
+- **Tampilan Interaktif Frontend (`ReportIndex.jsx`)**:
+  - 6 Kartu KPI Finansial dengan gradasi dan indikator status.
+  - Grafik Tren Pendapatan Harian (Line Chart) dan Grafik Jam Sibuk (Bar Chart) menggunakan Chart.js.
+  - Diagram Komposisi Metode Bayar Cash vs QRIS (Doughnut Chart).
+  - Tabel Daftar Transaksi Kasir dengan pagination, filter status bayar & metode, pencarian instan, serta tombol **Cetak Ulang Struk Customer & Ticket Dapur**.
+- **Files Modified/Created**:
+  - `app/Http/Controllers/Pos/PosReportController.php` *(NEW)*
+  - `resources/js/Pages/POS/Admin/ReportIndex.jsx` *(NEW)*
+  - `routes/web.php`
+  - `resources/js/Components/Bar/Sidebar.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Penyesuaian Kitchen Ticket: Ganti "Bayar Via" Menjadi "Status Bayar: LUNAS / BELUM LUNAS")
+
+### Kustomisasi Struk Ticket Dapur (`Receipt.jsx`):
+- **Penggantian Field "Bayar Via" pada Kitchen Ticket**:
+  - Pada struk Dapur (`type === 'kitchen'`), label `Bayar Via: CASH/QRIS` telah diubah menjadi **`Status Bayar: LUNAS`** (hijau tebal) atau **`Status Bayar: BELUM LUNAS`** (merah tebal).
+  - Struk Pelanggan (`type === 'customer'`) tetap menampilkan metode pembayaran `Bayar Via: CASH / QRIS` beserta rincian Bayar dan Kembalian secara lengkap.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Verifikasi & Sinkronisasi Realtime Bayar & Kembalian Struk Kasir)
+
+### Sinkronisasi Data Pembayaran & Kembalian Struk Thermal Kasir (`Kasir.jsx`, `Receipt.jsx`, `HandleInertiaRequests.php`):
+- **Verifikasi Database & Eager Loading Pembayaran**:
+  - Memastikan seluruh transaksi tunai (`Cash`) yang dikirim dari kasir menyimpan nominal uang diberikan (`jumlah_bayar`) dan kalkulasi kembalian (`kembalian`) ke tabel `pos_payments`.
+  - Flash session `latestOrder` dan relasi `activeOrder.payment` terhubung penuh ke state `orderForReceipt` dan komponen `Receipt.jsx`.
+- **Tampilan Struk Pelanggan**:
+  - Untuk pembayaran tunai berlebih (misal total `Rp 23.000` dibayar dengan uang pecahan `Rp 30.000`), struk thermal mencetak:
+    * `Metode: CASH`
+    * `Bayar: Rp 30.000`
+    * `Kembalian: Rp 7.000`
+- **Files Verified & Compiled**:
+  - `app/Http/Middleware/HandleInertiaRequests.php`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Optimasi Kertas Thermal 80mm & Panduan Silent Direct Printing Kasir)
+
+### Penyesuaian Layout Kertas Thermal 80mm (`Receipt.jsx` & `Kasir.jsx`):
+- **Penetapan Default Kertas Thermal 80mm (`Kasir.jsx` & `Receipt.jsx`)**:
+  - Mengubah default prop `paperSize` menjadi `'80mm'` (lebar fisik `76mm`) untuk menyesuaikan dengan gulungan kertas thermal standar **80x80mm**.
+- **Penguncian Orientasi Portrait & Penyesuaian Presisi Rata Tengah 80mm (`Receipt.jsx`)**:
+  - Menambahkan aturan CSS `@page { size: portrait; margin: 0mm; }`, `left: 0; right: 0; margin: 0 auto;`, dan penyesuaian lebar printable `62mm` (mengeliminasi masalah teks/angka terpotong di tepi kanan seperti Nomor Meja 06, serta memberikan margin presisi pada gulungan kertas 80mm).
+- **Penambahan Logo Brand Green & Pembesaran Ukuran (`Receipt.jsx`)**:
+  - Menampilkan logo resmi Central Palantea (`/storage/logo/central_palantea.png`) dalam warna hijau khas brand secara presisi dan diperbesar (lebar `w-28` / `112px`) di bagian teratas header struk customer.
+- **Penyempurnaan Input Bayar Tunai & Hitung Kembalian (`Kasir.jsx` & `HandleInertiaRequests.php`)**:
+  - Menyaring tombol preset pecahan uang tunai (`Pas`, `30k`, `50k`, `100k`, `200k`) agar hanya menampilkan nominal yang sama atau lebih besar dari total tagihan.
+  - Mendaftarkan flash data `latestOrder` pada middleware `HandleInertiaRequests.php` sehingga data pembayaran `jumlah_bayar` dan `kembalian` dari server terkirim 100% utuh dan akurat ke struk thermal.
+- **Files Modified**:
+  - `app/Http/Middleware/HandleInertiaRequests.php`
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fix Order Not Saved in Database: Missing DB::commit in KasirController)
+
+### Perbaikan Persistence & Commit Transaksi Pesanan Kasir (`KasirController.php` & `Kasir.jsx`):
+- **Aktivasi `DB::commit()` pada `storeOrder` (`KasirController.php`)**:
+  - **Penyebab Masalah**: Sebelumnya method `storeOrder` mengeksekusi `DB::beginTransaction()`, namun tidak memanggil `DB::commit()` sebelum `return back()`. Hal ini menyebabkan PDO/MySQL secara otomatis melakukan **ROLLBACK** terhadap transaksi saat request HTTP berakhir. Akibatnya, pesanan yang baru dibuat (meja no. 5, dll) tidak pernah tersimpan di database, tidak masuk ke Dapur (KDS), dan tidak muncul di Admin/Kasir saat halaman di-refresh atau saat modal struk ditutup.
+  - **Solusi**: Menambahkan `DB::commit();` secara eksplisit tepat sebelum mengembalikan `return back()->with('success', ...)` dalam blok `try`.
+- **Penanganan Error Flash di Frontend (`Kasir.jsx`)**:
+  - Menambahkan pengecekan `page?.props?.flash?.error` pada callback `onSuccess` di `handleSendOrder` agar jika terjadi kendala pada backend, alert error ditampilkan secara transparan dan keranjang tidak dikosongkan.
+- **Files Modified**:
+  - `app/Http/Controllers/Pos/KasirController.php`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fix Layout Modal Struk Thermal POS: Responsive Scroll Mandiri & Fixed Buttons)
+
+### Perbaikan Modal Cetak Struk Thermal Kasir (`Kasir.jsx`):
+- **Responsive Scroll Mandiri Modal Preview (`Kasir.jsx`)**:
+  - Mengubah kontainer modal cetak struk thermal menjadi `max-h-[90vh] flex flex-col overflow-hidden`.
+  - Mengisolasi bagian scroll hanya pada area preview struk (`flex-1 overflow-y-auto custom-scrollbar`), sehingga saat item pesanan sangat banyak, **struk dapat di-scroll dengan lancar dari atas ke bawah** tanpa terpotong atau memaksa layar di-zoom out.
+- **Fixed Header & Action Buttons**:
+  - Judul modal ("Cetak Struk Thermal POS") terkunci di bagian atas modal (`shrink-0`).
+  - Tombol aksi **`🖨️ Print Sekarang`** dan **`Tutup`** terkunci secara presisi di bagian bawah modal (`shrink-0 pt-1 border-t`).
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Penataan Ulang & Kerapian Tampilan Daftar Menu Struk Thermal POS)
+
+### Perbaikan Layout Daftar Item Menu Struk (`Receipt.jsx`):
+- **Menghilangkan Potongan Nama Menu (`truncate`)**:
+  - Mengubah penanganan teks nama menu agar tampil secara utuh tanpa terpotong titik-titik (`...`), mendukung pembungkusan kata alami (`break-words flex-1`).
+- **Nominal Harga Selalu Satu Baris Presisi**:
+  - Mencegah nominal harga (misal `Rp 18.000`) terpotong/patah menjadi dua baris dengan menambahkan `whitespace-nowrap shrink-0 text-right`.
+- **Eliminasi Rincian Harga Satuan Redundan**:
+  - Menghilangkan cetakan baris `@ Rp X.XXX` untuk item berjumlah `1x` (karena harga satuan dan subtotal bernilai sama), dan hanya mencantumkan harga satuan jika `jumlah > 1` (misal: `2x Indomie Goreng` `(2 x Rp 18.000)`).
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fitur Input Uang Diberikan & Hitung Kembalian Saat Buat Order Tunai Kasir)
+
+### Penambahan Form Uang Bayar Tunai pada Kasir (`Kasir.jsx` & `KasirController.php`):
+- **Input Nominal Uang Diberikan (`Kasir.jsx`)**:
+  - Saat kasir memilih **`💵 Cash (Lunas)`** ketika membuat pesanan baru, form input **`Uang Diberikan (Rp)`** dan tombol preset instan (`Pas`, `50k`, `100k`, `200k`) otomatis muncul secara dinamis.
+  - Menampilkan kalkulasi **`Kembalian`** secara realtime sebelum pesanan dikirim ke dapur.
+- **Penyimpanan Record Pembayaran (`KasirController.php`)**:
+  - `storeOrder` menerima parameter `jumlah_bayar`, menghitung nilai kembalian tunai, dan langsung menyimpan record ke tabel `pos_payments`.
+- **Cetak Struk Instan dengan Kembalian Akurat (`Receipt.jsx`)**:
+  - Struk thermal yang langsung dicetak setelah pesanan dikirim secara otomatis menampilkan nominal **`Bayar: Rp [Uang Diberikan]`** dan **`Kembalian: Rp [Nominal Kembalian]`** yang di-input kasir.
+- **Files Modified**:
+  - `app/Http/Controllers/Pos/KasirController.php`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Pencantuman Rincian Bayar & Kembalian Khusus Pembayaran Tunai/Cash pada Struk)
+
+### Penyesuaian Struk Thermal Tunai/Cash (`Receipt.jsx`):
+- **Sinkronisasi Metode Pembayaran**:
+  - `Bayar Via` pada bagian header dan `Metode` pada bagian bawah disinkronkan secara konsisten (`CASH` / `QRIS`).
+- **Pencantuman Rincian Bayar & Kembalian Khusus Cash**:
+  - Untuk setiap transaksi bertipe **`CASH`**, struk thermal secara otomatis mencantumkan:
+    * **`Metode`**: `CASH`
+    * **`Bayar`**: `Rp [Jumlah Uang yang Diberikan]` (misal: Rp 100.000)
+    * **`Kembalian`**: `Rp [Nominal Kembalian]` (misal: Rp 65.000)
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Otomatisasi Opsi Cetak Struk Langsung Saat Kirim Pesanan Kasir)
+
+### Otomatisasi Cetak Struk Kasir (`KasirController.php` & `Kasir.jsx`):
+- **Flash Data Order Terbaru (`KasirController.php`)**:
+  - `storeOrder` mengembalikan objek `$order` lengkap beserta relasinya (`table`, `cashier`, `items.food`, `payment`) via `with('latestOrder', $order)` dalam flash session.
+- **Opsi Cetak Struk Langsung Tanpa Klik Ulang (`Kasir.jsx`)**:
+  - Setelah Kasir mengeklik tombol **"Kirim Pesanan ke Dapur"**, sistem **langsung memunculkan dialog konfirmasi sukses** dengan 2 pilihan cetak instan:
+    1. **`🖨️ Cetak Struk Customer`**: Langsung membuka modal cetak struk thermal untuk pelanggan.
+    2. **`🍳 Cetak Ticket Dapur`**: Langsung membuka modal cetak ticket dapur.
+  - Mengeliminasi kebutuhan kasir untuk mengeklik kembali nomor meja di grid maupun mengeklik tombol *"Proses Pembayaran (Customer Selesai Makan)"*.
+- **Tombol Akses Pintas Struk di Panel Kanan (`Kasir.jsx`)**:
+  - Saat memilih meja berstatus Lunas di grid, panel kanan kini langsung menampilkan tombol **`🖨️ Cetak Struk Customer`** dan **`🍳 Ticket Dapur`** untuk kemudahan cetak ulang kapan saja.
+- **Files Modified**:
+  - `app/Http/Controllers/Pos/KasirController.php`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Kustomisasi Struk Thermal POS: Logo, Judul, Alamat, No Meja, Format Waktu & Footer)
+
+### Pembaruan Tampilan Struk Thermal (`Receipt.jsx`):
+- **1. Penambahan Logo Brand**:
+  - Menampilkan logo resmi Central Palantea (`/storage/logo/central_palantea.png`) secara presisi di bagian teratas header struk customer.
+- **2. Judul Utama Struk**:
+  - Diperbarui menjadi **`CENTRAL PALANTEA HIDROPONIK`**.
+- **3. Subtitle & Alamat Resmi**:
+  - **Subtitle**: `Agrowisata Center — Cafe • Space • Hydroponic`.
+  - **Alamat**: `Jl. Melayu, Babussalam, Mandau, Bengkalis Regency, Riau 28784`.
+- **4. Penggantian Label & Tampilan Nomor Meja**:
+  - Mengubah label `NO. ANTRIAN:` menjadi **`NO. MEJA:`**.
+  - Menghapus blok latar belakang hitam pekat dan menampilkan nomor meja (`NO. XX`) secara bersih, tegas, dan mudah dibaca tanpa `NO. --` kosong.
+- **5. Pembaruan Pesan Footer Struk**:
+  - Mengubah teks footer menjadi:
+    * *"Terima Kasih Atas Kunjungan Anda!"*
+    * *"Mohon Ditunggu, Hidangan Segera Kami Antarkan"*
+- **6. Format Waktu Tanpa Detik**:
+  - Mengisolasi penulisan jam dan menit saja (misal `22/9/2026, 10.17`) dengan menghapus komponen detik.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Penyesuaian Modal Pembayaran QRIS: Uang Pas Otomatis & Tanpa Kembalian)
+
+### Penyesuaian UX Modal Bayar Kasir (`Kasir.jsx`):
+- **Otomatis Nominal Pas untuk QRIS**:
+  - Saat kasir memilih metode **`📱 QRIS`** di Modal Pembayaran, nilai `jumlahBayar` secara otomatis dikunci persis sesuai total tagihan pesanan (`jumlahBayar = total`).
+- **Penyembunyian Form Input & Quick Buttons Khusus QRIS**:
+  - Menyembunyikan input manual nominal, tombol preset uang pas (20k, 50k, 100k), dan kalkulasi kembalian saat metode **QRIS** dipilih, karena transaksi QRIS non-tunai selalu bernilai pas tanpa kembalian.
+  - Menampilkan banner informatif: *"Nominal pembayaran QRIS otomatis pas sesuai tagihan: Rp [Total] (tanpa kembalian)"*.
+- **Metode Cash Tetap Lengkap**:
+  - Metode **`💵 Cash`** tetap menampilkan input nominal bayar, tombol preset uang pas, dan kalkulator hitung kembalian secara presisi.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Penambahan Akses Menu Makanan & Nomor Antrian untuk Role Kasir)
+
+### Ekstensi Akses Modul Kantin untuk Kasir (`routes/web.php` & `Sidebar.jsx`):
+- **Otorisasi Middleware Route (`web.php`)**:
+  - Memindahkan route `/admin/pos-foods` (Kelola Menu Makanan) dan `/admin/pos-tables` (Kelola Nomor Antrian) ke dalam grup `Route::middleware(['auth', 'pos.access'])`.
+  - Hal ini mengizinkan pengguna dengan role `kasir` (serta `admin`) untuk mengelola daftar makanan/minuman dan memantau/mereset status 30 nomor antrian tanpa terkena 403 Forbidden.
+- **Tampilan Sidebar Modul KANTIN (`Sidebar.jsx`)**:
+  - Memperbarui kondisi render menu item **Menu Makanan** dan **Nomor Antrian** pada Sidebar agar tampil bagi role `admin` DAN `kasir` (`auth.user?.role === 'admin' || auth.user?.role === 'kasir'`).
+- **Files Modified**:
+  - `routes/web.php`
+  - `resources/js/Components/Bar/Sidebar.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Update Default Pembayaran: Cash Lunas & Urutan Opsi)
+
+### Pengaturan Default & Urutan Opsi Pembayaran (`Kasir.jsx`):
+- **Default Opsi Pembayaran**:
+  - Mengubah opsi default saat input pesanan baru di Kasir menjadi **`💵 Cash (Lunas)`** (karena mayoritas transaksi kasir adalah bayar tunai lunas).
+- **Urutan Tombol Pembayaran saat Input Order**:
+  1. **`💵 Cash (Lunas)`** (Default / Opsi 1)
+  2. **`📱 QRIS (Lunas)`** (Opsi 2)
+  3. **`⚠️ Belum Dibayar`** (Opsi 3)
+- **Garansi Status Lunas**:
+  - Saat kasir memilih **Cash** atau **QRIS**, pesanan langsung disimpan dengan status `payment_status = PAID` dan otomatis membuat record pembayaran. Dapur dan Kasir langsung menampilkan status **`✅ LUNAS`**.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fix Route Name Error: pos.kasir & pos.kitchen)
+
+### Perbaikan Nama Route Laravel (`AuthenticatedSessionController.php` & `WelcomeController.php`):
+- **Penyesuaian Nama Route**:
+  - Mengubah pemanggilan `route('pos.kasir.index')` menjadi **`route('pos.kasir')`** sesuai dengan definisi route di `routes/web.php`.
+  - Mengubah `route('pos.kitchen.index')` menjadi **`route('pos.kitchen')`**.
+- **Hasil**:
+  - Mengeliminasi error `Route [pos.kasir.index] not defined`.
+  - Pengalihan otomatis akun Kasir ke `/order` dan Dapur ke `/kitchen` berjalan 100% lancar tanpa exception.
+- **Files Modified**:
+  - `app/Http/Controllers/Auth/AuthenticatedSessionController.php`
+  - `app/Http/Controllers/WelcomeController.php`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fitur 3 Opsi Status Pembayaran Saat Input Pesanan Kasir)
+
+### Fleksibilitas Pembayaran Saat Input Order (`Kasir.jsx` & `KasirController.php`):
+- **3 Pilihan Status Pembayaran Saat Buat Order**:
+  1. **`⚠️ Belum Dibayar`**: Pesanan dikirim ke Dapur dengan status `payment_status = UNPAID`. Dapur dan Kasir menampilkan indikator **`⚠️ BELUM DIBAYAR`**. Pembayaran ditagih belakangan.
+  2. **`💵 Cash (Lunas)`**: Pesanan langsung lunas tunai saat di-input (`payment_status = PAID`). Dapur dan Kasir menampilkan **`✅ LUNAS`**. Record pembayaran dibuat otomatis.
+  3. **`📱 QRIS (Lunas)`**: Pesanan langsung lunas QRIS saat di-input (`payment_status = PAID`). Dapur dan Kasir menampilkan **`✅ LUNAS`**. Record pembayaran dibuat otomatis.
+- **Dapur Tetap Fokus 2 Status Utama**:
+  - Papan KDS Dapur (`Kitchen.jsx`) hanya menampilkan indikator utama: **`⚠️ BELUM DIBAYAR`** atau **`✅ LUNAS`**.
+- **Pengumuman Suara Sesuai Status**:
+  - Pengumuman suara kasir mengkonfirmasi apakah pesanan *lunas* atau *belum dibayar* saat dikirim ke dapur.
+- **Files Modified**:
+  - `app/Http/Controllers/Pos/KasirController.php`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fix Route & Redirect Akses POS Kasir)
+
+### Perbaikan Pengalihan Halaman Kasir (`AuthenticatedSessionController.php`, `WelcomeController.php`, `CustomerLayout.jsx`):
+- **Otomatis Redirect Role Kasir**:
+  - Saat user bertipe `kasir` login atau mengakses URL utama (`http://127.0.0.1:8000/`), sistem **secara otomatis mengarahkan langsung ke Halaman POS Kasir (`/order`)** bukannya toko online customer.
+  - Hal yang sama berlaku untuk role `dapur` (ke `/kitchen`) dan `admin` (ke `/admin`).
+- **Menu Akses Pintas di Header/Profile Dropdown (`CustomerLayout.jsx`)**:
+  - Menambahkan menu tombol **`💻 POS Order Kantin (Kasir)`** di dropdown profil user jika akun bertipe Kasir.
+- **Files Modified**:
+  - `app/Http/Controllers/Auth/AuthenticatedSessionController.php`
+  - `app/Http/Controllers/WelcomeController.php`
+  - `resources/js/Layouts/CustomerLayout.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Penyederhanaan Tampilan Pembayaran: Hanya Lunas / Belum Dibayar)
+
+### Penyederhanaan Visual Kasir & Dapur:
+- **Pembersihan Badge Cash/QRIS di KDS Dapur (`Kitchen.jsx`)**:
+  - Menghapus badge `💵 CASH` / `📱 QRIS` di seluruh kartu KDS Dapur (Kolom 1, 2, dan 3).
+  - Kartu kini **hanya fokus menampilkan indikator utama**: **`⚠️ BELUM DIBAYAR`** atau **`✅ LUNAS`**.
+- **Penyederhanaan Form & Recap POS Kasir (`Kasir.jsx`)**:
+  - Menghapus tombol pilihan metode pembayaran (Cash/QRIS) saat kasir membuat pesanan baru (karena metode pembayaran baru dipilih saat kasir memproses pembayaran/menagih customer di modal bayar).
+  - Memperbarui status pembayaran pada detail pesanan terisi agar hanya menampilkan **`⚠️ BELUM DIBAYAR`** atau **`✅ LUNAS`**.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kitchen.jsx`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Dukungan Alur Bayar Belakangan / Pay-Later POS Kantin)
+
+### Indikator & Reminder Pembayaran Belakangan:
+- **Badge Status Pembayaran di KDS Dapur (`Kitchen.jsx`)**:
+  - Menampilkan badge **`⚠️ BELUM DIBAYAR`** (animasi pulse kuning/amber) jika pesanan berstatus `payment_status = UNPAID`.
+  - Menampilkan badge **`✅ LUNAS`** (hijau) jika pesanan sudah dibayar.
+  - Ditampilkan di semua kolom KDS: *1. PESANAN BARU*, *2. SEDANG DIPROSES*, dan *3. SIAP / DISAJIKAN*.
+- **Note pada Struk Thermal & Ticket Dapur (`Receipt.jsx`)**:
+  - Menampilkan box warning bertuliskan: **`⚠️ BELUM DIBAYAR — * Pembayaran ditagih saat pengantaran *`** pada Struk Customer jika belum dibayar.
+  - Menampilkan banner **`⚠️ BELUM DIBAYAR - TAGIH SAAT PENGANTARAN`** pada Ticket Dapur.
+- **Reminder Kasir & Visual Grid 30 Nomor (`Kasir.jsx`)**:
+  - Visual Grid 30 Nomor menampilkan badge **`⚠️ UNPAID`** pada nomor antrian yang sedang terisi tapi belum dibayar.
+  - Panel kanan Recap Pesanan terisi menampilkan box **`📌 Reminder Kasir: Pembayaran ditagih saat pengantaran hidangan atau customer selesai makan`**.
+  - Tombol aksi kasir disesuaikan menjadi **`💳 PROSES PEMBAYARAN (TAGIH CUSTOMER)`**.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kitchen.jsx`
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fitur Text-to-Speech Suara Pengumuman Otomatis Kasir & Dapur)
+
+### Pengumuman Suara Bahasa Indonesia (Web Speech API):
+- **Fitur Pengumuman Suara (TTS Native Browser)**:
+  - Mengintegrasikan `window.speechSynthesis` (Web Speech API) dengan konfigurasi Bahasa Indonesia (`id-ID`).
+  - Menggabungkan nada *chime dual-tone* (E5 & A5) dengan pengumuman suara yang jernih dan alami.
+- **Pengumuman Otomatis pada KDS Dapur (`Kitchen.jsx`)**:
+  - **Pesanan Baru**: *"Pesanan baru masuk, Nomor Antrian [X], atas nama [Nama Pelanggan]"* saat ada order baru dari kasir.
+  - **Terima & Proses**: *"Pesanan Nomor Antrian [X] sedang diproses"* saat Dapur mengeklik tombol proses.
+  - **Siap Disajikan**: *"Pesanan Nomor Antrian [X] siap disajikan"* saat Dapur mengeklik makanan siap.
+  - **Serahkan & Selesaikan**: *"Pesanan Nomor Antrian [X] selesai diserahkan"* saat pesanan diserahkan.
+  - **Reset Kartu**: *"Nomor Antrian [X] siap digunakan kembali"* saat kartu antrian di-reset.
+- **Pengumuman Otomatis pada POS Kasir (`Kasir.jsx`)**:
+  - Menambahkan tombol **🔊 Suara Aktif / Aktifkan Suara** pada header Kasir.
+  - **Kirim Pesanan**: *"Pesanan Nomor Antrian [X] berhasil dikirim ke dapur"* saat Kasir membuat order.
+  - **Pembayaran Sukses**: *"Pembayaran Nomor Antrian [X] berhasil"* saat Kasir memproses pembayaran.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kitchen.jsx`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fix MySQL Error 1932 & Re-Migration Database)
+
+### Penanganan Database Corrupt XAMPP (Error 1932):
+- **Masalah**: Muncul error `SQLSTATE[42S02]: Base table or view not found: 1932 Table 'cph_project.products' doesn't exist in engine` akibat file data InnoDB XAMPP/MariaDB corrupt/yatim saat MySQL mati mendadak.
+- **Solusi**:
+  - Membuat database MySQL segar baru `cph_project_db` untuk membebaskan sistem dari file tablespace InnoDB yang terkunci.
+  - Memperbarui konfigurasi `DB_DATABASE=cph_project_db` di `.env`.
+  - Menjalankan `php artisan migrate:fresh --seed` secara penuh (49 tabel migration & 9 seeder berjalan **100% DONE**).
+  - Mengembalikan seluruh master data: Admin, Kasir, Dapur, 49 Item Menu Resmi Flyer, 30 Nomor Antrian, dan Produk Online.
+- **Files Modified**:
+  - `.env`
+  - `GEMINI.md`
+
+## 22 September 2026 (Fix Layout Panel Kasir: Scroll Keranjang Mandiri & Sticky Panel)
+
+### Perbaikan Layout POS Kasir (`Kasir.jsx`):
+- **Fixed & Sticky Panel Kanan (Recap Pesanan)**:
+  - Mengubah struktur Flexbox pada panel recap kanan menjadi `lg:h-[calc(100vh-120px)] lg:sticky lg:top-24 overflow-hidden`.
+  - Header (Nomor Antrian & Ganti Nomor) mengunci di posisi atas panel (`shrink-0`).
+  - Input Nama Customer, Metode Pembayaran (Cash/QRIS), Catatan, Total Tagihan, dan Tombol "Kirim Pesanan ke Dapur" mengunci di posisi paling bawah panel (`shrink-0`).
+- **Scroll Mandiri Item Keranjang (`cart.map`)**:
+  - Mengisolasi bagian scroll hanya pada **Daftar Item Menu Keranjang (`flex-1 overflow-y-auto min-h-0`)**.
+  - Saat item dalam keranjang bertambah banyak, hanya daftar item di keranjang saja yang ter-scroll, sementara form input dan tombol kirim di bawahnya tetap terlihat dan tidak ikut bergeser.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `GEMINI.md`
+
+## 22 September 2026 (Update KDS Audio, Tombol Selesai, Input Nama Customer & Metode Pembayaran Cash/QRIS)
+
+### Update Sistem KDS Dapur & POS Kasir:
+- **Perbaikan Layout Sidebar (Profil User Fixed di Bawah)**:
+  - Mengubah struktur Flexbox pada `Sidebar.jsx` agar **Profil User (`User Info`) di bagian bawah selalu fixed/sticky di posisi paling bawah**, tidak dapat ter-scroll.
+  - Mengisolasi bagian scroll hanya pada **Daftar Menu (`flex-1 overflow-y-auto`)** jika item menu berlebih.
+- **Pengaktifan Audio Notifikasi KDS (Web Audio API Synthesizer)**:
+- **Pengaktifan Audio Notifikasi KDS (Web Audio API Synthesizer)**:
+  - Mengintegrasikan Web Audio API Chime Synthesizer dua nada (E5 & A5) native browser yang **dijamin berbunyi lantang** saat ada pesanan baru masuk tanpa tergantung file MP3 eksternal.
+  - Menambahkan tes audio otomatis saat tombol "Suara Aktif" diklik agar browser meng-unlock izin audio.
+- **Tombol Penyelesaian Pesanan pada Kolom 3 KDS (SIAP / DISAJIKAN)**:
+  - Menambahkan tombol **`🎉 SERAHKAN KEPADA CUSTOMER & SELESAIKAN`** pada setiap card pesanan di Kolom 3 ("SIAP / DISAJIKAN").
+  - Menghubungkan alur status dari `READY` -> `COMPLETED`, yang secara otomatis memindahkan kartu antrian ke Kolom 4 ("KARTU ANTRIAN SELESAI") agar siap di-reset/dikembalikan ke kasir.
+- **Pencatatan Nama Customer (Input Diketik)**:
+  - Menambahkan field input **Nama Customer / Pemesan** pada POS Kasir (`Kasir.jsx`).
+  - Menyimpan `nama_pelanggan` pada tabel `pos_orders`.
+  - Menampilkan nama customer secara jelas di KDS (`Kitchen.jsx`), Kasir (`Kasir.jsx`), dan Struk Thermal (`Receipt.jsx`).
+- **Penyederhanaan Metode Pembayaran (Hanya Cash & QRIS)**:
+  - Mengubah opsi pembayaran menjadi **HANYA 2 PILIHAN: 💵 Cash dan 📱 QRIS**.
+  - Menampilkan badge indikator pembayaran (`💵 CASH` / `📱 QRIS`) secara jelas di bawah/samping informasi pesanan pada KDS Dapur, Kasir, dan Struk Thermal.
+- **Files Modified**:
+  - `database/migrations/2026_09_14_163459_add_nama_pelanggan_to_pos_orders_table.php`
+  - `app/Models/PosOrder.php`
+  - `app/Http/Controllers/Pos/KasirController.php`
+  - `app/Http/Controllers/Pos/KitchenController.php`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `resources/js/Pages/POS/Kitchen.jsx`
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `GEMINI.md`
+
+## 14 September 2026 (Update Sesi 4 - Pembaruan Daftar Menu Resmi Flyer)
+
+### Import & Sinkronisasi Menu Resmi Central Palantea Space & Kantin
+- **Pembaruan Master Data Menu Makanan/Minuman**:
+  - Menginput seluruh 49 item menu resmi sesuai flyer *Central Palantea Space & Kantin*.
+  - Terbagi menjadi 4 Kategori Utama:
+    1. **Makanan Utama (Main Courses)**: 20 Item (Nasi Goreng, Nasi Ayam Barendo Palantea, Selada Kuah Kacang Palantea, Nasi Ramas Dendeng Cabe Merah, Mienas Palantea, dll).
+    2. **Additional**: 4 Item (Telur Rebus, Telur Ceplok, Telur Dadar, Nasi Putih).
+    3. **Minuman**: 19 Item (Jus Kale 100% Fresh Hidroponik, Teh Es, Kopi Gingseng, Matcha Ice, Wedang Jahe Merah, dll).
+    4. **Snack**: 6 Item (French Fries, Mix Platter, Nugget Ayam, Pastel Sayur Mini, Risolles Sayur, Pisang Kipas).
+- **Files Modified**:
+  - `database/seeders/PosSeeder.php` (diperbarui dengan data presisi & harga resmi)
+  - Database cleaned: menu dummy di-reset dan diganti 49 menu resmi.
+  - `GEMINI.md`
+
+## 14 September 2026 (Update Sesi 3 - Pemisahan Sidebar & Konsep Nomor Antrian)
+
+### Pemisahan Menu Sidebar & Perubahan Konsep POS Kantin
+- **Pemisahan Modul Sidebar Admin**:
+  - `TOKO ONLINE`: Menampung seluruh fitur e-commerce/website lama (Produk Online, Pesanan Online, Laporan, Customer, Kunjungan, Ulasan).
+  - `KANTIN`: Menampung seluruh fitur POS internal baru (Sistem POS Kasir, Kitchen Display, Menu Makanan, Nomor Antrian) yang diletakkan di section terpisah di bawah dengan space/pemisah jelas.
+- **Transformasi Konsep "Meja" -> "Nomor Antrian / Nomor Duduk"**:
+  - Menyesuaikan sistem operasional kantin dari Dine-in Meja 01-30 menjadi **Nomor Antrian / Nomor Duduk (No. 01 - 30)** yang dibawa/dipegang oleh pelanggan setelah bayar.
+  - Struk Thermal & Ticket Dapur (`Receipt.jsx`) menampilkan **NO. ANTRIAN: XX** secara besar dan jelas.
+  - Kitchen Display System (`Kitchen.jsx`) menampilkan **NO. ANTRIAN** dengan jelas pada setiap kolom status pesanan.
+  - Halaman Admin Manajemen Meja diperbarui menjadi **Manajemen Nomor Antrian**.
+- **Files Modified**:
+  - `resources/js/Components/Bar/Sidebar.jsx`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `resources/js/Pages/POS/Kitchen.jsx`
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `resources/js/Pages/POS/Admin/TableIndex.jsx`
+  - `GEMINI.md`
+
+## 14 September 2026 (Update Sesi 2 - Lanjutan)
+
+### Aktivasi & Deployment Sistem POS
+- **Status**: Sistem POS sepenuhnya aktif setelah menjalankan migration dan seeder.
+- **Fix Migration Role Enum**: Kolom `role` di tabel `users` hanya mendukung `admin` & `customer`. Ditambahkan migration baru untuk memperluas enum ke `['admin', 'customer', 'kasir', 'dapur']`.
+  - **File Created**: `database/migrations/2026_09_14_160836_add_kasir_dapur_to_users_role.php`
+- **Migration POS Berhasil**: `2026_09_14_100000_create_pos_system_tables` — 6 tabel POS berhasil dibuat (880ms).
+- **Seeder Berhasil**: `PosSeeder` berjalan sukses — 2 user (kasir & dapur), 30 meja (Meja 01-30), 3 kategori, 10 menu makanan/minuman terisi di database.
+- **Frontend Build Berhasil**: `npm run build` — semua aset POS ter-compile (`Kasir.js`, `Kitchen.js`, `FoodIndex.js`, `TableIndex.js`).
+- **Kredensial Akun**:
+  - Kasir: `kasir@cph.com` / `KasirCPH24@` → redirect ke `/order`
+  - Dapur: `dapur@cph.com` / `DapurCPH24@` → redirect ke `/kitchen`
+- **Verifikasi**: Semua route, middleware, model, controller, dan view POS sudah terkonfigurasi dengan benar.
+
+## 14 September 2026
+
+### Fitur Baru: Integrasi Sistem POS Kasir & Kitchen Display System (KDS Dapur)
+- **Tujuan**: Menambahkan modul internal POS untuk order makanan/minuman langsung (dine-in) di kasir dan sistem KDS untuk dapur tanpa membuat project/database baru atau merusak fitur e-commerce yang sudah ada.
+- **Arsitektur Isosiasi Data (`pos_*`)**:
+  - `pos_food_categories`: Kategori makanan/minuman dinamis (Makanan, Minuman, Snack).
+  - `pos_foods`: Menu makanan/minuman internal dengan soft delete & snapshot harga.
+  - `pos_tables`: Master data 30 meja (`Meja 01` s/d `30`) dengan status terpisah (`AVAILABLE`, `OCCUPIED`, `NEEDS_CLEANING`).
+  - `pos_orders`: Pesanan kasir dengan nomor unik `CP-POS-YYYYMMDD-XXX` dan status order terpisah (`NEW`, `PROCESSING`, `READY`, `COMPLETED`, `CANCELLED`).
+  - `pos_order_items`: Snapshot item pesanan, quantity, harga satuan, dan catatan khusus.
+  - `pos_payments`: Pembayaran kasir (`Cash`, `QRIS`, `Transfer`) dengan pencatatan `jumlah_bayar` dan `kembalian`.
+- **Ekstensi Role & Security**:
+  - Perluasan role pada tabel `users` existing: `admin`, `kasir`, `dapur`, `customer`.
+  - Helper role pada `User.php`: `isKasir()`, `isDapur()`, `canAccessPos()`, `canAccessKitchen()`.
+  - Middleware baru: `EnsureUserCanAccessPos` (`pos.access`) dan `EnsureUserCanAccessKitchen` (`kitchen.access`) terdaftar di `bootstrap/app.php`.
+  - Login Redirect: `admin` → `/admin`, `kasir` → `/order`, `dapur` → `/kitchen`.
+- **Fitur Frontend & UX**:
+  - **POS Kasir (`/order`)**: Visual grid 30 meja dengan 3 indikator warna & teks, filter kategori menu makanan, keranjang pesanan dengan input catatan per item & pesanan, tombol kirim ke dapur, serta modal pembayaran (hitung kembalian & preset uang pas).
+  - **Kitchen Display System (`/kitchen`)**: Papan KDS 4 kolom/tab (Pesanan Baru, Diproses, Siap, Meja Perlu Dibersihkan) dengan **NOMOR MEJA SANGAT BESAR**, notifikasi audio/visual saat pesanan baru masuk, dan polling otomatis setiap 5 detik.
+  - **Struk Thermal (`Receipt.jsx`)**: Komponen pencetakan struk customer & ticket dapur (58mm/80mm) menggunakan `@media print` CSS native (`window.print()`).
+  - **Admin Management (`/admin/pos-foods` & `/admin/pos-tables`)**: Menu kelola makanan (CRUD) dan pemantauan/reset status 30 meja.
+- **Files Created**:
+  - `database/migrations/2026_09_14_100000_create_pos_system_tables.php`
+  - `app/Models/PosFoodCategory.php`
+  - `app/Models/PosFood.php`
+  - `app/Models/PosTable.php`
+  - `app/Models/PosOrder.php`
+  - `app/Models/PosOrderItem.php`
+  - `app/Models/PosPayment.php`
+  - `app/Http/Middleware/EnsureUserCanAccessPos.php`
+  - `app/Http/Middleware/EnsureUserCanAccessKitchen.php`
+  - `database/seeders/PosSeeder.php`
+  - `app/Http/Controllers/Pos/KasirController.php`
+  - `app/Http/Controllers/Pos/KitchenController.php`
+  - `app/Http/Controllers/Pos/AdminFoodController.php`
+  - `app/Http/Controllers/Pos/AdminTableController.php`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `resources/js/Pages/POS/Kitchen.jsx`
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `resources/js/Pages/POS/Admin/FoodIndex.jsx`
+  - `resources/js/Pages/POS/Admin/TableIndex.jsx`
+  - `tests/Feature/PosSystemTest.php`
+- **Files Modified**:
+  - `app/Models/User.php`
+  - `bootstrap/app.php`
+  - `app/Http/Controllers/Auth/AuthenticatedSessionController.php`
+  - `database/seeders/DatabaseSeeder.php`
+  - `routes/web.php`
+  - `resources/js/Components/Bar/Sidebar.jsx`
+  - `GEMINI.md`
+
 ## 17 April 2026
 
 ### Panduan Jawaban Catatan Revisi PA

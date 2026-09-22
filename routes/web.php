@@ -33,6 +33,13 @@ use App\Http\Controllers\MidtransController;
 // ====== LOCATION CONTROLLER ======
 use App\Http\Controllers\LocationController;
 
+// ====== POS & KITCHEN CONTROLLERS ======
+use App\Http\Controllers\Pos\KasirController;
+use App\Http\Controllers\Pos\KitchenController;
+use App\Http\Controllers\Pos\AdminFoodController;
+use App\Http\Controllers\Pos\AdminTableController;
+use App\Http\Controllers\Pos\PosReportController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -178,6 +185,44 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
         Route::get('/kunjungan/{format}', 'kunjungan')->name('laporan.kunjungan');
         Route::get('/produk-terlaris/{format}', 'produkTerlaris')->name('laporan.terlaris');
     });
+});
+
+// =====================================================
+// === ROUTE POS KASIR (Role: admin, kasir) ===
+// =====================================================
+Route::middleware(['auth', 'pos.access'])->group(function () {
+    Route::get('/order', [KasirController::class, 'index'])->name('pos.kasir');
+    Route::post('/pos/order', [KasirController::class, 'storeOrder'])->name('pos.order.store');
+    Route::post('/pos/payment', [KasirController::class, 'processPayment'])->name('pos.payment.process');
+    Route::post('/pos/order/{id}/cancel', [KasirController::class, 'cancelOrder'])->name('pos.order.cancel');
+    Route::get('/pos/json-state', [KasirController::class, 'jsonState'])->name('pos.json.state');
+
+    // --- POS Menu & Table Management (Admin & Kasir) ---
+    Route::prefix('admin')->group(function () {
+        Route::get('/pos-foods', [AdminFoodController::class, 'index'])->name('admin.pos.foods.index');
+        Route::post('/pos-foods', [AdminFoodController::class, 'store'])->name('admin.pos.foods.store');
+        Route::post('/pos-foods/{id}/update', [AdminFoodController::class, 'update'])->name('admin.pos.foods.update');
+        Route::post('/pos-foods/{id}/delete', [AdminFoodController::class, 'destroy'])->name('admin.pos.foods.delete');
+        Route::post('/pos-food-categories', [AdminFoodController::class, 'storeCategory'])->name('admin.pos.food-categories.store');
+
+        Route::get('/pos-tables', [AdminTableController::class, 'index'])->name('admin.pos.tables.index');
+        Route::post('/pos-tables/{id}/status', [AdminTableController::class, 'updateStatus'])->name('admin.pos.tables.update-status');
+        Route::post('/pos-tables/reset-all', [AdminTableController::class, 'resetAll'])->name('admin.pos.tables.reset-all');
+
+        // --- POS Reports & Revenue Dashboard ---
+        Route::get('/pos-reports', [PosReportController::class, 'index'])->name('admin.pos.reports.index');
+        Route::get('/pos-reports/export-csv', [PosReportController::class, 'exportCsv'])->name('admin.pos.reports.export.csv');
+    });
+});
+
+// =====================================================
+// === ROUTE KITCHEN DISPLAY / DAPUR (Role: admin, dapur) ===
+// =====================================================
+Route::middleware(['auth', 'kitchen.access'])->group(function () {
+    Route::get('/kitchen', [KitchenController::class, 'index'])->name('pos.kitchen');
+    Route::post('/kitchen/order/{id}/status', [KitchenController::class, 'updateOrderStatus'])->name('pos.kitchen.order.status');
+    Route::post('/kitchen/table/{id}/clean', [KitchenController::class, 'cleanTable'])->name('pos.kitchen.table.clean');
+    Route::get('/kitchen/json-state', [KitchenController::class, 'jsonState'])->name('pos.kitchen.json.state');
 });
 
 // Legacy route redirects for backwards compatibility

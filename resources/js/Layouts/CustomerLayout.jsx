@@ -133,11 +133,25 @@ export function SiteHeader({ auth, onCartClick }) {
                                                 {user.role === 'admin' && (
                                                     <span className="block mt-1 text-xs font-bold text-red-600 bg-red-50 w-fit px-2 py-0.5 rounded">Administrator</span>
                                                 )}
+                                                {user.role === 'kasir' && (
+                                                    <span className="block mt-1 text-xs font-bold text-green-700 bg-green-50 w-fit px-2 py-0.5 rounded">Staff Kasir Kantin</span>
+                                                )}
+                                                {user.role === 'dapur' && (
+                                                    <span className="block mt-1 text-xs font-bold text-blue-700 bg-blue-50 w-fit px-2 py-0.5 rounded">Staff Dapur (KDS)</span>
+                                                )}
                                             </div>
                                             <div className="p-1">
                                                 {user.role === 'admin' ? (
-                                                    <Link href="/admin" className="block w-full text-left px-3 py-2 text-sm font-semibold text-green-700 rounded-md hover:bg-green-50">
-                                                        Dashboard Admin
+                                                    <Link href="/admin" className="block w-full text-left px-3 py-2 text-sm font-bold text-green-700 bg-green-50 rounded-md hover:bg-green-100 mb-1">
+                                                        ⚙️ Dashboard Admin
+                                                    </Link>
+                                                ) : user.role === 'kasir' ? (
+                                                    <Link href="/order" className="block w-full text-left px-3 py-2 text-sm font-bold text-green-700 bg-green-50 rounded-md hover:bg-green-100 mb-1">
+                                                        💻 POS Order Kantin (Kasir)
+                                                    </Link>
+                                                ) : user.role === 'dapur' ? (
+                                                    <Link href="/kitchen" className="block w-full text-left px-3 py-2 text-sm font-bold text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 mb-1">
+                                                        👩‍🍳 Kitchen Display (Dapur)
                                                     </Link>
                                                 ) : (
                                                     <>

@@ -16,6 +16,20 @@ class WelcomeController extends Controller
 {
     public function index()
     {
+        // Auto redirect internal staff roles to their respective systems
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user->role === 'kasir') {
+                return redirect()->route('pos.kasir');
+            }
+            if ($user->role === 'dapur') {
+                return redirect()->route('pos.kitchen');
+            }
+            if ($user->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+        }
+
         // Cache data statistik selama 60 menit
         $stats = Cache::remember('welcome_stats', 60 * 60, function () {
             return [

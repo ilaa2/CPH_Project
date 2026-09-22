@@ -21,6 +21,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
             'customer' => \App\Http\Middleware\EnsureUserIsCustomer::class,
+            'pos.access' => \App\Http\Middleware\EnsureUserCanAccessPos::class,
+            'kitchen.access' => \App\Http\Middleware\EnsureUserCanAccessKitchen::class,
         ]);
 
         // Exclude retry-payment routes from CSRF verification
