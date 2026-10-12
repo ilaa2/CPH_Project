@@ -18,6 +18,11 @@ class PosOrderItem extends Model
         'harga_satuan',
         'subtotal',
         'catatan',
+        'is_served',
+    ];
+
+    protected $casts = [
+        'is_served' => 'boolean',
     ];
 
     public function order()

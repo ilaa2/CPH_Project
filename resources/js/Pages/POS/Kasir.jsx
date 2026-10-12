@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 import {
   FiCoffee, FiShoppingBag, FiCheckCircle, FiClock, FiAlertCircle,
   FiPlus, FiMinus, FiTrash2, FiPrinter, FiSearch, FiX, FiDollarSign,
-  FiCreditCard, FiRefreshCw, FiVolume2, FiVolumeX
+  FiCreditCard, FiRefreshCw, FiVolume2, FiVolumeX, FiSlash
 } from 'react-icons/fi';
 
 // Web Audio API Synthesizer Sound Generator
@@ -113,6 +113,7 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
   const [printKitchenReceipt, setPrintKitchenReceipt] = useState(true);
   const [currentReceiptOrder, setCurrentReceiptOrder] = useState(null);
   const [receiptType, setReceiptType] = useState('both'); // 'both', 'customer', or 'kitchen'
+  const [bothPrintStep, setBothPrintStep] = useState(1); // 1 = Customer, 2 = Kitchen, 3 = Selesai
   const [receiptPaperSize, setReceiptPaperSize] = useState('80mm');
   const [showMobileCart, setShowMobileCart] = useState(false);
 
@@ -154,6 +155,16 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
         icon: 'warning',
         title: 'Pilih Meja Terlebih Dahulu',
         text: 'Silakan klik salah satu meja berwarna HIJAU (Tersedia) di panel atas/samping.',
+        confirmColor: '#16a34a',
+      });
+      return;
+    }
+
+    if (selectedTable.status === 'UNAVAILABLE') {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Nomor Antrian Tidak Tersedia',
+        text: `Nomor Antrian ${selectedTable.nomor_meja} saat ini sedang dinonaktifkan/tidak tersedia.`,
         confirmColor: '#16a34a',
       });
       return;
@@ -291,8 +302,9 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
         setSelectedTable(null);
         setShowMobileCart(false);
 
-        // Directly open Receipt Preview modal (default 2 lembar auto-cut)
+        // Directly open Receipt Preview modal (default 2 lembar bertahap)
         setReceiptType('both');
+        setBothPrintStep(1);
         setShowReceiptModal(true);
       },
       onError: (errors) => {
@@ -350,8 +362,9 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
         setCurrentReceiptOrder(orderForReceipt);
         setSelectedTable(null);
 
-        // Directly open Receipt Preview modal (default 2 lembar auto-cut)
+        // Directly open Receipt Preview modal (default 2 lembar bertahap)
         setReceiptType('both');
+        setBothPrintStep(1);
         setShowReceiptModal(true);
       },
       onError: (err) => {
@@ -369,6 +382,8 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
         return <span className="text-[10px] font-bold text-red-700 bg-red-100 px-1.5 py-0.5 rounded">🔴 Terisi</span>;
       case 'NEEDS_CLEANING':
         return <span className="text-[10px] font-bold text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">🟡 Perlu Dibersihkan</span>;
+      case 'UNAVAILABLE':
+        return <span className="text-[10px] font-bold text-gray-700 bg-gray-200 px-1.5 py-0.5 rounded">⚪ Tidak Tersedia</span>;
       default:
         return null;
     }
@@ -410,6 +425,7 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
                 <span className="flex items-center gap-1 font-medium text-green-700"><span className="w-2 h-2 rounded-full bg-green-500"></span> Tersedia</span>
                 <span className="flex items-center gap-1 font-medium text-red-700"><span className="w-2 h-2 rounded-full bg-red-500"></span> Dipakai</span>
                 <span className="flex items-center gap-1 font-medium text-amber-700"><span className="w-2 h-2 rounded-full bg-amber-500"></span> Selesai/Siap</span>
+                <span className="flex items-center gap-1 font-medium text-gray-500"><span className="w-2 h-2 rounded-full bg-gray-400"></span> Tidak Tersedia</span>
               </div>
             </div>
 
@@ -419,6 +435,7 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
                 let bgClass = 'bg-green-50 border-green-300 hover:bg-green-100 text-green-800';
                 if (table.status === 'OCCUPIED') bgClass = 'bg-red-50 border-red-300 hover:bg-red-100 text-red-800';
                 if (table.status === 'NEEDS_CLEANING') bgClass = 'bg-amber-50 border-amber-300 hover:bg-amber-100 text-amber-800';
+                if (table.status === 'UNAVAILABLE') bgClass = 'bg-gray-100 border-gray-300 text-gray-400 opacity-60';
                 if (isSelected) bgClass += ' ring-2 ring-green-600 font-bold scale-105 shadow-md';
 
                 const isUnpaid = table.active_order?.payment_status === 'UNPAID';
@@ -431,7 +448,7 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
                   >
                     <span className="text-xs font-extrabold">NO. {table.nomor_meja}</span>
                     <span className="text-[9px] font-bold mt-0.5">
-                      {table.status === 'AVAILABLE' ? '🟢 Free' : isUnpaid ? '⚠️ UNPAID' : table.status === 'OCCUPIED' ? '🔴 Lunas' : '🟡 Clean'}
+                      {table.status === 'AVAILABLE' ? '🟢 Free' : table.status === 'UNAVAILABLE' ? '⚪ Off' : isUnpaid ? '⚠️ UNPAID' : table.status === 'OCCUPIED' ? '🔴 Lunas' : '🟡 Clean'}
                     </span>
                   </button>
                 );
@@ -496,7 +513,11 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
                     <div>
                       <div className="aspect-square bg-gray-200 rounded-lg mb-2 overflow-hidden relative">
                         {food.gambar ? (
-                          <img src={food.gambar} alt={food.nama} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                          <img
+                            src={food.gambar.startsWith('/') || food.gambar.startsWith('http') ? food.gambar : `/storage/${food.gambar}`}
+                            alt={food.nama}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-gray-400 font-semibold text-xs">
                             🍽️ {food.nama}
@@ -596,12 +617,23 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
               <div className="flex-1 overflow-y-auto min-h-0 space-y-2 border-y py-2 pr-1">
                 <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider sticky top-0 bg-white py-1">Item Pesanan:</h4>
                 {selectedTable.active_order.items?.map((item, i) => (
-                  <div key={i} className="flex justify-between text-xs py-1 border-b border-gray-100">
-                    <div>
-                      <span className="font-semibold text-gray-800">{item.jumlah}x {item.food?.nama}</span>
+                  <div key={i} className="flex justify-between items-center text-xs py-1.5 border-b border-gray-100">
+                    <div className="flex-1 pr-2">
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span className="font-bold text-gray-900">{item.jumlah}x {item.food?.nama}</span>
+                        {item.is_served ? (
+                          <span className="text-[9px] font-black text-green-700 bg-green-100 border border-green-200 px-1.5 py-0.5 rounded">
+                            ✅ Diantar
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold text-amber-700 bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded">
+                            ⏳ Dimasak
+                          </span>
+                        )}
+                      </div>
                       {item.catatan && <p className="text-[10px] text-red-500 italic">* {item.catatan}</p>}
                     </div>
-                    <span className="font-medium text-gray-700">Rp {Number(item.subtotal).toLocaleString('id-ID')}</span>
+                    <span className="font-semibold text-gray-700 shrink-0">Rp {Number(item.subtotal).toLocaleString('id-ID')}</span>
                   </div>
                 ))}
               </div>
@@ -631,6 +663,7 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
                     onClick={() => {
                       setCurrentReceiptOrder(selectedTable.active_order);
                       setReceiptType('both');
+                      setBothPrintStep(1);
                       setShowReceiptModal(true);
                     }}
                     className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-extrabold rounded-xl shadow-md text-xs transition-all flex items-center justify-center gap-2"
@@ -649,6 +682,17 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
               <h4 className="font-bold text-amber-900 text-sm">Nomor Antrian Dalam Proses Dibersihkan / Selesai</h4>
               <p className="text-xs text-amber-700 mt-1">
                 Customer sudah selesai makan dan bayar. Menunggu staf dapur mereset nomor antrian.
+              </p>
+            </div>
+          )}
+
+          {/* CASE 3.5: TABLE UNAVAILABLE */}
+          {selectedTable && selectedTable.status === 'UNAVAILABLE' && (
+            <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200 p-4 my-auto">
+              <FiSlash size={40} className="mx-auto mb-2 text-gray-400" />
+              <h4 className="font-bold text-gray-800 text-sm">Nomor Antrian Sedang Tidak Tersedia</h4>
+              <p className="text-xs text-gray-500 mt-1">
+                Nomor antrian ini sedang dinonaktifkan oleh admin (misal rusak/hilang/sedang disimpan).
               </p>
             </div>
           )}
@@ -943,87 +987,162 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
 
 
       {/* MODAL PRINT RECEIPT (PREVIEW & PRINT) */}
-      {showReceiptModal && currentReceiptOrder && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl max-w-md w-full max-h-[92vh] flex flex-col p-4 shadow-2xl space-y-3 overflow-hidden">
-            {/* Header with Type Selector */}
-            <div className="flex justify-between items-center border-b pb-2 shrink-0">
-              <div>
-                <h3 className="font-bold text-sm text-gray-800 flex items-center gap-2">
-                  <FiPrinter className="text-green-600" />
-                  Cetak Struk Thermal POS
-                </h3>
-                <div className="flex items-center gap-1 mt-1.5">
-                  <button
-                    onClick={() => setReceiptType('both')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
-                      receiptType === 'both' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    ✂️ Keduanya (2 Lembar)
-                  </button>
-                  <button
-                    onClick={() => setReceiptType('customer')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
-                      receiptType === 'customer' ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    🖨️ Customer Saja
-                  </button>
-                  <button
-                    onClick={() => setReceiptType('kitchen')}
-                    className={`px-2 py-0.5 rounded text-[10px] font-bold transition-colors ${
-                      receiptType === 'kitchen' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    🍳 Dapur Saja
-                  </button>
+      {showReceiptModal && currentReceiptOrder && (() => {
+        const activeTypeToRender = receiptType === 'both'
+          ? (bothPrintStep === 1 ? 'customer' : 'kitchen')
+          : receiptType;
+
+        const handlePrintStep = () => {
+          if (receiptType === 'both') {
+            if (bothPrintStep === 1) {
+              window.print();
+              setBothPrintStep(2);
+            } else if (bothPrintStep === 2) {
+              window.print();
+              setBothPrintStep(3);
+            } else {
+              setBothPrintStep(1);
+            }
+          } else {
+            window.print();
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 animate-fade-in">
+            <div className="bg-white rounded-2xl max-w-md w-full max-h-[92vh] flex flex-col p-4 shadow-2xl space-y-3 overflow-hidden">
+              {/* Header with Type Selector */}
+              <div className="flex justify-between items-center border-b pb-2 shrink-0">
+                <div>
+                  <h3 className="font-bold text-sm text-gray-800 flex items-center gap-2">
+                    <FiPrinter className="text-green-600" />
+                    Cetak Struk Thermal POS (80mm)
+                  </h3>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <button
+                      onClick={() => {
+                        setReceiptType('both');
+                        setBothPrintStep(1);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition-all ${
+                        receiptType === 'both' ? 'bg-green-600 text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      ✂️ 2 Lembar (Klik 2x)
+                    </button>
+                    <button
+                      onClick={() => setReceiptType('customer')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                        receiptType === 'customer' ? 'bg-green-600 text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      🖨️ Customer Saja
+                    </button>
+                    <button
+                      onClick={() => setReceiptType('kitchen')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
+                        receiptType === 'kitchen' ? 'bg-blue-600 text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      🍳 Dapur Saja
+                    </button>
+                  </div>
                 </div>
+                <button onClick={() => setShowReceiptModal(false)} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100">
+                  <FiX size={18} />
+                </button>
               </div>
-              <button onClick={() => setShowReceiptModal(false)} className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-100">
-                <FiX size={18} />
-              </button>
-            </div>
 
-            {/* Scrollable Printable Preview */}
-            <div className="flex-1 overflow-y-auto min-h-0 py-2 px-1 bg-gray-50 rounded-xl border border-gray-200 custom-scrollbar">
-              <Receipt order={currentReceiptOrder} type={receiptType} paperSize="80mm" />
-            </div>
+              {/* Status info bar saat mode 2 lembar */}
+              {receiptType === 'both' && (
+                <div className="px-3 py-1.5 rounded-xl text-xs font-bold flex justify-between items-center bg-gray-100 border border-gray-200">
+                  <span className="text-gray-800">
+                    {bothPrintStep === 1 && '📄 Lembar 1: Struk Pembayaran Customer'}
+                    {bothPrintStep === 2 && '🍳 Lembar 2: Ticket Pesanan Dapur'}
+                    {bothPrintStep === 3 && '✅ Kedua lembar resi telah dicetak!'}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                    bothPrintStep === 1 ? 'bg-green-100 text-green-800' :
+                    bothPrintStep === 2 ? 'bg-blue-100 text-blue-800 animate-pulse' :
+                    'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {bothPrintStep === 1 && 'Klik 1 dari 2'}
+                    {bothPrintStep === 2 && 'Klik 2 dari 2'}
+                    {bothPrintStep === 3 && 'Selesai'}
+                  </span>
+                </div>
+              )}
 
-            {/* Fixed Bottom Action Buttons */}
-            <div className="flex gap-2 shrink-0 pt-1 border-t">
-              <button
-                onClick={() => {
-                  if (receiptType === 'both') {
-                    setReceiptType('customer');
-                    setTimeout(() => {
-                      window.print();
-                      setTimeout(() => {
-                        setReceiptType('kitchen');
-                        setTimeout(() => {
-                          window.print();
-                          setTimeout(() => setReceiptType('both'), 500);
-                        }, 400);
-                      }, 600);
-                    }, 200);
-                  } else {
-                    window.print();
-                  }
-                }}
-                className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow transition-colors"
-              >
-                <FiPrinter size={16} /> Print Sekarang
-              </button>
-              <button
-                onClick={() => setShowReceiptModal(false)}
-                className="px-4 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl text-xs transition-colors"
-              >
-                Tutup
-              </button>
+              {/* Scrollable Printable Preview */}
+              <div className="flex-1 overflow-y-auto min-h-0 py-2 px-1 bg-gray-50 rounded-xl border border-gray-200 custom-scrollbar">
+                <Receipt order={currentReceiptOrder} type={activeTypeToRender} paperSize="80mm" />
+              </div>
+
+              {/* Action Buttons with 2-Click Sequence */}
+              <div className="space-y-1.5 shrink-0 pt-1 border-t">
+                {receiptType === 'both' ? (
+                  <>
+                    {bothPrintStep === 1 && (
+                      <button
+                        onClick={handlePrintStep}
+                        className="w-full py-3 bg-green-600 hover:bg-green-700 active:scale-[0.99] text-white font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all"
+                      >
+                        <FiPrinter size={18} /> [Klik 1] Print Struk Customer
+                      </button>
+                    )}
+
+                    {bothPrintStep === 2 && (
+                      <button
+                        onClick={handlePrintStep}
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all animate-pulse"
+                      >
+                        <FiPrinter size={18} /> [Klik 2] Lanjut Print Ticket Dapur
+                      </button>
+                    )}
+
+                    {bothPrintStep === 3 && (
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setBothPrintStep(1)}
+                          className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl text-xs transition-colors flex items-center justify-center gap-1.5"
+                        >
+                          🔄 Cetak Ulang Lembar 1
+                        </button>
+                        <button
+                          onClick={() => setShowReceiptModal(false)}
+                          className="flex-1 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-xs transition-colors"
+                        >
+                          ✅ Selesai & Tutup
+                        </button>
+                      </div>
+                    )}
+
+                    <p className="text-[11px] text-gray-500 text-center font-medium">
+                      {bothPrintStep === 1 && '💡 Klik tombol ini untuk print struk customer, lalu robek kertas.'}
+                      {bothPrintStep === 2 && '✂️ Kertas struk customer sudah dirobek? Klik untuk print ticket dapur.'}
+                      {bothPrintStep === 3 && 'Kedua resi telah selesai dicetak terpisah.'}
+                    </p>
+                  </>
+                ) : (
+                  <button
+                    onClick={handlePrintStep}
+                    className="w-full py-3 bg-green-600 hover:bg-green-700 active:scale-[0.99] text-white font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all"
+                  >
+                    <FiPrinter size={18} /> Print {receiptType === 'customer' ? 'Struk Customer' : 'Ticket Dapur'}
+                  </button>
+                )}
+
+                <button
+                  onClick={() => setShowReceiptModal(false)}
+                  className="w-full py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl text-xs transition-colors"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </Sidebar>
   );
 }

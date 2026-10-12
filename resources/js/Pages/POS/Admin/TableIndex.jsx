@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, router } from '@inertiajs/react';
 import Sidebar from '@/Components/Bar/Sidebar';
 import Swal from 'sweetalert2';
-import { FiGrid, FiRefreshCw, FiCheckCircle, FiAlertCircle, FiXCircle } from 'react-icons/fi';
+import { FiGrid, FiRefreshCw, FiCheckCircle, FiAlertCircle, FiXCircle, FiSlash } from 'react-icons/fi';
 
 export default function TableIndex({ tables = [] }) {
   const handleStatusChange = (tableId, nomorMeja, newStatus) => {
@@ -61,7 +61,7 @@ export default function TableIndex({ tables = [] }) {
       <div className="space-y-6">
 
         {/* SUMMARY STATS */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-xl border shadow-sm flex items-center gap-3">
             <div className="p-3 bg-green-100 text-green-700 rounded-xl">
               <FiCheckCircle size={24} />
@@ -97,6 +97,18 @@ export default function TableIndex({ tables = [] }) {
               </span>
             </div>
           </div>
+
+          <div className="bg-white p-4 rounded-xl border shadow-sm flex items-center gap-3">
+            <div className="p-3 bg-gray-100 text-gray-600 rounded-xl">
+              <FiSlash size={24} />
+            </div>
+            <div>
+              <span className="text-xs text-gray-500 font-medium block">Tidak Tersedia (Off)</span>
+              <span className="text-2xl font-black text-gray-700">
+                {tables.filter(t => t.status === 'UNAVAILABLE').length} Nomor
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* 30 NUMBERS CARDS GRID */}
@@ -105,12 +117,13 @@ export default function TableIndex({ tables = [] }) {
             let bgBorderClass = 'bg-green-50/50 border-green-300';
             if (table.status === 'OCCUPIED') bgBorderClass = 'bg-red-50/50 border-red-300';
             if (table.status === 'NEEDS_CLEANING') bgBorderClass = 'bg-amber-50/50 border-amber-300';
+            if (table.status === 'UNAVAILABLE') bgBorderClass = 'bg-gray-100 border-gray-300 opacity-75';
 
             return (
               <div key={table.id} className={`p-3 rounded-xl border ${bgBorderClass} shadow-2xs space-y-2 flex flex-col justify-between`}>
                 <div className="text-center">
                   <span className="text-xs text-gray-400 font-bold uppercase tracking-wider block">ANTRIAN</span>
-                  <span className="text-2xl font-black text-gray-800">NO. {table.nomor_meja}</span>
+                  <span className={`text-2xl font-black ${table.status === 'UNAVAILABLE' ? 'text-gray-400' : 'text-gray-800'}`}>NO. {table.nomor_meja}</span>
                 </div>
 
                 <div className="text-center">
@@ -122,6 +135,7 @@ export default function TableIndex({ tables = [] }) {
                     <option value="AVAILABLE">🟢 Available</option>
                     <option value="OCCUPIED">🔴 Dipakai</option>
                     <option value="NEEDS_CLEANING">🟡 Selesai</option>
+                    <option value="UNAVAILABLE">⚪ Tidak Tersedia</option>
                   </select>
                 </div>
               </div>

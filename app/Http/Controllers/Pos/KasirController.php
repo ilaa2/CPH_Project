@@ -21,6 +21,29 @@ class KasirController extends Controller
      */
     public function index()
     {
+        // 1. Auto-seed Pempek Palantea jika belum ada di database
+        try {
+            if (!PosFood::where('nama', 'like', '%Pempek%')->exists()) {
+                $snackCat = PosFoodCategory::where('nama_kategori', 'Snack')->first();
+                $catId = $snackCat ? $snackCat->id : 4;
+                PosFood::create([
+                    'category_id' => $catId,
+                    'nama' => 'Pempek Palantea (Isi 6 Pcs)',
+                    'deskripsi' => '★ Menu Baru - Pempek asli ikan tenggiri disajikan dengan kuah cuko segar (Isi 6 pcs)',
+                    'harga' => 30000,
+                    'gambar' => 'pos_foods/pempek_palantea.png',
+                    'status' => 'Aktif',
+                ]);
+            }
+        } catch (\Throwable $e) {}
+
+        // 2. Pastikan kolom is_served ada di pos_order_items
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_order_items', 'is_served')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_order_items ADD COLUMN is_served TINYINT(1) NOT NULL DEFAULT 0");
+            }
+        } catch (\Throwable $e) {}
+
         $tables = PosTable::with(['activeOrder.items.food', 'activeOrder.cashier', 'activeOrder.payment'])
             ->orderBy('nomor_meja', 'asc')
             ->get();

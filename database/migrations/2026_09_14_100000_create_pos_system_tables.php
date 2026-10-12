@@ -37,7 +37,7 @@ return new class extends Migration
         Schema::create('pos_tables', function (Blueprint $table) {
             $table->id();
             $table->string('nomor_meja')->unique(); // '01', '02', ..., '30'
-            $table->enum('status', ['AVAILABLE', 'OCCUPIED', 'NEEDS_CLEANING'])->default('AVAILABLE');
+            $table->string('status', 50)->default('AVAILABLE'); // 'AVAILABLE', 'OCCUPIED', 'NEEDS_CLEANING', 'UNAVAILABLE'
             $table->timestamps();
         });
 

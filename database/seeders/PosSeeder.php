@@ -121,6 +121,7 @@ class PosSeeder extends Seeder
             ['category_id' => $catMinuman->id, 'nama' => 'Es Kosong', 'deskripsi' => 'Segelas es batu', 'harga' => 4000, 'status' => 'Aktif'],
 
             // --- SNACK (CAMILAN) ---
+            ['category_id' => $catSnack->id, 'nama' => 'Pempek Palantea (Isi 6 Pcs)', 'deskripsi' => '★ Menu Baru - Pempek asli ikan tenggiri disajikan dengan kuah cuko segar (Isi 6 pcs)', 'harga' => 30000, 'gambar' => 'pos_foods/pempek_palantea.png', 'status' => 'Aktif'],
             ['category_id' => $catSnack->id, 'nama' => 'French Fries', 'deskripsi' => 'Kentang goreng stik renyah gurih', 'harga' => 18000, 'status' => 'Aktif'],
             ['category_id' => $catSnack->id, 'nama' => 'Mix Platter', 'deskripsi' => 'Kombinasi camilan french fries, nugget, dan sosis', 'harga' => 20000, 'status' => 'Aktif'],
             ['category_id' => $catSnack->id, 'nama' => 'Nugget Ayam', 'deskripsi' => 'Nugget olahan daging ayam pilihan goreng renyah', 'harga' => 18000, 'status' => 'Aktif'],

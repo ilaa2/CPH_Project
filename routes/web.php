@@ -221,6 +221,7 @@ Route::middleware(['auth', 'pos.access'])->group(function () {
 Route::middleware(['auth', 'kitchen.access'])->group(function () {
     Route::get('/kitchen', [KitchenController::class, 'index'])->name('pos.kitchen');
     Route::post('/kitchen/order/{id}/status', [KitchenController::class, 'updateOrderStatus'])->name('pos.kitchen.order.status');
+    Route::post('/kitchen/item/{id}/toggle-served', [KitchenController::class, 'toggleItemServed'])->name('pos.kitchen.item.toggle-served');
     Route::post('/kitchen/table/{id}/clean', [KitchenController::class, 'cleanTable'])->name('pos.kitchen.table.clean');
     Route::get('/kitchen/json-state', [KitchenController::class, 'jsonState'])->name('pos.kitchen.json.state');
 });

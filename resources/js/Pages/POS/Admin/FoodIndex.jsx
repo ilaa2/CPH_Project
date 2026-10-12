@@ -184,7 +184,11 @@ export default function FoodIndex({ foods = { data: [] }, categories = [], filte
                       <td className="p-3">
                         <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden border flex items-center justify-center">
                           {food.gambar ? (
-                            <img src={food.gambar} alt={food.nama} className="w-full h-full object-cover" />
+                            <img
+                              src={food.gambar.startsWith('/') || food.gambar.startsWith('http') ? food.gambar : `/storage/${food.gambar}`}
+                              alt={food.nama}
+                              className="w-full h-full object-cover"
+                            />
                           ) : (
                             <FiImage className="text-gray-400" size={18} />
                           )}

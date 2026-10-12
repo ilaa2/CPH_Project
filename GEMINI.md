@@ -1,5 +1,335 @@
 # Catatan Perubahan
 
+## 13 Oktober 2026 (Restorasi Presisi Struk Customer Versi 21 Menit Lalu & Tiket Dapur Tetap Aman)
+
+### Penyesuaian Desain Struk POS (`Receipt.jsx`):
+- **Restorasi Struk Customer Persis Versi 21 Menit Lalu (Sesuai Screenshot User)**:
+  - Mengembalikan seluruh tata letak dan tipografi Struk Customer ke versi tajam hitam pekat (`text-black`):
+    - Logo Palantea rapi (`w-24`).
+    - Header toko tegas: `CENTRAL PALANTEA HIDROPONIK` (**`text-lg sm:text-xl font-black uppercase`**).
+    - Nomor Meja: Kotak berbingkai garis ganda hitam di atas latar abu-abu terang (**`text-3xl sm:text-4xl font-black`**).
+    - Daftar menu belanja: Nama menu berukuran tebal jelas (**`text-sm sm:text-base font-bold`**), kuantiti (**`text-base sm:text-lg font-black`**), dan subtotal (**`text-sm sm:text-base font-black`**).
+    - Total Tagihan: Dicetak sangat mencolok dengan garis pemisah ganda (**`text-xl sm:text-2xl font-black`**).
+    - Rincian Bayar & Kembalian jelas dan terpisah.
+    - Footer bersih tanpa teks Wifi & stop kontak.
+- **Tiket Kantin / Dapur Tetap Aman Sesuai Permintaan**:
+  - Nomor Meja bersih tanpa blok hitam pekat (`bg-black text-white` ditiadakan), diganti bingkai garis putus-putus di atas latar putih terang (**`text-2xl sm:text-3xl font-black`**).
+  - Pesanan tetap menggunakan huruf kapital penuh (**ALL CAPSLOCK**), kuantiti jumbo (**`text-2xl sm:text-3xl font-black`**), dan nama menu masakan besar (**`text-lg sm:text-xl font-black uppercase`**).
+- **Kompilasi Frontend & Pengemasan Update**:
+  - Sukses mengompilasi ulang bundle Vite via `npm run build` (11.49s).
+  - Mengemas ulang seluruh file ke paket pembaruan hosting `d:\PA\CPH_Update_Kantin_September_2026.zip` (2.59 MB).
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+## 13 Oktober 2026 (Font Jumbo, All-Caps Ticket Dapur & Eliminasi Sisa Margin Tepi 100% Penuh)
+
+### Pembesaran Huruf Jumbo & Format All-Caps Ticket Dapur (`Receipt.jsx`):
+- **Khusus Ticket Dapur (All CAPSLOCK & Font Ekstra Besar)**:
+  - **Pesanan Huruf Besar Penuh (Uppercase)**: Seluruh teks daftar menu, catatan koki, header, nomor antrian, dan status bayar pada Ticket Dapur diubah menjadi huruf kapital pekat (`uppercase font-black`) agar staf dapur dapat membaca pesanan dari jarak 1–2 meter tanpa kesulitan.
+  - **Kuantitas Jumbo**: Angka jumlah porsi (`{item.jumlah}X`) diperbesar tajam menjadi **`text-3xl sm:text-4xl font-black`** di baris awal masakan.
+  - **Nama Menu Masakan**: Diperbesar menjadi **`text-xl sm:text-2xl font-black uppercase`** dengan wrapping responsif.
+  - **Catatan / Request Masakan**: Diberi kotak pembatas khusus abu-abu terang dengan font tebal berbingkai ganda: `* CATATAN: PEDAS / TANPA BAWANG` (**`text-sm sm:text-base font-black`**).
+  - **Nomor Meja Dapur**: Dibuat sangat kontras dengan latar hitam teks putih (**`text-5xl font-black`**).
+  - **Header & Footer Dapur**: `--- TICKET DAPUR ---` (**`text-3xl sm:text-4xl`**) dan `*** SEGERA ANTAR SAAT MATANG ***` (**`text-base font-black`**).
+
+### Pembesaran Tipografi Struk Customer (`Receipt.jsx`):
+- **Nama Menu & Harga**: Ukuran menu dinaikkan menjadi **`text-base font-bold`** dengan kuantiti **`text-lg font-black`** dan subtotal **`text-base font-black`**.
+- **Total Pembayaran**: Dibuat sangat mencolok dan tegas dengan ukuran **`text-2xl sm:text-3xl font-black`** diapit garis pemisah ganda.
+- **Rincian Bayar & Kembalian**: Diperbesar ke **`text-base sm:text-lg font-black`** sehingga kasir dan pelanggan langsung melihat angka uang kembalian secara presisi.
+
+### Eliminasi Sisa Margin Samping & Bypass Modal Dialog (`Receipt.jsx`):
+- **Penyebab Sisa Jarak Kosong Samping (Baru Melebar 1/3)**:
+  - Komponen `<Receipt />` dirender di dalam modal pop-up dialog (`<div className="fixed inset-0 ... p-4">` dan `<div className="max-w-md ...">`).
+  - Saat print dijalankan, browser memperhitungkan container `position: fixed` dan `max-w-md` (448px) yang memiliki padding 16px (`p-4`), sehingga lebar cetak absolut tertahan oleh batas kotak modal dialog dan tidak bisa meregang 100% ke lebar fisik kertas.
+- **Solusi Bypass Modal di CSS Cetak (`@media print`)**:
+  - Menetralkan seluruh kontainer modal pembungkus (`.fixed, [class*="fixed"]`, `.max-w-md`, `.overflow-hidden`, `.overflow-y-auto`, `.pos-receipt-container`):
+    - `position: static !important; width: 100% !important; min-width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 !important;`
+  - Mengubah padding horizontal receipt menjadi nol mutlak: **`padding: 0 0mm 12mm 0mm !important;`** dan `px-0`.
+  - Konten struk kini otomatis melebar menyentuh batas tepi kepala cetak (*thermal head*) printer 80mm dari ujung kiri hingga ujung kanan tanpa jeda kosong.
+
+### Kompilasi Frontend & Pembaruan Paket ZIP Hosting:
+- Sukses mengompilasi ulang aset Vite via `npm run build` (22.85s).
+- Mengemas ulang seluruh file sistem ke dalam paket update `d:\PA\CPH_Update_Kantin_September_2026.zip` (2.59 MB).
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+## 12 Oktober 2026 (Fix Lebar Penuh 100% Anti Sisa Margin 3cm & Hapus Teks Wifi)
+
+### Penyesuaian Lebar Penuh Edge-to-Edge & Pembersihan Footer (`Receipt.jsx`):
+- **Mengatasi Sisa Margin Kosong ~3 cm di Samping Kertas**:
+  - **Penyebab Sisa 3 cm**:
+    1. Pembatasan lebar tetap millimeter (`w-[72mm]`) yang pada resolusi print driver Windows tertentu dihitung lebih kecil dari 80mm roll fisik.
+    2. Default margin Chrome (0.4 inci / ~1.5 cm di kiri dan ~1.5 cm di kanan = pas 3.0 cm) jika opsi Margin di jendela print Chrome diset ke *Default*.
+  - **Solusi CSS Lebar Penuh 100%**:
+    - Mengubah `.pos-receipt-printable` saat cetak menjadi **`width: 100% !important; min-width: 100% !important; max-width: 100% !important; margin: 0 !important;`**.
+    - Mengubah wrapper menjadi **`position: static !important; width: 100% !important;`**, sehingga konten struk otomatis meregang dan mengisi 100% seluruh lebar kertas fisik printer tanpa terpotong atau tersisa jarak kosong.
+    - Menambahkan aturan `@page :left { margin: 0mm !important; }` dan `@page :right { margin: 0mm !important; }` untuk memaksa browser mengabaikan default margin samping.
+- **Penghapusan Teks Wifi & Stop Kontak**:
+  - Menghapus baris teks *"Wifi & Stop Kontak Tersedia • Selamat Menikmati"* pada bagian footer struk sesuai permintaan.
+- **Kompilasi Frontend & Pengemasan Update**:
+  - Sukses mengompilasi ulang aset Vite (`npm run build`).
+  - Mengemas ulang file ke `d:\PA\CPH_Update_Kantin_September_2026.zip`.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+
+
+### Pemisahan Cetak Struk 2-Click Berurutan (`Kasir.jsx`, `ReportIndex.jsx`):
+- **Masalah Kertas Tersambung**:
+  - Printer thermal pada PC desktop tidak memotong otomatis di antara lembar 1 dan lembar 2 saat dikirim dalam 1 job print bersamaan, sehingga kertas keluar menyambung panjang dan kasir kesulitan merobeknya secara terpisah.
+- **Solusi Pintar Alur 2-Click (Tanpa Perlu Pilih-Pilih Tab Manual)**:
+  - Pada modal struk di `Kasir.jsx` dan `ReportIndex.jsx`, mode default adalah **`✂️ 2 Lembar (Klik 2x)`**:
+    - **Klik 1**: Tombol hijau `🖨️ [Klik 1] Print Struk Customer`. Sistem merender dan mencetak lembar Struk Customer saja. Kasir merobek kertas dari printer.
+    - **Transisi Otomatis**: Seketika setelah klik 1, sistem otomatis mengalihkan preview ke Ticket Dapur dan tombol berubah warna menjadi biru terang: `🍳 [Klik 2] Lanjut Print Ticket Dapur`.
+    - **Klik 2**: Kasir cukup menekan tombol yang sama sekali lagi! Lembar Ticket Dapur langsung dicetak terpisah, dan kasir merobek lembar ke-2 untuk dapur.
+    - **Selesai**: Kasir tidak perlu repot ganti tab manual (*Customer Saja* lalu *Dapur Saja*). Cukup klik print 2 kali, kedua struk selesai dicetak rapi dan terpotong terpisah!
+- **Penyebab Perbedaan Laptop vs PC Monitor**:
+  - Laptop pada umumnya menggunakan Windows Display Scaling 125% atau 150%, sedangkan PC desktop menggunakan 100%. Selain itu pengaturan kertas di dialog print Chrome PC monitor kerap kali default ke A4/Letter dengan skala *Fit to page*.
+  - Dengan penetapan eksplisit `@page { size: 80mm auto; margin: 0; }` dan lebar `w-[72mm]`, tampilan cetak di PC desktop kini konsisten 100% penuh dan tajam.
+- **Kompilasi Frontend & Pengemasan Update**:
+  - Sukses mengompilasi ulang aset Vite (`npm run build`).
+  - Mengemas ulang file ke `d:\PA\CPH_Update_Kantin_September_2026.zip`.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `resources/js/Pages/POS/Admin/ReportIndex.jsx`
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+
+
+### Pemecahan Masalah Cetakan Struk Kecil pada Printer 80mm (`Receipt.jsx`, `Kasir.jsx`, `ReportIndex.jsx`):
+- **Penyebab Cetakan Kecil / Menyusut**:
+  - Sebelumnya lebar komponen dibatasi hanya `w-[62mm]` dengan margin samping yang besar.
+  - Aturan CSS cetak sebelumnya menggunakan `@page { size: portrait; }`, yang menyebabkan peramban (Chrome/Edge) menganggap ukuran kertas sebagai A4 portrait (210mm) dan memperkecil (*downscale*) konten 62mm menjadi sangat kecil di tengah roll 80mm.
+  - Ukuran font lama terlalu mikro (`9px`–`11px`), sehingga pada printer thermal 203 DPI terlihat sangat halus dan sulit terbaca.
+- **Peningkatan Lebar Standar 80mm & `@page` Presisi**:
+  - Mengubah lebar printable area menjadi **`w-[72mm] max-w-[72mm]`** (72mm adalah lebar standar cetak thermal head 80mm / 576 dots). Struk kini memenuhi roll kertas secara proporsional.
+  - Menetapkan aturan cetak eksplisit: **`@page { size: 80mm auto; margin: 0mm !important; }`** agar browser mengenali kertas sebagai continuous roll 80mm dan mencetak dalam skala penuh 100%.
+- **Pembesaran Tipografi & Kontras Hitam Pekat**:
+  - **Nomor Meja**: Diperbesar tajam menjadi **`text-2xl sm:text-3xl font-black`** dengan strip pembatas tebal, sehingga nomor antrian langsung terbaca jelas tanpa perlu mendekatkan mata.
+  - **Menu & Jumlah Item**: Diperbesar ke `text-xs sm:text-[13px] font-bold` dengan kuantiti menu `text-sm sm:text-base font-black`.
+  - **Total Tagihan**: Diperbesar ke `text-base sm:text-lg font-black` dengan garis pemisah ganda tebal.
+  - Mengganti teks abu-abu terang dengan **hitam pekat (`text-black`)** untuk mengoptimalkan panas head printer thermal menghasilkan tulisan yang jelas dan tidak pudar.
+- **Pembersihan Alur Cetak `window.print()`**:
+  - Pada `Kasir.jsx` dan `ReportIndex.jsx`, pemanggilan dialog print disederhanakan menjadi pemanggilan native langsung `window.print()` yang langsung merender halaman 1 dan halaman 2 secara bersih.
+- **Kompilasi Frontend & Pengemasan Update**:
+  - Sukses mengompilasi ulang aset Vite (`npm run build`).
+  - Mengemas ulang file ke `d:\PA\CPH_Update_Kantin_September_2026.zip`.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Receipt.jsx`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `resources/js/Pages/POS/Admin/ReportIndex.jsx`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+
+
+### Rombakan KDS Dapur Menjadi Wide Grid & Auto-Complete (`Kitchen.jsx` & `KitchenController.php`):
+- **Otomatis Selesai 0-Click (Zero-Click Auto-Complete)**:
+  - Ketika koki/staf dapur mengklik `🍽️ Antar` pada menu terakhir suatu pesanan (semua item berstatus `Diantar` / 100%), sistem secara instan dan otomatis:
+    - Mengubah status pesanan menjadi `COMPLETED` di database.
+    - Menghilangkan kartu pesanan dari antrian aktif memasak secara mulus tanpa memerlukan klik tombol konfirmasi atau tombol selesai tambahan.
+    - Membunyikan nada chime dan voice selebrasi: `"Semua menu nomor antrian {nomor_meja} selesai diantar!"`.
+    - Menampilkan notifikasi toast hijau: `"🎉 No. Antrian {nomor_meja} Selesai Otomatis!"`.
+- **Tata Letak Wide Grid Anti-Scroll (Kartu Berjajar ke Samping)**:
+  - Mengeliminasi pembagian 4 kolom vertikal sempit yang sebelumnya membuat kartu menumpuk ke bawah dan memaksa koki scrolling berkali-kali.
+  - Mengubah area memasak menjadi **Multi-Column Wide Grid (`grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3`)**:
+    - Kartu meja pesanan kini berjejer rapi ke samping (2–3 kartu per baris di layar monitor/laptop).
+    - Mampu menampilkan **4 hingga 6 pesanan meja aktif sekaligus** dalam satu pandangan mata tanpa perlu scroll.
+  - Kolom **1. PESANAN BARU** diposisikan ramping di sebelah kiri (~300px) dengan tombol `👩‍🍳 Terima & Mulai Masak`.
+- **Penghapusan Kolom 3 ("SIAP / DISAJIKAN") yang Redundant**:
+  - Karena makanan langsung diantar ke meja pelanggan saat matang, tidak ada lagi makanan yang tertahan di dapur.
+  - Pesanan yang selesai otomatis diarsipkan ke modal **"📋 Riwayat Selesai Hari Ini"** di header atas, lengkap dengan tombol `↩️ Masak Kembali` jika koki sempat salah klik.
+- **Modal "🧹 Kartu Antrian Selesai"**:
+  - Kartu nomor antrian yang butuh di-reset/diambil disajikan dalam modal ringkas di header jika ada meja kotor, tanpa membuang kolom utama layar dapur.
+- **Pembaruan Backend (`KitchenController.php`)**:
+  - `toggleItemServed`: Mendeteksi `allCount === servedCount` untuk mengotomatiskan `order_status = 'COMPLETED'` dan mengupdate status meja `NEEDS_CLEANING` jika sudah lunas (`PAID`).
+  - Mengakomodasi pengembalian status pesanan dari `COMPLETED` kembali ke `PROCESSING` jika di-undo.
+  - Menyediakan relasi `completedOrders` hari ini pada method `index()`.
+- **Kompilasi Frontend & Pengemasan Update**:
+  - Sukses mengompilasi ulang aset Vite (`npm run build`).
+  - Mengemas ulang seluruh file ke `d:\PA\CPH_Update_Kantin_September_2026.zip`.
+- **Files Modified**:
+  - `resources/js/Pages/POS/Kitchen.jsx`
+  - `app/Http/Controllers/Pos/KitchenController.php`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+
+
+### Auto-Healing Menu Pempek Palantea (`KasirController.php` & `AdminFoodController.php`):
+- **Otomatis Masuk Database Tanpa Perlu Jalankan Script/Migrasi**:
+  - Pada method `index()` di `KasirController` dan `AdminFoodController`, sistem secara cerdas mengecek apakah menu `Pempek Palantea (Isi 6 Pcs)` sudah terdaftar di tabel `pos_foods`.
+  - Jika belum ada (misal administrator belum menjalankan `setup_cpanel.php`), sistem secara instan membuat (*self-seed*) data menu tersebut lengkap dengan harga `Rp 30.000`, kategori `Snack`, dan path gambar `pos_foods/pempek_palantea.png`.
+  - Menu Pempek langsung tampil di halaman kasir (`/order`) di tab Snack dan halaman admin menu makanan (`/admin/pos-foods`).
+
+### Fix Tombol "Antar" KDS Dapur Tidak Ada Respon (`Kitchen.jsx` & `KitchenController.php`):
+- **Penyebab Masalah**:
+  - `Kitchen.jsx` sebelumnya memanggil fungsi Ziggy `route('pos.kitchen.item.toggle-served', itemId)`. Karena Ziggy cache di hosting belum mencatat route baru ini, JavaScript mengalami *Reference/Uncaught Exception* seketika saat tombol ditekan, sehingga request HTTP batal terkirim ke server.
+- **Solusi Kompatibilitas Tinggi**:
+  - Pada `Kitchen.jsx`, pemanggilan diubah agar memanfaatkan endpoint yang sudah dikenal Ziggy: `router.post(`/kitchen/order/${orderId}/status`, { toggle_item_id: itemId })`, serta fallback ke URL direct `/kitchen/item/${itemId}/toggle-served`.
+  - Pada `KitchenController.php` method `updateOrderStatus`, ditambahkan interceptor: jika terdapat `toggle_item_id`, request langsung dialihkan ke method `toggleItemServed()`.
+  - Menambahkan *auto-healing DDL*: jika kolom `is_served` belum ada di tabel `pos_order_items`, controller secara otomatis mengeksekusi `ALTER TABLE pos_order_items ADD COLUMN is_served TINYINT(1) NOT NULL DEFAULT 0` tanpa memicu error SQL.
+- **Kompilasi Frontend & Pengemasan Update**:
+  - Mengompilasi ulang seluruh bundle Vite via `npm run build`.
+  - Mengemas ulang seluruh file ke `d:\PA\CPH_Update_Kantin_September_2026.zip` (2.58 MB).
+- **Files Modified**:
+  - `app/Http/Controllers/Pos/KasirController.php`
+  - `app/Http/Controllers/Pos/AdminFoodController.php`
+  - `app/Http/Controllers/Pos/KitchenController.php`
+  - `resources/js/Pages/POS/Kitchen.jsx`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+
+
+### Fitur Antar Duluan / Checklist Menu Selesai Dimasak (`Kitchen.jsx` & `Kasir.jsx`):
+- **Tombol Checklist Mandiri Per-Item Menu di KDS Dapur (`Kitchen.jsx`)**:
+  - Pada kartu antrian kolom **2. SEDANG DIPROSES**, setiap menu makanan/minuman kini memiliki tombol aksi mandiri:
+    - **`🍽️ Antar`** (warna biru): Klik saat masakan tersebut sudah selesai dimasak dan langsung diantar duluan ke meja pelanggan (misal: Indomie Goreng atau minuman selesai duluan).
+    - **`✅ Diantar`** (warna hijau): Menandai bahwa item tersebut sudah diantar ke meja pelanggan, teks nama menu dicoret halus (`line-through`), dan kartu item berubah warna hijau muda.
+    - Dapat diklik kembali (toggle) untuk membatalkan jika terjadi salah pencet.
+  - **Bilah Progress Antar Real-time**: Menampilkan persentase dan jumlah menu yang sudah disajikan (contoh: `2 dari 4 Menu Selesai (50%)`) lengkap dengan bilah progress visual.
+  - **Tombol Penyelesaian Akhir**: Tombol `✅ SEMUA MAKANAN SELESAI & SIAP` tetap tersedia untuk memindahkan seluruh pesanan ke kolom **3. SIAP / DISAJIKAN** setelah semua hidangan selesai.
+- **Sinkronisasi Status di Layar Kasir (`Kasir.jsx`)**:
+  - Pada panel detail meja aktif di layar Kasir, kasir dapat melihat badge status per-item: **`✅ Diantar`** (sudah disajikan oleh staf dapur) atau **`⏳ Dimasak`** (masih disiapkan di dapur).
+- **Backend & Database Schema**:
+  - Membuat migrasi `2026_10_12_222000_add_is_served_to_pos_order_items_table.php` untuk menambahkan kolom `is_served` (`TINYINT(1) DEFAULT 0`) pada tabel `pos_order_items`.
+  - Menambahkan endpoint `toggleItemServed($itemId)` di `KitchenController.php` lengkap dengan *auto self-healing* schema.
+  - Memperbarui `PosOrderItem.php` dengan fillable `'is_served'` dan cast `'is_served' => 'boolean'`.
+- **Kompilasi Ulang Frontend & Paket Update Hosting**:
+  - Mengompilasi ulang bundle frontend via `npm run build` (5.53 detik).
+  - Mengemas ulang seluruh file ke paket update `d:\PA\CPH_Update_Kantin_September_2026.zip` (2.58 MB) siap upload ke cPanel.
+- **Files Modified/Created**:
+  - `database/migrations/2026_10_12_222000_add_is_served_to_pos_order_items_table.php` *(NEW)*
+  - `app/Http/Controllers/Pos/KitchenController.php`
+  - `app/Models/PosOrderItem.php`
+  - `routes/web.php`
+  - `public/setup_cpanel.php`
+  - `resources/js/Pages/POS/Kitchen.jsx`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+
+
+### Penambahan Menu "Pempek Palantea (Isi 6 Pcs)":
+- **Informasi Menu Baru**:
+  - Nama: **Pempek Palantea (Isi 6 Pcs)**
+  - Kategori: **Snack** (Camilan)
+  - Harga: **Rp 30.000 / Porsi**
+  - Deskripsi: `★ Menu Baru - Pempek asli ikan tenggiri disajikan dengan kuah cuko segar (Isi 6 pcs)`
+  - Foto Menu: Gambar resmi promo flyer disimpan di `pos_foods/pempek_palantea.png` (resolusi penuh).
+- **Integrasi Database & Migrasi Otomatis**:
+  - Menambahkan menu ke `database/seeders/PosSeeder.php` di bawah kategori Snack.
+  - Membuat migrasi otomatis `2026_10_12_221000_add_pempek_palantea_to_pos_foods.php` sehingga saat `setup_cpanel.php` dijalankan, menu langsung masuk ke database hosting tanpa perlu reset tabel.
+- **Penyempurnaan Display Gambar Frontend (`Kasir.jsx` & `FoodIndex.jsx`)**:
+  - Menambahkan pengecekan path gambar fleksibel `food.gambar.startsWith('/') || food.gambar.startsWith('http') ? food.gambar : '/storage/' + food.gambar` sehingga gambar dari direktori storage Laravel selalu tampil dengan sempurna di layar kasir maupun daftar menu admin.
+- **Pembaruan Paket Update Hosting**:
+  - Mengompilasi ulang frontend via `npm run build` (13.5 detik).
+  - Menyertakan aset gambar `storage/app/public/pos_foods/pempek_palantea.png` dan `public/storage/pos_foods/pempek_palantea.png` ke dalam paket ZIP `d:\PA\CPH_Update_Kantin_September_2026.zip` (2.58 MB).
+- **Files Modified/Created**:
+  - `database/seeders/PosSeeder.php`
+  - `database/migrations/2026_10_12_221000_add_pempek_palantea_to_pos_foods.php` *(NEW)*
+  - `storage/app/public/pos_foods/pempek_palantea.png` *(NEW)*
+  - `public/storage/pos_foods/pempek_palantea.png` *(NEW)*
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `resources/js/Pages/POS/Admin/FoodIndex.jsx`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+
+
+### Fitur Status Nomor Antrian 'Tidak Tersedia' (UNAVAILABLE):
+- **Opsi Dropdown Baru pada Manajemen Antrian (`TableIndex.jsx`)**:
+  - Menambahkan pilihan status **`⚪ Tidak Tersedia`** (`UNAVAILABLE`) pada dropdown setiap kartu meja antrian (No. 01–30).
+  - Menambahkan kartu ringkasan KPI ke-4 pada dashboard antrian: **Tidak Tersedia (Off)** dengan ikon `FiSlash` dan indikator warna abu-abu.
+  - Tampilan kartu nomor yang berstatus *Tidak Tersedia* otomatis dibuat redup/abu-abu (`opacity-75 bg-gray-100 text-gray-400`).
+- **Pembaruan Validasi Backend & Self-Healing (`AdminTableController.php`)**:
+  - Memperbarui validasi input request pada `updateStatus` menjadi `'status' => 'required|in:AVAILABLE,OCCUPIED,NEEDS_CLEANING,UNAVAILABLE'`.
+  - Menambahkan blok auto *self-healing* `try / catch`: jika database MySQL hosting mendeteksi warning 1265 (Data truncated) akibat tipe ENUM lama, controller secara otomatis mengeksekusi raw query `ALTER TABLE pos_tables MODIFY COLUMN status VARCHAR(50) NOT NULL DEFAULT 'AVAILABLE'` dan langsung memperbarui status tanpa error.
+- **Dukungan Database Schema & Helper cPanel (`setup_cpanel.php`)**:
+  - Menyematkan perintah eksplisit penyesuaian kolom `pos_tables.status` ke `VARCHAR(50)` di dalam `setup_cpanel.php`.
+  - Membuat migrasi baru `2026_10_12_220000_allow_unavailable_status_in_pos_tables.php` yang mengubah tipe kolom status `pos_tables` menjadi `VARCHAR(50)` via raw statement, sehingga bebas dari batasan ENUM MySQL dan mendukung nilai `UNAVAILABLE` secara dinamis.
+  - Memperbarui migrasi dasar `create_pos_system_tables.php` untuk konsistensi.
+- **Sinkronisasi Tampilan & Proteksi Kasir POS (`Kasir.jsx`)**:
+  - Legend grid nomor antrian kini menampilkan status **`⚪ Tidak Tersedia`**.
+  - Tombol nomor antrian yang berstatus `UNAVAILABLE` otomatis berlabel **`⚪ Off`** dengan gaya non-aktif.
+  - Menambahkan proteksi `handleAddToCart`: jika kasir memilih nomor yang tidak tersedia, muncul peringatan instan bahwa nomor antrian sedang dinonaktifkan/tidak tersedia.
+  - Menambahkan banner informatif pada panel kanan info meja ketika nomor berstatus `UNAVAILABLE` dipilih.
+- **Re-Compile Frontend & Paket Update Hosting**:
+  - Mengompilasi ulang bundle frontend via `npm run build` (5.24 detik).
+  - Mengemas ulang seluruh file ke paket update `d:\PA\CPH_Update_Kantin_September_2026.zip` (650 KB) siap upload ke cPanel.
+- **Files Modified/Created**:
+  - `resources/js/Pages/POS/Admin/TableIndex.jsx`
+  - `resources/js/Pages/POS/Kasir.jsx`
+  - `app/Http/Controllers/Pos/AdminTableController.php`
+  - `database/migrations/2026_10_12_220000_allow_unavailable_status_in_pos_tables.php` *(NEW)*
+  - `database/migrations/2026_09_14_100000_create_pos_system_tables.php`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+
+
+### Pembuatan Paket Update & Penyempurnaan Helper Deployment:
+- **Build Aset Frontend Segar**: Mengompilasi ulang seluruh bundle React Vite (`npm run build`) untuk memastikan seluruh halaman POS, Kitchen, Reports, Receipt, dan Tailwind CSS 100% mutakhir.
+- **Pembuatan Paket Update Ringkas (`d:\PA\CPH_Update_Kantin_September_2026.zip`)**:
+  - Mengisolasi hanya file-file baru & berubah (Controller POS, Model POS, Middleware, Migrasi, Seeder, Halaman React POS, Route web.php, dan bundle `public/build`).
+  - Ukuran file sangat ringan (hanya **650 KB**), mengeliminasi kebutuhan re-upload `vendor/` (33+ MB) atau source code lama yang tidak berubah.
+- **Penyempurnaan Web Helper cPanel (`public/setup_cpanel.php`)**:
+  - Menambahkan tombol **⚡ 1-Click Update Otomatis (Migrate POS + Seed Menu + Cache)**: mengeksekusi `migrate --force` dan `db:seed --class=PosSeeder --force` secara aman tanpa menghapus data produk, pelanggan, atau transaksi toko online yang sudah ada.
+  - Menambahkan optimasi cache Laravel (`config:cache`, `route:cache`, `view:cache`) dan pembuatan link storage (`storage:link`).
+  - Menambahkan tautan pintas verifikasi langsung ke `/login`, `/order` (Kasir), `/kitchen` (Dapur), `/admin/pos-reports` (Laporan), dan `/admin/pos-foods` (Menu Makanan).
+- **Panduan Step-by-Step Deployment**: Menyusun instruksi upload dan ekstraksi file ZIP ke cPanel File Manager (`public_html`) serta eksekusi migrasi via browser.
+- **Files Created/Modified**:
+  - `public/setup_cpanel.php`
+  - `make_update_zip.ps1`
+  - `d:\PA\CPH_Update_Kantin_September_2026.zip`
+  - `GEMINI.md`
+
+
+
+### Analisis & Pemetaan Berkas Deployment:
+- **Baseline Deployment**: Menetapkan commit `114ee5e` (17 April 2026) sebagai acuan kode yang telah aktif di hosting.
+- **Audit File Baru**: Mengidentifikasi 22 file baru mencakup Controller POS/KDS/Laporan (`app/Http/Controllers/Pos/*`), Middleware (`pos.access`, `kitchen.access`), Model (`Pos*`), Migrasi (`2026_09_14_*`), Seeder (`PosSeeder.php`), Halaman React (`resources/js/Pages/POS/*`), dan `.htaccess`.
+- **Audit File Berubah**: Mengidentifikasi 9 file lama yang mengalami modifikasi logic (`AuthenticatedSessionController.php`, `WelcomeController.php`, `HandleInertiaRequests.php`, `User.php`, `bootstrap/app.php`, `web.php`, `DatabaseSeeder.php`, `Sidebar.jsx`, `CustomerLayout.jsx`).
+- **Audit Dependencies & Assets**: Mengonfirmasi `composer.json` dan `package.json` 100% identik sehingga `vendor` tidak perlu di-upload ulang. Seluruh aset frontend terkompilasi segar pada `public/build`.
+- **Rencana Database Aman**: Menegaskan perintah `php artisan migrate --force` dan seeder terisolasi `php artisan db:seed --class=PosSeeder --force` untuk mencegah data existing toko online terhapus.
+- **Files Modified**:
+  - `GEMINI.md`
+
+
+## 22 September 2026 (Penyiapan Paket Deployment Lengkap ke Jagoan Hosting cPanel)
+
+### Otomatisasi & Penyiapan File Production Deployment:
+- **Build Frontend Assets (`public/build`)**: Memastikan seluruh berkas Inertia.js React, Tailwind CSS, icon, chart, dan halaman POS/Dapur 100% terkompilasi segar untuk production via `npm run build`.
+- **Root `.htaccess` (`.htaccess`)**: Membuat file pengalihan otomatis agar traffic domain utama cPanel langsung diarahkan ke folder `/public` tanpa perlu mengubah Document Root cPanel.
+- **Script Helper cPanel (`public/setup_cpanel.php`)**: Membuat installer web otomatis untuk membuat `storage:link`, menjalankan `migrate:fresh --seed` (mengisi database, menu makanan, meja 1-30, akun kasir/admin), dan optimasi cache Laravel (`config:cache`, `route:cache`, `view:cache`).
+- **Paket ZIP Siap Upload (`d:\PA\CPH_Project_JagoanHosting.zip`)**: Mengompres seluruh source code beserta folder `vendor` dan `public/build` menjadi 1 file ZIP siap extract di cPanel.
+- **Files Created/Modified**:
+  - `.htaccess` *(NEW)*
+  - `public/setup_cpanel.php` *(NEW)*
+  - `make_zip.ps1` *(NEW)*
+  - `GEMINI.md`
+
+
 ## 22 September 2026 (Update Logo Struk Kasir ke logoo.png)
 
 ### Penyesuaian Logo Struk Kasir (`Receipt.jsx`):

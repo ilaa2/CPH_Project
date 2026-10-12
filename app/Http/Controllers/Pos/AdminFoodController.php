@@ -16,6 +16,22 @@ class AdminFoodController extends Controller
      */
     public function index(Request $request)
     {
+        // Auto-seed Pempek Palantea jika belum ada di database
+        try {
+            if (!PosFood::where('nama', 'like', '%Pempek%')->exists()) {
+                $snackCat = PosFoodCategory::where('nama_kategori', 'Snack')->first();
+                $catId = $snackCat ? $snackCat->id : 4;
+                PosFood::create([
+                    'category_id' => $catId,
+                    'nama' => 'Pempek Palantea (Isi 6 Pcs)',
+                    'deskripsi' => '★ Menu Baru - Pempek asli ikan tenggiri disajikan dengan kuah cuko segar (Isi 6 pcs)',
+                    'harga' => 30000,
+                    'gambar' => 'pos_foods/pempek_palantea.png',
+                    'status' => 'Aktif',
+                ]);
+            }
+        } catch (\Throwable $e) {}
+
         $query = PosFood::with('category')->latest();
 
         if ($request->has('search') && $request->search != '') {

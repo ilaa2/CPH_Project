@@ -53,7 +53,8 @@ export default function ReportIndex({
 
   // Modal State for viewing receipt / details
   const [selectedOrder, setSelectedOrder] = useState(null);
-  const [receiptType, setReceiptType] = useState('customer');
+  const [receiptType, setReceiptType] = useState('both');
+  const [bothPrintStep, setBothPrintStep] = useState(1);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
 
   // Currency formatter
@@ -84,9 +85,10 @@ export default function ReportIndex({
   };
 
   // Open Detail / Receipt Modal
-  const handleOpenReceipt = (order, type = 'customer') => {
+  const handleOpenReceipt = (order, type = 'both') => {
     setSelectedOrder(order);
     setReceiptType(type);
+    setBothPrintStep(1);
     setShowReceiptModal(true);
   };
 
@@ -696,68 +698,175 @@ export default function ReportIndex({
       </div>
 
       {/* MODAL PRINT STRUK / TICKET */}
-      {showReceiptModal && selectedOrder && (
-        <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-200">
-            {/* Modal Header */}
-            <div className="p-3 bg-gray-50 border-b flex justify-between items-center shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-sm text-gray-800">
-                  {receiptType === 'kitchen' ? '🍳 Ticket Dapur' : '🖨️ Struk Thermal Pelanggan'}
-                </span>
-                <span className="text-xs px-2 py-0.5 rounded font-bold bg-green-100 text-green-800">
-                  Meja {selectedOrder.table?.nomor_meja || '--'}
-                </span>
+      {showReceiptModal && selectedOrder && (() => {
+        const activeTypeToRender = receiptType === 'both'
+          ? (bothPrintStep === 1 ? 'customer' : 'kitchen')
+          : receiptType;
+
+        const handlePrintStep = () => {
+          if (receiptType === 'both') {
+            if (bothPrintStep === 1) {
+              window.print();
+              setBothPrintStep(2);
+            } else if (bothPrintStep === 2) {
+              window.print();
+              setBothPrintStep(3);
+            } else {
+              setBothPrintStep(1);
+            }
+          } else {
+            window.print();
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[92vh] flex flex-col overflow-hidden border border-gray-200">
+              {/* Modal Header */}
+              <div className="p-3 bg-gray-50 border-b flex justify-between items-center shrink-0">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-sm text-gray-800 flex items-center gap-1.5">
+                      <FiPrinter className="text-green-600" /> Cetak Struk (80mm)
+                    </span>
+                    <span className="text-xs px-2 py-0.5 rounded font-bold bg-green-100 text-green-800">
+                      Meja {selectedOrder.table?.nomor_meja || '--'}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <button
+                      onClick={() => {
+                        setReceiptType('both');
+                        setBothPrintStep(1);
+                      }}
+                      className={`px-2 py-0.5 rounded-lg text-xs font-black transition-all ${
+                        receiptType === 'both' ? 'bg-green-600 text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      ✂️ 2 Lembar (Klik 2x)
+                    </button>
+                    <button
+                      onClick={() => setReceiptType('customer')}
+                      className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all ${
+                        receiptType === 'customer' ? 'bg-green-600 text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      🖨️ Customer Saja
+                    </button>
+                    <button
+                      onClick={() => setReceiptType('kitchen')}
+                      className={`px-2 py-0.5 rounded-lg text-xs font-bold transition-all ${
+                        receiptType === 'kitchen' ? 'bg-blue-600 text-white shadow-xs' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      🍳 Dapur Saja
+                    </button>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowReceiptModal(false)}
+                  className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-800 transition-colors"
+                >
+                  <FiX size={18} />
+                </button>
               </div>
-              <button
-                onClick={() => setShowReceiptModal(false)}
-                className="p-1.5 rounded-lg hover:bg-gray-200 text-gray-500 hover:text-gray-800 transition-colors"
-              >
-                <FiX size={18} />
-              </button>
-            </div>
 
-            {/* Modal Body - Scrollable Receipt */}
-            <div className="flex-1 overflow-y-auto p-4 bg-gray-100 custom-scrollbar">
-              <Receipt order={selectedOrder} type={receiptType} paperSize="80mm" />
-            </div>
+              {/* Status info bar */}
+              {receiptType === 'both' && (
+                <div className="px-3 py-1.5 text-xs font-bold flex justify-between items-center bg-gray-100 border-b border-gray-200">
+                  <span className="text-gray-800">
+                    {bothPrintStep === 1 && '📄 Lembar 1: Struk Pembayaran Customer'}
+                    {bothPrintStep === 2 && '🍳 Lembar 2: Ticket Pesanan Dapur'}
+                    {bothPrintStep === 3 && '✅ Kedua lembar resi telah dicetak!'}
+                  </span>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                    bothPrintStep === 1 ? 'bg-green-100 text-green-800' :
+                    bothPrintStep === 2 ? 'bg-blue-100 text-blue-800 animate-pulse' :
+                    'bg-emerald-100 text-emerald-800'
+                  }`}>
+                    {bothPrintStep === 1 && 'Klik 1 dari 2'}
+                    {bothPrintStep === 2 && 'Klik 2 dari 2'}
+                    {bothPrintStep === 3 && 'Selesai'}
+                  </span>
+                </div>
+              )}
 
-            {/* Modal Footer */}
-            <div className="p-3 bg-white border-t flex justify-end gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowReceiptModal(false)}
-                className="px-4 py-2 border rounded-xl text-xs font-bold text-gray-600 hover:bg-gray-100"
-              >
-                Tutup
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (receiptType === 'both') {
-                    setReceiptType('customer');
-                    setTimeout(() => {
-                      window.print();
-                      setTimeout(() => {
-                        setReceiptType('kitchen');
-                        setTimeout(() => {
-                          window.print();
-                          setTimeout(() => setReceiptType('both'), 500);
-                        }, 400);
-                      }, 600);
-                    }, 200);
-                  } else {
-                    window.print();
-                  }
-                }}
-                className="px-5 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-extrabold flex items-center gap-1.5 shadow-sm"
-              >
-                <FiPrinter size={14} /> Cetak Struk
-              </button>
+              {/* Modal Body - Scrollable Receipt */}
+              <div className="flex-1 overflow-y-auto p-4 bg-gray-100 custom-scrollbar">
+                <Receipt order={selectedOrder} type={activeTypeToRender} paperSize="80mm" />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-3 bg-white border-t space-y-1.5 shrink-0">
+                {receiptType === 'both' ? (
+                  <>
+                    {bothPrintStep === 1 && (
+                      <button
+                        type="button"
+                        onClick={handlePrintStep}
+                        className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 shadow-sm"
+                      >
+                        <FiPrinter size={16} /> [Klik 1] Print Struk Customer
+                      </button>
+                    )}
+
+                    {bothPrintStep === 2 && (
+                      <button
+                        type="button"
+                        onClick={handlePrintStep}
+                        className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 shadow-sm animate-pulse"
+                      >
+                        <FiPrinter size={16} /> [Klik 2] Lanjut Print Ticket Dapur
+                      </button>
+                    )}
+
+                    {bothPrintStep === 3 && (
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setBothPrintStep(1)}
+                          className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold rounded-xl text-xs"
+                        >
+                          🔄 Cetak Ulang Lembar 1
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowReceiptModal(false)}
+                          className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl text-xs"
+                        >
+                          ✅ Selesai & Tutup
+                        </button>
+                      </div>
+                    )}
+
+                    <p className="text-[11px] text-gray-500 text-center font-medium">
+                      {bothPrintStep === 1 && '💡 Klik tombol ini untuk print struk customer, lalu robek kertas.'}
+                      {bothPrintStep === 2 && '✂️ Kertas struk customer sudah dirobek? Klik untuk print ticket dapur.'}
+                      {bothPrintStep === 3 && 'Kedua resi telah selesai dicetak terpisah.'}
+                    </p>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handlePrintStep}
+                    className="w-full py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-1.5 shadow-sm"
+                  >
+                    <FiPrinter size={16} /> Print {receiptType === 'customer' ? 'Struk Customer' : 'Ticket Dapur'}
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => setShowReceiptModal(false)}
+                  className="w-full py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-600 font-bold rounded-xl text-xs transition-colors"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </Sidebar>
   );
 }
