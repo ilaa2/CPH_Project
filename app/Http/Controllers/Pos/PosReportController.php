@@ -11,6 +11,9 @@ use App\Models\PosPayment;
 use App\Models\PosFood;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Spatie\SimpleExcel\SimpleExcelWriter;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PosReportController extends Controller
 {
@@ -30,10 +33,12 @@ class PosReportController extends Controller
                 $startDate = Carbon::yesterday()->startOfDay();
                 $endDate = Carbon::yesterday()->endOfDay();
                 break;
+            case 'week':
             case 'last_7_days':
                 $startDate = Carbon::today()->subDays(6)->startOfDay();
                 $endDate = Carbon::today()->endOfDay();
                 break;
+            case 'month':
             case 'this_month':
                 $startDate = Carbon::today()->startOfMonth()->startOfDay();
                 $endDate = Carbon::today()->endOfMonth()->endOfDay();
@@ -41,6 +46,11 @@ class PosReportController extends Controller
             case 'last_month':
                 $startDate = Carbon::today()->subMonth()->startOfMonth()->startOfDay();
                 $endDate = Carbon::today()->subMonth()->endOfMonth()->endOfDay();
+                break;
+            case 'year':
+            case 'this_year':
+                $startDate = Carbon::today()->startOfYear()->startOfDay();
+                $endDate = Carbon::today()->endOfYear()->endOfDay();
                 break;
             case 'custom':
                 $startDate = $startDateInput ? Carbon::parse($startDateInput)->startOfDay() : Carbon::today()->startOfDay();
@@ -53,17 +63,19 @@ class PosReportController extends Controller
             case 'today':
             default:
                 $filter = 'today';
-                $startDate = Carbon::today()->startOfDay();
-                $endDate = Carbon::today()->endOfDay();
+                $startDate = $startDateInput ? Carbon::parse($startDateInput)->startOfDay() : Carbon::today()->startOfDay();
+                $endDate = $endDateInput ? Carbon::parse($endDateInput)->endOfDay() : Carbon::today()->endOfDay();
                 break;
         }
 
-        // Global KPI Counters (Not constrained by filter)
+        // Global KPI Counters (Not constrained by filter, exclude CANCELLED)
         $todayRevenue = PosOrder::where('payment_status', 'PAID')
+            ->where('order_status', '!=', 'CANCELLED')
             ->whereDate('created_at', Carbon::today())
             ->sum('total');
 
         $thisMonthRevenue = PosOrder::where('payment_status', 'PAID')
+            ->where('order_status', '!=', 'CANCELLED')
             ->whereMonth('created_at', Carbon::today()->month)
             ->whereYear('created_at', Carbon::today()->year)
             ->sum('total');
@@ -99,26 +111,44 @@ class PosReportController extends Controller
             });
         }
 
-        // Filtered KPIs
+        // Filtered KPIs (Exclude CANCELLED)
         $filteredPaidOrders = PosOrder::whereBetween('created_at', [$startDate, $endDate])
-            ->where('payment_status', 'PAID');
+            ->where('payment_status', 'PAID')
+            ->where('order_status', '!=', 'CANCELLED');
 
         $filteredRevenue = (clone $filteredPaidOrders)->sum('total');
         $filteredTransactionCount = (clone $filteredPaidOrders)->count();
         $filteredAvgTicket = $filteredTransactionCount > 0 ? round($filteredRevenue / $filteredTransactionCount) : 0;
 
-        // Cash vs QRIS Revenue in Filter Range
-        $cashRevenue = PosPayment::whereBetween('pos_payments.created_at', [$startDate, $endDate])
-            ->where('pos_payments.status', 'SUCCESS')
-            ->whereRaw('LOWER(pos_payments.metode_pembayaran) LIKE ?', ['%cash%'])
-            ->join('pos_orders', 'pos_payments.order_id', '=', 'pos_orders.id')
-            ->sum('pos_orders.total');
+        // Cash vs QRIS Revenue in Filter Range (Presisi untuk Cash, QRIS, & SPLIT)
+        $cashRevenue = 0;
+        $qrisRevenue = 0;
 
-        $qrisRevenue = PosPayment::whereBetween('pos_payments.created_at', [$startDate, $endDate])
-            ->where('pos_payments.status', 'SUCCESS')
-            ->whereRaw('LOWER(pos_payments.metode_pembayaran) LIKE ?', ['%qris%'])
-            ->join('pos_orders', 'pos_payments.order_id', '=', 'pos_orders.id')
-            ->sum('pos_orders.total');
+        $paidOrdersList = (clone $filteredPaidOrders)->with('payment')->get();
+        foreach ($paidOrdersList as $pOrder) {
+            $payment = $pOrder->payment;
+            $method = strtoupper($payment->metode_pembayaran ?? $pOrder->metode_pembayaran ?? 'CASH');
+
+            if ($method === 'SPLIT') {
+                $cVal = (int) ($payment->cash_amount ?? 0);
+                $qVal = (int) ($payment->qris_amount ?? 0);
+                $kembalian = (int) ($payment->kembalian ?? 0);
+                $netCash = max(0, $cVal - $kembalian);
+
+                if ($cVal === 0 && $qVal === 0) {
+                    $half = round($pOrder->total / 2);
+                    $cashRevenue += $half;
+                    $qrisRevenue += ($pOrder->total - $half);
+                } else {
+                    $cashRevenue += $netCash;
+                    $qrisRevenue += $qVal;
+                }
+            } elseif (str_contains($method, 'QRIS')) {
+                $qrisRevenue += $pOrder->total;
+            } else {
+                $cashRevenue += $pOrder->total;
+            }
+        }
 
         // Top 5 Best Selling Foods in Filter Range
         $topFoods = PosOrderItem::select(
@@ -127,8 +157,12 @@ class PosReportController extends Controller
                 DB::raw('SUM(subtotal) as total_omzet')
             )
             ->whereBetween('created_at', [$startDate, $endDate])
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', 'ACTIVE');
+            })
             ->whereHas('order', function ($q) {
-                $q->where('payment_status', 'PAID');
+                $q->where('payment_status', 'PAID')
+                  ->where('order_status', '!=', 'CANCELLED');
             })
             ->with(['food.category'])
             ->groupBy('food_id')
@@ -136,8 +170,33 @@ class PosReportController extends Controller
             ->take(5)
             ->get();
 
+        $topProductText = $topFoods->first() ? ($topFoods->first()->food->nama ?? '-') : '-';
+
+        // Summary payload
+        $summaryData = [
+            'total_pendapatan' => (int) $filteredRevenue,
+            'total_transaksi' => (int) $filteredTransactionCount,
+            'cash_revenue' => (int) $cashRevenue,
+            'qris_revenue' => (int) $qrisRevenue,
+            'produk_terlaris' => $topProductText,
+            'total_active_unpaid' => (int) $totalActiveUnpaid,
+            'todayRevenue' => (int) $todayRevenue,
+            'thisMonthRevenue' => (int) $thisMonthRevenue,
+            'filteredRevenue' => (int) $filteredRevenue,
+            'filteredTransactionCount' => (int) $filteredTransactionCount,
+            'filteredAvgTicket' => (int) $filteredAvgTicket,
+            'cashRevenue' => (int) $cashRevenue,
+            'qrisRevenue' => (int) $qrisRevenue,
+        ];
+
+        // Jika request JSON (Axios quick filter)
+        if ($request->wantsJson()) {
+            return response()->json([
+                'summary' => $summaryData,
+            ]);
+        }
+
         // Daily Chart Data for the range
-        // If range is within 31 days, group by Day. If longer, group by month/day.
         $diffDays = $startDate->diffInDays($endDate);
         $chartData = [];
 
@@ -149,6 +208,7 @@ class PosReportController extends Controller
                     DB::raw('COUNT(id) as count')
                 )
                 ->where('payment_status', 'PAID')
+                ->where('order_status', '!=', 'CANCELLED')
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->groupBy('date_str')
                 ->get()
@@ -171,6 +231,7 @@ class PosReportController extends Controller
                     DB::raw('COUNT(id) as count')
                 )
                 ->where('payment_status', 'PAID')
+                ->where('order_status', '!=', 'CANCELLED')
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->groupBy('ym_str')
                 ->orderBy('ym_str')
@@ -193,6 +254,7 @@ class PosReportController extends Controller
                 DB::raw('SUM(total) as revenue')
             )
             ->where('payment_status', 'PAID')
+            ->where('order_status', '!=', 'CANCELLED')
             ->whereBetween('created_at', [$startDate, $endDate])
             ->groupBy('hour_num')
             ->get()
@@ -212,16 +274,7 @@ class PosReportController extends Controller
 
         return Inertia::render('POS/Admin/ReportIndex', [
             'orders' => $orders,
-            'summary' => [
-                'todayRevenue' => (int) $todayRevenue,
-                'thisMonthRevenue' => (int) $thisMonthRevenue,
-                'totalActiveUnpaid' => (int) $totalActiveUnpaid,
-                'filteredRevenue' => (int) $filteredRevenue,
-                'filteredTransactionCount' => (int) $filteredTransactionCount,
-                'filteredAvgTicket' => (int) $filteredAvgTicket,
-                'cashRevenue' => (int) $cashRevenue,
-                'qrisRevenue' => (int) $qrisRevenue,
-            ],
+            'summary' => $summaryData,
             'topFoods' => $topFoods,
             'chartData' => $chartData,
             'peakHoursData' => $peakHoursData,
@@ -236,71 +289,432 @@ class PosReportController extends Controller
         ]);
     }
 
-    public function exportCsv(Request $request)
+    /**
+     * Endpoint untuk preview data laporan (Grafik & Tabel) via Axios
+     */
+    public function data(Request $request, $type)
     {
-        $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date'))->startOfDay() : Carbon::today()->startOfDay();
-        $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date'))->endOfDay() : Carbon::today()->endOfDay();
+        $startDate = $request->query('start_date', Carbon::today()->startOfMonth()->format('Y-m-d'));
+        $endDate = $request->query('end_date', Carbon::today()->format('Y-m-d'));
 
-        $orders = PosOrder::with(['table', 'cashier', 'payment', 'items.food'])
-            ->whereBetween('created_at', [$startDate, $endDate])
-            ->orderBy('created_at', 'asc')
+        switch ($type) {
+            case 'penjualan':
+                return $this->getPreviewPenjualan($startDate, $endDate);
+            case 'menu-terlaris':
+            case 'produk-terlaris':
+                return $this->getPreviewMenuTerlaris($startDate, $endDate);
+            default:
+                return response()->json(['error' => 'Invalid report type'], 400);
+        }
+    }
+
+    private function getPreviewPenjualan($startDate, $endDate)
+    {
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
+
+        $dailyStats = PosOrder::select(
+                DB::raw('DATE(created_at) as date_str'),
+                DB::raw('SUM(total) as revenue'),
+                DB::raw('COUNT(id) as count')
+            )
+            ->where('payment_status', 'PAID')
+            ->where('order_status', '!=', 'CANCELLED')
+            ->whereBetween('created_at', [$start, $end])
+            ->groupBy('date_str')
+            ->get()
+            ->keyBy('date_str');
+
+        $period = Carbon::parse($start)->toPeriod($end);
+        $labels = [];
+        $revenues = [];
+        foreach ($period as $dt) {
+            $dStr = $dt->format('Y-m-d');
+            $labels[] = $dt->translatedFormat('d M');
+            $revenues[] = (int) ($dailyStats[$dStr]->revenue ?? 0);
+        }
+
+        $orders = PosOrder::with(['table', 'payment', 'items.food'])
+            ->where('payment_status', 'PAID')
+            ->where('order_status', '!=', 'CANCELLED')
+            ->whereBetween('created_at', [$start, $end])
+            ->latest()
+            ->take(50)
             ->get();
 
-        $csvFileName = 'laporan-kantin-cph-' . $startDate->format('Ymd') . '-' . $endDate->format('Ymd') . '.csv';
+        $tableRows = $orders->map(function ($o) {
+            $metode = strtoupper($o->payment->metode_pembayaran ?? $o->metode_pembayaran ?? 'Cash');
+            $items = $o->items->map(fn($it) => $it->jumlah . 'x ' . ($it->food->nama ?? 'Menu'))->implode(', ');
+            return [
+                'col1' => $o->created_at->format('d/m/Y H:i'),
+                'col2' => '#' . $o->nomor_pesanan . ' (Meja ' . ($o->table->nomor_meja ?? '--') . ')',
+                'col3' => $items,
+                'col4' => 'Rp ' . number_format($o->total, 0, ',', '.') . ' (' . $metode . ')',
+            ];
+        });
 
-        $headers = [
-            "Content-type" => "text/csv; charset=UTF-8",
-            "Content-Disposition" => "attachment; filename=$csvFileName",
-            "Pragma" => "no-cache",
-            "Cache-Control" => "must-revalidate, post-check=0, pre-check=0",
-            "Expires" => "0"
-        ];
+        return response()->json([
+            'chart' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Omzet Penjualan (Rp)',
+                        'data' => $revenues,
+                        'borderColor' => '#16a34a',
+                        'backgroundColor' => 'rgba(22, 163, 74, 0.1)',
+                        'fill' => true,
+                        'tension' => 0.4,
+                    ]
+                ]
+            ],
+            'table' => [
+                'headers' => ['Waktu', 'No. Pesanan & Meja', 'Menu Dipesan', 'Total & Metode'],
+                'rows' => $tableRows,
+            ]
+        ]);
+    }
 
-        $callback = function () use ($orders) {
-            $file = fopen('php://output', 'w');
-            // Add UTF-8 BOM for Excel compatibility
-            fputs($file, "\xEF\xBB\xBF");
+    private function getPreviewMenuTerlaris($startDate, $endDate)
+    {
+        $start = Carbon::parse($startDate)->startOfDay();
+        $end = Carbon::parse($endDate)->endOfDay();
 
-            // Header row
-            fputcsv($file, [
-                'Nomor Pesanan',
-                'Waktu Transaksi',
-                'Nomor Meja',
-                'Nama Pelanggan',
-                'Item Pesanan',
-                'Subtotal (Rp)',
-                'Diskon (Rp)',
-                'Total (Rp)',
-                'Metode Bayar',
-                'Status Bayar',
-                'Kasir',
+        $topFoods = PosOrderItem::select(
+                'food_id',
+                DB::raw('SUM(jumlah) as total_qty'),
+                DB::raw('SUM(subtotal) as total_omzet')
+            )
+            ->whereBetween('created_at', [$start, $end])
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', 'ACTIVE');
+            })
+            ->whereHas('order', function ($q) {
+                $q->where('payment_status', 'PAID')
+                  ->where('order_status', '!=', 'CANCELLED');
+            })
+            ->with(['food.category'])
+            ->groupBy('food_id')
+            ->orderByDesc('total_qty')
+            ->take(10)
+            ->get();
+
+        $labels = $topFoods->map(fn($f) => $f->food->nama ?? 'Menu')->toArray();
+        $qtys = $topFoods->map(fn($f) => (int)$f->total_qty)->toArray();
+
+        $tableRows = $topFoods->map(function ($f, $idx) {
+            return [
+                'col1' => ($idx + 1) . '. ' . ($f->food->nama ?? 'Menu'),
+                'col2' => $f->food->category->nama_kategori ?? 'Kantin',
+                'col3' => number_format($f->total_qty, 0, ',', '.') . ' Porsi',
+                'col4' => 'Rp ' . number_format($f->total_omzet, 0, ',', '.'),
+            ];
+        });
+
+        return response()->json([
+            'chart' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Porsi Terjual',
+                        'data' => $qtys,
+                        'backgroundColor' => '#8b5cf6',
+                        'borderRadius' => 6,
+                    ]
+                ]
+            ],
+            'table' => [
+                'headers' => ['Nama Menu Makanan/Minuman', 'Kategori', 'Porsi Terjual', 'Total Omzet'],
+                'rows' => $tableRows,
+            ]
+        ]);
+    }
+
+    /**
+     * Export Handler (PDF, Excel, CSV)
+     */
+    public function export(Request $request, $type, $format)
+    {
+        $startDate = $request->query('start_date') ? Carbon::parse($request->query('start_date'))->startOfDay() : Carbon::today()->startOfMonth()->startOfDay();
+        $endDate = $request->query('end_date') ? Carbon::parse($request->query('end_date'))->endOfDay() : Carbon::today()->endOfDay();
+
+        if ($type === 'menu-terlaris') {
+            $topFoods = PosOrderItem::select(
+                    'food_id',
+                    DB::raw('SUM(jumlah) as total_qty'),
+                    DB::raw('SUM(subtotal) as total_omzet')
+                )
+                ->whereBetween('created_at', [$startDate, $endDate])
+                ->where(function ($q) {
+                    $q->whereNull('status')->orWhere('status', 'ACTIVE');
+                })
+                ->whereHas('order', function ($q) {
+                    $q->where('payment_status', 'PAID')
+                      ->where('order_status', '!=', 'CANCELLED');
+                })
+                ->with(['food.category'])
+                ->groupBy('food_id')
+                ->orderByDesc('total_qty')
+                ->get();
+
+            $data = $topFoods->map(function ($f, $i) {
+                return [
+                    'Peringkat' => $i + 1,
+                    'Nama Menu' => $f->food->nama ?? 'Menu',
+                    'Kategori' => $f->food->category->nama_kategori ?? 'Kantin',
+                    'Porsi Terjual' => (int) $f->total_qty,
+                    'Total Omzet (Rp)' => (int) $f->total_omzet,
+                ];
+            })->toArray();
+
+            return $this->handleExport($format, $data, 'laporan_menu_terlaris_kantin', [
+                'title' => 'LAPORAN MENU TERLARIS KANTIN PALANTEA',
+                'period' => "Periode: " . $startDate->format('d/m/Y') . " s/d " . $endDate->format('d/m/Y')
             ]);
+        }
 
-            foreach ($orders as $order) {
-                $itemList = $order->items->map(function ($item) {
-                    return $item->jumlah . 'x ' . ($item->food->nama ?? 'Menu');
-                })->implode('; ');
+        // Default: Penjualan
+        $orders = PosOrder::with(['table', 'cashier', 'payment', 'items.food'])
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where('payment_status', 'PAID')
+            ->where('order_status', '!=', 'CANCELLED')
+            ->orderBy('created_at', 'desc')
+            ->get();
 
-                $metode = $order->payment->metode_pembayaran ?? $order->metode_pembayaran ?? 'Cash';
+        $data = $orders->map(function ($o) {
+            $itemList = $o->items->map(function ($item) {
+                return $item->jumlah . 'x ' . ($item->food->nama ?? 'Menu');
+            })->implode(', ');
 
-                fputcsv($file, [
-                    $order->nomor_pesanan,
-                    $order->created_at->format('d/m/Y H:i'),
-                    'No. ' . ($order->table->nomor_meja ?? '--'),
-                    $order->nama_pelanggan ?? 'Pelanggan',
-                    $itemList,
-                    $order->subtotal,
-                    $order->diskon,
-                    $order->total,
-                    strtoupper($metode),
-                    $order->payment_status === 'PAID' ? 'LUNAS' : 'BELUM LUNAS',
-                    $order->cashier->name ?? 'Kasir',
+            $metode = strtoupper($o->payment->metode_pembayaran ?? $o->metode_pembayaran ?? 'Cash');
+
+            return [
+                'No Pesanan' => $o->nomor_pesanan,
+                'Waktu' => $o->created_at->format('d/m/Y H:i'),
+                'No Meja' => 'Meja ' . ($o->table->nomor_meja ?? '--'),
+                'Pelanggan' => $o->nama_pelanggan ?? 'Pelanggan',
+                'Menu Dipesan' => $itemList,
+                'Metode Bayar' => $metode,
+                'Total (Rp)' => (int) $o->total,
+                'Kasir' => $o->cashier->name ?? 'Kasir',
+            ];
+        })->toArray();
+
+        // Top 5 foods for PDF
+        $topFoods = PosOrderItem::select(
+                'food_id',
+                DB::raw('SUM(jumlah) as total_qty'),
+                DB::raw('SUM(subtotal) as total_omzet')
+            )
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->where(function ($q) {
+                $q->whereNull('status')->orWhere('status', 'ACTIVE');
+            })
+            ->whereHas('order', function ($q) {
+                $q->where('payment_status', 'PAID')
+                  ->where('order_status', '!=', 'CANCELLED');
+            })
+            ->with(['food'])
+            ->groupBy('food_id')
+            ->orderByDesc('total_qty')
+            ->take(5)
+            ->get()
+            ->map(fn($f) => [
+                'nama' => $f->food->nama ?? 'Menu',
+                'total_qty' => (int) $f->total_qty,
+                'total_omzet' => (int) $f->total_omzet,
+            ])
+            ->toArray();
+
+        return $this->handleExport($format, $data, 'laporan_penjualan_kantin', [
+            'title' => 'LAPORAN PENJUALAN KANTIN PALANTEA',
+            'period' => "Periode: " . $startDate->format('d/m/Y') . " s/d " . $endDate->format('d/m/Y'),
+            'topProducts' => $topFoods,
+        ]);
+    }
+
+    private function handleExport($format, array $data, string $filename, array $extraData = [])
+    {
+        try {
+            $kebabFilename = str_replace('_', '-', $filename);
+            $safeDate = Carbon::now('Asia/Jakarta')->format('d-m-Y');
+            $finalFilenameBase = "{$kebabFilename}-{$safeDate}";
+
+            while (ob_get_level()) ob_end_clean();
+
+            $tempDir = storage_path('app/temp_export');
+            if (!file_exists($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            // CSV Export
+            if ($format === 'csv') {
+                $fileName = "{$finalFilenameBase}.csv";
+                $filePath = "{$tempDir}/{$fileName}";
+
+                $file = fopen($filePath, 'w');
+                fputs($file, "\xEF\xBB\xBF");
+
+                if (!empty($data)) {
+                    fputcsv($file, array_keys($data[0]));
+                }
+                foreach ($data as $row) {
+                    fputcsv($file, $row);
+                }
+                fclose($file);
+
+                return response()->download($filePath, $fileName, [
+                    'Content-Type' => 'text/csv; charset=UTF-8',
                 ]);
             }
 
-            fclose($file);
-        };
+            // Excel Export
+            if ($format === 'excel') {
+                $fileName = "{$finalFilenameBase}.xlsx";
+                $filePath = "{$tempDir}/{$fileName}";
 
-        return response()->stream($callback, 200, $headers);
+                $writer = SimpleExcelWriter::create($filePath, 'xlsx');
+                if (!empty($data)) {
+                    $writer->addRows(collect($data)->toArray());
+                } else {
+                    $writer->addRow(['Status' => 'Data Kosong']);
+                }
+                $writer->close();
+
+                return response()->download($filePath, $fileName, [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                ]);
+            }
+
+            // PDF Export
+            if ($format === 'pdf') {
+                $fileName = "{$finalFilenameBase}.pdf";
+                $filePath = "{$tempDir}/{$fileName}";
+
+                $title = $extraData['title'] ?? str_replace('-', ' ', strtoupper($kebabFilename));
+                $period = $extraData['period'] ?? ("Tanggal Cetak: " . now()->format('d/m/Y H:i'));
+
+                $safeData = empty($data) ? [] : $data;
+                $safeHeaders = empty($data) ? [] : array_keys($data[0]);
+
+                $pdfData = array_merge([
+                    'title' => $title,
+                    'period' => $period,
+                    'headers' => $safeHeaders,
+                    'data' => $safeData,
+                ], $extraData);
+
+                Pdf::loadView('laporan.pdf', $pdfData)
+                    ->setPaper('a4', 'landscape')
+                    ->save($filePath);
+
+                return response()->download($filePath, $fileName, [
+                    'Content-Type' => 'application/pdf',
+                ]);
+            }
+
+            return response("Format tidak didukung: {$format}", 400, ['Content-Type' => 'text/plain']);
+        } catch (\Throwable $e) {
+            Log::error("EXPORT_KANTIN_ERROR: " . $e->getMessage());
+            return response("Export Failed: " . $e->getMessage(), 500, ['Content-Type' => 'text/plain']);
+        }
+    }
+
+    public function exportCsv(Request $request)
+    {
+        return $this->export($request, 'penjualan', 'csv');
+    }
+
+    /**
+     * Update metode pembayaran, nominal Cash/QRIS, kembalian, dan catatan koreksi
+     */
+    public function updatePaymentNote(Request $request, $id)
+    {
+        $request->validate([
+            'metode_pembayaran' => 'nullable|in:Cash,QRIS,SPLIT,UNPAID',
+            'cash_amount' => 'nullable|integer|min:0',
+            'qris_amount' => 'nullable|integer|min:0',
+            'kembalian' => 'nullable|integer|min:0',
+            'catatan_koreksi' => 'nullable|string|max:500',
+        ]);
+
+        try {
+            DB::beginTransaction();
+
+            $order = PosOrder::with('payment')->where('id', $id)->firstOrFail();
+            $payment = $order->payment;
+            $orderTotal = (int) $order->total;
+
+            $newMethod = $request->metode_pembayaran ?: ($payment ? $payment->metode_pembayaran : ($order->metode_pembayaran ?: 'Cash'));
+
+            if ($newMethod === 'UNPAID') {
+                if ($payment) {
+                    $payment->delete();
+                }
+                $order->update([
+                    'payment_status' => 'UNPAID',
+                    'metode_pembayaran' => null,
+                ]);
+                DB::commit();
+                return back()->with('success', 'Status pesanan ' . $order->nomor_pesanan . ' berhasil diubah menjadi Belum Bayar (UNPAID).');
+            }
+
+            $cashAmount = 0;
+            $qrisAmount = 0;
+
+            if ($newMethod === 'Cash') {
+                $cashAmount = $request->filled('cash_amount') && (int)$request->cash_amount > 0 ? (int)$request->cash_amount : $orderTotal;
+                $qrisAmount = 0;
+            } elseif ($newMethod === 'QRIS') {
+                $qrisAmount = $request->filled('qris_amount') && (int)$request->qris_amount > 0 ? (int)$request->qris_amount : $orderTotal;
+                $cashAmount = 0;
+            } elseif ($newMethod === 'SPLIT') {
+                $cashAmount = (int) ($request->cash_amount ?? 0);
+                $qrisAmount = (int) ($request->qris_amount ?? 0);
+                if ($cashAmount + $qrisAmount < $orderTotal) {
+                    $qrisAmount = max(0, $orderTotal - $cashAmount);
+                }
+            }
+
+            $jumlahBayar = $cashAmount + $qrisAmount;
+            $kembalian = $request->filled('kembalian') ? (int)$request->kembalian : max(0, $jumlahBayar - $orderTotal);
+
+            if (!$payment) {
+                $payment = PosPayment::create([
+                    'order_id' => $order->id,
+                    'cashier_id' => auth()->id() ?: $order->cashier_id,
+                    'metode_pembayaran' => $newMethod,
+                    'jumlah_bayar' => $jumlahBayar,
+                    'cash_amount' => $cashAmount,
+                    'qris_amount' => $qrisAmount,
+                    'kembalian' => $kembalian,
+                    'paid_at' => now(),
+                    'status' => 'SUCCESS',
+                    'catatan_koreksi' => $request->catatan_koreksi,
+                ]);
+            } else {
+                $payment->metode_pembayaran = $newMethod;
+                $payment->jumlah_bayar = $jumlahBayar;
+                $payment->cash_amount = $cashAmount;
+                $payment->qris_amount = $qrisAmount;
+                $payment->kembalian = $kembalian;
+                if ($request->has('catatan_koreksi')) {
+                    $payment->catatan_koreksi = $request->catatan_koreksi;
+                }
+                $payment->save();
+            }
+
+            // Sinkronkan ke PosOrder
+            $order->update([
+                'metode_pembayaran' => $newMethod,
+                'payment_status' => 'PAID',
+            ]);
+
+            DB::commit();
+
+            return back()->with('success', 'Metode pembayaran pesanan ' . $order->nomor_pesanan . ' berhasil diubah menjadi ' . $newMethod . '!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Gagal memperbarui pembayaran: ' . $e->getMessage());
+        }
     }
 }

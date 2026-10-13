@@ -192,9 +192,18 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
 // =====================================================
 Route::middleware(['auth', 'pos.access'])->group(function () {
     Route::get('/order', [KasirController::class, 'index'])->name('pos.kasir');
+    Route::get('/pos/monitor', [KasirController::class, 'monitor'])->name('pos.monitor');
+    Route::get('/order-monitor', [KasirController::class, 'monitor'])->name('pos.monitor.alias1');
+    Route::get('/admin/pos-monitor', [KasirController::class, 'monitor'])->name('admin.pos.monitor');
+    Route::get('/monitor', [KasirController::class, 'monitor'])->name('pos.monitor.alias2');
     Route::post('/pos/order', [KasirController::class, 'storeOrder'])->name('pos.order.store');
     Route::post('/pos/payment', [KasirController::class, 'processPayment'])->name('pos.payment.process');
+    Route::post('/pos/order/{id}/complete', [KasirController::class, 'completeOrder'])->name('pos.order.complete');
     Route::post('/pos/order/{id}/cancel', [KasirController::class, 'cancelOrder'])->name('pos.order.cancel');
+    Route::post('/pos/order/{id}/add-items', [KasirController::class, 'addItemsToOrder'])->name('pos.order.add-items');
+    Route::post('/pos/order-item/{id}/toggle-served', [KasirController::class, 'toggleOrderItemServed'])->name('pos.order-item.toggle-served');
+    Route::post('/pos/order-item/{id}/cancel', [KasirController::class, 'cancelOrderItem'])->name('pos.order-item.cancel');
+    Route::post('/pos/table/{id}/reset', [KasirController::class, 'resetTable'])->name('pos.table.reset');
     Route::get('/pos/json-state', [KasirController::class, 'jsonState'])->name('pos.json.state');
 
     // --- POS Menu & Table Management (Admin & Kasir) ---
@@ -212,6 +221,9 @@ Route::middleware(['auth', 'pos.access'])->group(function () {
         // --- POS Reports & Revenue Dashboard ---
         Route::get('/pos-reports', [PosReportController::class, 'index'])->name('admin.pos.reports.index');
         Route::get('/pos-reports/export-csv', [PosReportController::class, 'exportCsv'])->name('admin.pos.reports.export.csv');
+        Route::get('/pos-reports/{type}/json', [PosReportController::class, 'data'])->name('admin.pos.reports.data');
+        Route::get('/pos-reports/{type}/{format}', [PosReportController::class, 'export'])->name('admin.pos.reports.export');
+        Route::post('/pos-reports/order/{id}/update-payment-note', [PosReportController::class, 'updatePaymentNote'])->name('admin.pos.reports.payment.update-note');
     });
 });
 
@@ -228,8 +240,8 @@ Route::middleware(['auth', 'kitchen.access'])->group(function () {
 
 // Legacy route redirects for backwards compatibility
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
-    Route::get('/dashboard', fn() => redirect()->route('admin.dashboard'));
-    Route::get('/profile', fn() => redirect()->route('admin.profile.edit'));
+    Route::redirect('/dashboard', '/admin');
+    Route::redirect('/profile', '/admin/profile');
 });
 
 

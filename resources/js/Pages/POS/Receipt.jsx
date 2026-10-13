@@ -152,7 +152,24 @@ function SingleReceiptContent({ order, isKitchen, paperSize = '80mm' }) {
                 <span>Metode Pembayaran:</span>
                 <span className="font-black uppercase">{rawPaymentMethod.toUpperCase()}</span>
               </div>
-              {isCash ? (
+              {rawPaymentMethod.toUpperCase() === 'SPLIT' ? (
+                <>
+                  <div className="flex justify-between font-semibold">
+                    <span>Bayar Cash (Tunai):</span>
+                    <span className="font-bold">Rp {Number(order.payment?.cash_amount ?? 0).toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold">
+                    <span>Bayar QRIS:</span>
+                    <span className="font-bold">Rp {Number(order.payment?.qris_amount ?? 0).toLocaleString('id-ID')}</span>
+                  </div>
+                  {order.payment?.kembalian > 0 && (
+                    <div className="flex justify-between font-black text-base pt-0.5 border-t border-dashed border-gray-400">
+                      <span>Kembalian Tunai:</span>
+                      <span>Rp {Number(order.payment.kembalian).toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
+                </>
+              ) : isCash ? (
                 <>
                   <div className="flex justify-between font-semibold">
                     <span>Uang Diterima:</span>
@@ -164,9 +181,22 @@ function SingleReceiptContent({ order, isKitchen, paperSize = '80mm' }) {
                   </div>
                 </>
               ) : (
-                <div className="flex justify-between font-bold">
-                  <span>Bayar:</span>
-                  <span>Rp {Number(order.total || 0).toLocaleString('id-ID')} (PAS)</span>
+                <>
+                  <div className="flex justify-between font-bold">
+                    <span>Bayar QRIS:</span>
+                    <span>Rp {Number(order.payment?.qris_amount || order.payment?.jumlah_bayar || order.total || 0).toLocaleString('id-ID')}</span>
+                  </div>
+                  {order.payment?.kembalian > 0 && (
+                    <div className="flex justify-between font-black text-sm pt-0.5 border-t border-dashed border-gray-400">
+                      <span>Kembalian Tunai:</span>
+                      <span>Rp {Number(order.payment.kembalian).toLocaleString('id-ID')}</span>
+                    </div>
+                  )}
+                </>
+              )}
+              {order.payment?.catatan_koreksi && (
+                <div className="mt-1 p-1 bg-gray-100 border border-gray-300 rounded text-[11px] font-bold text-gray-800 italic">
+                  * Ket: {order.payment.catatan_koreksi}
                 </div>
               )}
             </div>
@@ -195,9 +225,11 @@ function SingleReceiptContent({ order, isKitchen, paperSize = '80mm' }) {
       {/* HEADER TICKET DAPUR */}
       <div className="text-center mb-2 pb-1.5 border-b-2 border-dashed border-gray-600">
         <h2 className="font-black text-2xl sm:text-3xl uppercase tracking-wider text-black leading-tight">
-          --- TICKET DAPUR ---
+          {order.is_additional ? '--- TICKET DAPUR (TAMBAHAN) ---' : '--- TICKET DAPUR ---'}
         </h2>
-        <p className="text-xs sm:text-sm font-black text-black uppercase mt-0.5">SEGERA SIAPKAN & MASAK</p>
+        <p className="text-xs sm:text-sm font-black text-black uppercase mt-0.5">
+          {order.is_additional ? '★ MENU TAMBAHAN PESANAN ★' : 'SEGERA SIAPKAN & MASAK'}
+        </p>
       </div>
 
       {/* NOMOR MEJA & INFORMASI PESANAN (TANPA BOLD BLOK HITAM) */}

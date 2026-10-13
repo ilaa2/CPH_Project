@@ -1,5 +1,341 @@
 # Catatan Perubahan
 
+## 13 Oktober 2026 (Redesain Laporan Penjualan Kantin Sesuai Desain Laporan Penjualan Sayur Hidroponik)
+
+### 1. Penyelarasan Desain Laporan Kantin dengan Laporan Sayur:
+- **Latar Belakang**: Tampilan laporan penjualan kantin (`ReportIndex.jsx`) sebelumnya masih menggunakan layout lama yang berbeda dari standar dashboard laporan penjualan hidroponik/sayur (`resources/js/Pages/Laporan/Index.jsx`).
+- **Penyelarasan Visual & Struktur UI (100% Identik)**:
+  1. **Header & Quick Filter Presets**:
+     - Tombol filter cepat ala pill tab: `[Hari Ini]`, `[Minggu Ini]`, `[Bulan Ini]`, `[Tahun Ini]` dengan status aktif bergaris tepi/bg hijau.
+     - Custom Date Range Picker: Input tanggal mulai (`start_date`) dan tanggal selesai (`end_date`) dilengkapi tombol loading `[🔍 Terapkan]`.
+  2. **4 Kartu Ringkasan (Summary Cards)**:
+     - Didesain dengan kartu putih bersih, aksen border kiri berwarna (*left border accent*), dan ikon membulat di sisi kanan:
+       - 🟢 **Total Pendapatan** (`border-l-4 border-green-500`): Total akumulasi omzet pesanan Lunas (PAID).
+       - 🔵 **Total Pesanan** (`border-l-4 border-blue-500`): Total jumlah transaksi/order masuk.
+       - 🟠 **Rata-rata Transaksi** (`border-l-4 border-orange-500`): Rata-rata nominal per transaksi (*Average Order Value*).
+       - 🟣 **Porsi Makanan Terjual** (`border-l-4 border-purple-500`): Akumulasi kuantitas porsi makanan & minuman yang terjual.
+  3. **Katalog Laporan (Report Cards Grid)**:
+     - **Kartu Laporan Penjualan & Transaksi Kantin**:
+       - Ringkasan transaksi harian, status bayar, metode pembayaran (Cash, QRIS, Split), dan omzet.
+       - Tombol `[👁️ Lihat Laporan]` untuk memicu grafik tren pendapatan & tabel transaksi live.
+       - Dropdown menu `[Ekspor ▼]` dengan 3 format: **PDF**, **Excel**, dan **CSV**.
+     - **Kartu Laporan Menu & Makanan Terlaris (Best Seller)**:
+       - Analisis hidangan terfavorit, jumlah porsi terjual, dan kontribusi pendapatan.
+       - Tombol `[👁️ Lihat Laporan]` untuk memicu grafik batang per menu & tabel peringkat.
+       - Dropdown menu `[Ekspor ▼]` dengan 3 format: **PDF**, **Excel**, dan **CSV**.
+  4. **Bagian Preview Interaktif (#preview-section)**:
+     - Menampilkan visualisasi data grafik menggunakan Chart.js:
+       - **Grafik Tren Penjualan**: Garis lengkung halus berwarna hijau emerald Palantea (`rgba(16, 185, 129, ...)`).
+       - **Grafik Makanan Terlaris**: Diagram batang horizontal/vertikal memuat 10 hidangan teratas.
+     - Tabel ringkasan data dinamis dengan header sticky, pagination, dan indikator status rapi.
+
+### 2. Fitur Ekspor Multi-Format (PDF, Excel, CSV) & Endpoint Data:
+- **Backend Controller (`PosReportController.php`)**:
+  - `data(Request $request, $type)`: Endpoint AJAX JSON untuk mengambil dataset grafik dan tabel ringkasan secara instan ketika pengguna memilih tipe laporan.
+  - `export(Request $request, $type, $format)`: Endpoint generator berkas unduhan:
+    - **PDF**: Menggunakan template `resources/views/laporan/pdf.blade.php` via Laravel DomPDF dengan orientasi A4 landscape, logo kop Palantea, tabel striping profesional, dan ringkasan menu terlaris.
+    - **Excel**: Menggunakan `Spatie\SimpleExcel\SimpleExcelWriter` yang ringan dan kompatibel dengan Microsoft Excel (.xlsx).
+    - **CSV**: Format data CSV terstandarisasi untuk integrasi spreadsheet lanjutan.
+- **Rute Web (`routes/web.php`)**:
+  - `Route::get('/pos-reports/{type}/json', [PosReportController::class, 'data'])->name('admin.pos.reports.data');`
+  - `Route::get('/pos-reports/{type}/{format}', [PosReportController::class, 'export'])->name('admin.pos.reports.export');`
+
+### 3. Pemeliharaan Fitur Operasional Kasir & POS:
+- Seluruh fitur operasional kasir tetap dipertahankan dan terintegrasi mulus dalam tabel rincian transaksi:
+  - **Cetak Ulang Struk (2 Lembar Dapur + Pelanggan)** via `ReceiptModal`.
+  - **Koreksi Pembayaran Cash ➡️ QRIS / Split** langsung dari baris transaksi via `EditModal`.
+  - **Pelunasan Pesanan Belum Bayar (`UNPAID`)** langsung dari baris laporan via `PayModal`.
+
+---
+
+## 13 Oktober 2026 (Pemasangan Lengkap 100% Foto & Harga Resmi Seluruh Menu Kantin Palantea)
+
+### 1. Integrasi Lengkap Seluruh Foto Produk Menu Kantin:
+- **Kondisi Sebelumnya**: Baru 5 menu yang memiliki foto hidangan, menu lainnya masih menampilkan ikon placeholder piring standar (`🍽️`).
+- **Pembaruan 100%**: Sebanyak **48 kartu foto produk berbingkai resmi Palantea** (PNG beresolusi tinggi dengan label harga tertera) telah dipetakan dan dihubungkan ke seluruh 50 menu di database sistem POS:
+  1. **Nasi Ayam Barendo Palantea** ➡️ `pos_foods/Nasi Ayam Barendo 25K.png` (Rp 25.000)
+  2. **Nasi Goreng Ayam Barendo Palantea** ➡️ `pos_foods/Nasi Goreng Ayam Barendo 28K.png` (Rp 28.000)
+  3. **Mie Goreng Ayam Barendo Palantea** ➡️ `pos_foods/Mie Goreng Ayam Barendo 28K.png` (Rp 28.000)
+  4. **Mienas Palantea (Mie Nasi Goreng)** ➡️ `pos_foods/Mienas Palantea 25K.png` (Rp 25.000)
+  5. **Nasi Dadar Palantea** ➡️ `pos_foods/Nasi Dadar Palantea 17K.png` (Rp 17.000)
+  6. **Selada Kuah Kacang Palantea** ➡️ `pos_foods/Selada Kuah Kacang 20K.png` (Rp 20.000)
+  7. **Nasi Ramas Ayam Bakar** ➡️ `pos_foods/Nasi Ramas Ayam Bakar 25K.png` (Rp 25.000)
+  8. **Nasi Ramas Ikan Bakar** ➡️ `pos_foods/Nasi Ramas Ikan Bakar 28K.png` (Rp 28.000)
+  9. **Nasi Ramas Dendeng Cabe Hijau** ➡️ `pos_foods/Nasi Ramas Dendeng Cabe Hijau 28K.png` (Rp 28.000)
+  10. **Nasi Ramas Dendeng Cabe Merah** ➡️ `pos_foods/Nasi Ramas Dendeng Cabe Merah 28K.png` (Rp 28.000)
+  11. **Nasi Ramas Rendang Ayam** ➡️ `pos_foods/Nasi Ramas Rendang Ayam 25K.png` (Rp 25.000)
+  12. **Nasi Ramas Rendang Daging** ➡️ `pos_foods/Nasi Ramas Rendang Daging 28K.png` (Rp 28.000)
+  13. **Indomie Rebus + Telur** ➡️ `pos_foods/Indomie Rebus + Telur 18K.png` (Rp 18.000)
+  14. **Indomie Rebus Double + Telur** ➡️ `pos_foods/Indomie Rebus Double + Telur 23K.png` (Rp 23.000)
+  15. **Indomie Goreng + Telur** ➡️ `pos_foods/Indomie Goreng + Telur 18K.png` (Rp 18.000)
+  16. **Indomie Goreng Double + Telur** ➡️ `pos_foods/Indomie Goreng Double + Telur 23K.png` (Rp 23.000)
+  17. **Pop Mie Goreng** ➡️ `pos_foods/Pop Mie Goreng 13K.png` (Rp 13.000)
+  18. **Pop Mie Kuah** ➡️ `pos_foods/Pop Mie Kuah 13K.png` (Rp 13.000)
+  19. **Telur Rebus** ➡️ `pos_foods/Telur Rebus 5K.png` (Rp 5.000)
+  20. **Telur Ceplok** ➡️ `pos_foods/Telur Ceplok 6K.png` (Rp 6.000)
+  21. **Telur Dadar** ➡️ `pos_foods/Telur Dadar 10K.png` (Rp 10.000)
+  22. **Nasi Putih** ➡️ `pos_foods/Nasi Putih 6K.png` (Rp 6.000)
+  23. **Teh Manis / Tawar Hot** ➡️ `pos_foods/Teh Manis Tawar Hot 6K.png` (Rp 6.000)
+  24. **Teh Es** ➡️ `pos_foods/Teh Es 6K.png` (Rp 6.000)
+  25. **Jeruk Ice/Hot** ➡️ `pos_foods/Jeruk Ice Hot 15K.png` (Rp 15.000)
+  26. **Kopi Hitam Hot** ➡️ `pos_foods/Kopi Hitam Hot 10K.png` (Rp 10.000)
+  27. **Kopi Hitam Ice** ➡️ `pos_foods/Kopi Hitam Ice 15K.png` (Rp 15.000)
+  28. **Kopi Gingseng Ice/Hot** ➡️ `pos_foods/Kopi Gingseng 17K.png` (Rp 17.000)
+  29. **Kopi Cappuccino Ice/Hot** ➡️ `pos_foods/Kopi Cappuccino 17K.png` (Rp 17.000)
+  30. **Kopi Susu Ice / Hot** ➡️ `pos_foods/Kopi Susu 17K.png` (Rp 17.000)
+  31. **Milo Ice/Hot** ➡️ `pos_foods/Milo 17K.png` (Rp 17.000)
+  32. **Matcha Ice** ➡️ `pos_foods/Matcha Ice 17K.png` (Rp 17.000)
+  33. **Teh Susu Ice/Hot** ➡️ `pos_foods/Teh Susu 17K.png` (Rp 17.000)
+  34. **Teh Tarik Ice/Hot** ➡️ `pos_foods/Teh Tarik 17K.png` (Rp 17.000)
+  35. **Lychee Tea Ice/Hot** ➡️ `pos_foods/Lychee Tea 17K.png` (Rp 17.000)
+  36. **Lemon Tea Ice/Hot** ➡️ `pos_foods/Lemon Tea 17K.png` (Rp 17.000)
+  37. **Jus Kale** ➡️ `pos_foods/Jus Kale 18K.png` (Rp 18.000)
+  38. **Wedang Jahe Merah Ice/Hot** ➡️ `pos_foods/Wedang Jahe Merah 17K.png` (Rp 17.000)
+  39. **Air Mineral 600ml** ➡️ `pos_foods/Air Mineral 600ml 5K.png` (Rp 5.000)
+  40. **Air Mineral 330ml** ➡️ `pos_foods/Air Mineral 330ml 3K.png` (Rp 3.000)
+  41. **Es Kosong** ➡️ `pos_foods/Es Kosong 4K.png` (Rp 4.000)
+  42. **French Fries** ➡️ `pos_foods/French Fries 18K.png` (Rp 18.000)
+  43. **Mix Platter** ➡️ `pos_foods/Mix Platter 20K.png` (Rp 20.000)
+  44. **Nugget Ayam** ➡️ `pos_foods/Nugget Ayam 18K.png` (Rp 18.000)
+  45. **Pastel Sayur Mini (Isi 5 Pcs)** ➡️ `pos_foods/Pastel Sayur Mini (Isi 5 Pcs) 18K.png` (Rp 18.000)
+  46. **Risolles Sayur (Isi 4 Pcs)** ➡️ `pos_foods/Risolles Sayur (Isi 4 Pcs) 18K.png` (Rp 18.000)
+  47. **Pisang Kipas (Isi 3 Pcs)** ➡️ `pos_foods/Pisang Kipas (Isi 3 Pcs) 18K.png` (Rp 18.000)
+  48. **Pempek Palantea (Isi 6 Pcs)** ➡️ `pos_foods/Pempek [HARGA].png` (Rp 30.000)
+  49. **Nasi Goreng** ➡️ `pos_foods/Nasi Goreng Ayam Barendo 28K.png` (Rp 19.000)
+  50. **Nasi Goreng Pattaya** ➡️ `pos_foods/Nasi Dadar Palantea 17K.png` (Rp 24.000)
+
+### 2. Sinkronisasi Penyimpanan Berkas:
+- Seluruh file foto telah disinkronkan ke kedua lokasi:
+  - `public/storage/pos_foods/` (untuk akses publik web server).
+  - `storage/app/public/pos_foods/` (untuk direktori penyimpanan storage Laravel).
+
+### 3. Pembaruan Komponen Frontend (`Kasir.jsx` & `FoodIndex.jsx`):
+- Menambahkan pembungkusan `encodeURI()` pada atribut `src` gambar produk. Ini mencegah terjadinya broken image pada peramban web desktop maupun mobile saat memuat nama file yang mengandung spasi atau karakter kurung (misalnya `Pisang Kipas (Isi 3 Pcs) 18K.png`).
+
+### 4. Auto-Sinkronisasi Database di Hosting cPanel (`setup_cpanel.php` & `PosSeeder.php`):
+- `database/seeders/PosSeeder.php` telah diperbarui dengan seluruh daftar path foto dan nominal harga resmi.
+- `public/setup_cpanel.php` telah ditambahkan mekanisme update langsung via query ke tabel `pos_foods`, sehingga begitu file ZIP diekstrak di cPanel dan user membuka `setup_cpanel.php`, database cPanel otomatis terhubung ke seluruh foto tanpa risiko gambar hilang.
+
+### 5. Kompilasi & Pengemasan Update:
+- Build frontend selesai via `npm run build` (9.89s).
+- File arsip cPanel `d:\PA\CPH_Update_Kantin_September_2026.zip` (191.11 MB) siap upload memuat seluruh foto beresolusi tinggi, bundle JS/CSS, seeder, dan file backend.
+
+---
+
+## 13 Oktober 2026 (Fitur Ubah / Koreksi Metode Pembayaran Cash ke QRIS & Otomatisasi 100% Full Bill di Unpaid)
+
+### 1. Latar Belakang Masalah:
+- **Kasus Human Error Kasir**: Kasir secara tidak sengaja menekan pilihan pembayaran **Cash** padahal pelanggan sebenarnya membayar melalui **QRIS**.
+- **Kebutuhan**: Kasir/admin membutuhkan fasilitas untuk mengubah dan mengoreksi metode pembayaran transaksi yang sudah tercatat (`Cash` ➡️ `QRIS`, atau sebaliknya, maupun ke `SPLIT`) agar laporan keuangan mutasi kas fisik laci kasir dan mutasi rekening bank QRIS tetap sinkron dan akurat tanpa perlu membatalkan/menghapus pesanan.
+- **Kebutuhan Pesanan UNPAID**: Pada pesanan yang berstatus Belum Bayar (`UNPAID`), pemilihan metode pembayaran QRIS harus langsung mengalokasikan 100% nilai tagihan (bukan setengah/parsial) sehingga proses pelunasan menjadi 1-klik cepat tanpa pesan error kurang bayar.
+
+### 2. Implementasi Backend (`PosReportController.php`):
+- **Endpoint Update Catatan & Metode Bayar (`updatePaymentNote`)**:
+  - Ditingkatkan untuk memvalidasi dan menerima field input metode pembayaran baru: `metode_pembayaran` (`in:Cash,QRIS,SPLIT,UNPAID`).
+  - Mengupdate tabel `pos_payments` dan `pos_orders` secara simultan:
+    - Jika diubah ke **QRIS**: `qris_amount` otomatis diatur sejumlah total tagihan pesanan, `cash_amount = 0`, `kembalian = 0` (atau sesuai input koreksi kembalian tunai jika customer transfer lebih).
+    - Jika diubah ke **Cash**: `cash_amount` otomatis diatur sejumlah total tagihan pesanan, `qris_amount = 0`.
+    - Jika diubah ke **SPLIT**: Mengalokasikan porsi tunai (`cash_amount`) dan porsi non-tunai (`qris_amount`) sesuai form kasir.
+  - Memperbarui status pesanan menjadi `PAID` dan meregenerasi perhitungan total omzet Cash vs QRIS secara instan di dashboard laporan.
+
+### 3. Pembaruan Halaman Laporan Penjualan (`ReportIndex.jsx`):
+- **Interaksi Badge Pembayaran yang Dapat Diklik**:
+  - Seluruh badge metode bayar di tabel laporan (`LUNAS (Cash)`, `LUNAS (QRIS)`, `SPLIT`, `UNPAID`) kini dapat langsung diklik atau ditekan ikon pensil kuning (`FiEdit2`) untuk memunculkan modal koreksi.
+- **Modal Koreksi Pembayaran Lengkap**:
+  - Menyediakan tombol pemilih metode pembayaran yang jelas: `[💵 Cash] [📱 QRIS] [⚡ SPLIT]`.
+  - Memilih tombol `📱 QRIS` langsung mengisikan nominal 100% total tagihan ke pos QRIS dan mengenolkan uang tunai.
+  - Tersedia form pengisian uang kembalian tunai jika customer transfer QRIS berlebih dan catatan penjelasan kasir (misal: *"Salah klik Cash, sebenarnya bayar QRIS"*).
+  - Memperbaiki parameter ID rute dari `order.payment.id` menjadi `order.id` agar tidak error jika pesanan belum memiliki relasi payment terikat.
+
+### 4. Pembaruan Tampilan Monitor Pesanan (`OrderMonitor.jsx`):
+- **Kartu Pesanan Interaktif**:
+  - Badge pembayaran pada kartu monitor (`LUNAS (Cash)`, `LUNAS (QRIS)`, dll.) kini memiliki ikon edit dan dapat diklik langsung untuk memunculkan modal ubah metode bayar.
+  - Modal mendeteksi status pesanan: Jika pesanan sudah lunas, judul modal bertuliskan **"Ubah Metode Bayar & Koreksi"** dan tombol submit bertuliskan **"💾 Simpan Perubahan"** dengan warna amber; jika pesanan belum bayar, bertuliskan **"Pelunasan Pembayaran Kasir"** dengan tombol hijau **"✅ Lunaskan Pembayaran"**.
+  - Pilihan tab metode bayar memprioritaskan `📱 QRIS` di kolom pertama, otomatis mengisi nominal tagihan penuh secara aman.
+
+### 5. Penyempurnaan Tampilan POS Kasir Utama (`Kasir.jsx`):
+- **Visual Feedback QRIS**:
+  - Ditambahkan banner indikator biru yang jelas saat opsi pembayaran `📱 QRIS` dipilih di panel keranjang belanja kasir (`Rp [Total Tagihan] - Pastikan customer scan QRIS sesuai tagihan`).
+
+### 6. Hasil Kompilasi & Pengemasan Update:
+- **Build Aset Frontend**: Sukses dikompilasi via `npm run build` (56.44s) tanpa peringatan maupun error.
+- **Paket Hosting Update**: File arsip `d:\PA\CPH_Update_Kantin_September_2026.zip` (4.74 MB) telah diperbarui memuat seluruh kode controller, komponen POS, gambar-gambar menu, dan build aset terbaru.
+
+---
+
+## 13 Oktober 2026 (Pemasangan Foto 5 Menu Makanan Kantin Sesuai Hidangan)
+
+### 1. Pemetaan Foto Menu Makanan:
+- Berdasarkan 5 foto hidangan asli yang diunggah, seluruhnya telah diidentifikasi dan dipetakan secara presisi ke menu kantin:
+  1. **Nasi Ramas Ikan Bakar**: File `nasi_ramas_ikan_bakar.jpg` (Ikan bakar bumbu kuning meresap dengan nasi, sambal merah pedas, dan daun singkong).
+  2. **Nasi Ayam Barendo Palantea**: File `nasi_ayam_barendo_palantea.jpg` (Ayam goreng telur barendo renyah bersarang emas, disajikan dengan nasi putih bertabur bawang goreng, lalapan selada & sambal).
+  3. **Selada Kuah Kacang Palantea**: File `selada_kuah_kacang_palantea.jpg` (Salad sayuran selada segar hidroponik Palantea, irisan tomat, timun segar, telur rebus belah dua, dan cup saus kuah kacang gurih manis).
+  4. **Nasi Ramas Rendang Daging**: File `nasi_ramas_rendang_daging.jpg` (Nasi ramas hangat dengan sepotong rendang daging sapi empuk bumbu pekat kaya rempah, sambal merah dan daun singkong).
+  5. **Nasi Goreng Ayam Barendo Palantea**: File `nasi_goreng_ayam_barendo_palantea.jpg` (Nasi goreng gurih dengan topping ayam barendo telur renyah, kerupuk renyah, selada dan tomat).
+
+### 2. Penempatan File & Sinkronisasi Database:
+- **Lokasi Penyimpanan**: Foto disimpan di direktori `storage/app/public/pos_foods/` dan disalin ke `public/storage/pos_foods/` agar langsung dapat diakses peramban web kasir.
+- **Pembaruan Database Lokal**: Kolom `gambar` pada tabel `pos_foods` telah diperbarui untuk ke-5 hidangan tersebut.
+- **Pembaruan Seeder (`PosSeeder.php`)**: Menambahkan atribut `'gambar'` pada masing-masing entri menu makanan.
+- **Auto-Sinkronisasi di cPanel (`setup_cpanel.php`)**: Menambahkan pembaruan otomatis kolom `gambar` pada tabel `pos_foods` ketika helper dibuka, sehingga setelah file di-extract di cPanel foto langsung terhubung ke database.
+- **Pengemasan ZIP Update**:
+  - File ZIP hosting diperbarui: `d:\PA\CPH_Update_Kantin_September_2026.zip` (4.74 MB), memuat seluruh gambar dan kode terbaru.
+
+---
+
+## 13 Oktober 2026 (Fix 404 Not Found Monitor Pesanan di cPanel & Auto-Bust Cache Routing)
+
+### 1. Penyebab Terjadinya Modal `404 | NOT FOUND`:
+- **Gejala Masalah**: Saat kasir/admin mengklik menu "Monitor Pesanan" di sidebar atau tombol di kasir POS, muncul pop-up modal bertuliskan `404 | NOT FOUND`.
+- **Penyebab Utama**:
+  1. **Route Cache Tertahan di cPanel (`bootstrap/cache/routes-v7.php`)**:
+     - Di server production cPanel, Laravel membaca rute dari file cache `bootstrap/cache/routes-v7.php`.
+     - File cache ini dibuat sebelum rute baru `/pos/monitor` ditambahkan.
+     - Ketika file ZIP diekstrak di File Manager cPanel, file `routes-v7.php` tidak otomatis terhapus, sehingga Laravel tetap menggunakan daftar rute lama di mana `/pos/monitor` belum terdaftar.
+     - Akibatnya, server mengembalikan respon 404 HTML, dan Inertia.js menangkapnya lalu menampilkannya sebagai modal dialog *404 Not Found*.
+  2. **Closure pada Route Alias**:
+     - Rute redirect lama `Route::get('/order-monitor', fn() => redirect()->route('pos.monitor'));` menggunakan PHP Closure (`fn()`), yang pada beberapa konfigurasi Laravel mencegah perintah `php artisan route:cache` terserialisasi dengan baik.
+
+### 2. Solusi Permanen & Perlindungan Berlapis:
+- **Auto-Bust Cache Cerdas di `bootstrap/app.php`**:
+  - Menambahkan auto-heal detection sebelum aplikasi dikonfigurasi: jika `bootstrap/cache/routes-v7.php` atau `routes.php` ditemukan dan belum memuat rute `pos.monitor` (atau lebih usang dibanding `routes/web.php`), sistem secara otomatis menghapus file cache tersebut via `@unlink()`.
+  - Hal ini menjamin rute baru langsung aktif seketika setelah upload tanpa memerlukan terminal SSH.
+- **Rute Alias Lengkap & Eliminasi Closure (`routes/web.php`)**:
+  - Mendaftarkan rute lengkap tanpa closure:
+    - `Route::get('/pos/monitor', [KasirController::class, 'monitor'])->name('pos.monitor');`
+    - `Route::get('/order-monitor', [KasirController::class, 'monitor'])->name('pos.monitor.alias1');`
+    - `Route::get('/admin/pos-monitor', [KasirController::class, 'monitor'])->name('admin.pos.monitor');`
+    - `Route::get('/monitor', [KasirController::class, 'monitor'])->name('pos.monitor.alias2');`
+- **Pembaruan Helper `setup_cpanel.php`**:
+  - Menambahkan pembersihan cache otomatis saat `setup_cpanel.php` dibuka.
+  - Menambahkan tombol khusus 1-klik: `🧹 Bersihkan Cache & Perbarui Rute (Solusi 404 Monitor)`.
+  - Menambahkan link langsung `📺 Monitor Pesanan (Baru)`.
+- **Akses Role Dapur (`User.php`)**:
+  - Menambahkan role `'dapur'` pada `canAccessPos()` agar staf dapur juga dapat membuka tampilan Monitor Pesanan tanpa terkendala izin akses.
+- **Kompilasi & Pembaruan Paket ZIP**:
+  - Sukses `npm run build` (5.34s).
+  - Paket hosting diperbarui: `d:\PA\CPH_Update_Kantin_September_2026.zip` (2.62 MB).
+
+---
+
+## 13 Oktober 2026 (Fix Bug Duplicate Entry Nomor Pesanan CP-POS & Proteksi Double Submit)
+
+### 1. Perbaikan Bug Bentrok Nomor Pesanan (`KasirController.php`):
+- **Penyebab Terjadinya Error**:
+  - Muncul error: `Duplicate entry 'CP-POS-20261013-007' for key 'pos_orders_nomor_pesanan_unique'`.
+  - Hal ini disebabkan perhitungan nomor pesanan sebelumnya memakai `count() + 1`. Jika ada salah satu pesanan sebelumnya yang dibatalkan, dihapus saat pengetesan, atau ada selisih zona waktu, maka nilai `count() + 1` akan menghitung ulang nomor yang sudah tersimpan di database dan menyebabkan bentrok (*duplicate entry*).
+- **Solusi Anti-Collision & Auto-Increment Cerdas**:
+  - Mengganti perhitungan nomor urut dengan mengambil **nomor pesanan tertinggi yang ada di database hari ini** (`where('nomor_pesanan', 'like', $prefix . '%')->orderBy('id', 'desc')->lockForUpdate()`).
+  - Mengambil angka akhiran dengan regex (`/-\d+$/`) lalu menambahkannya secara berurutan ($+1$).
+  - Menambahkan proteksi **loop guard** (`do { ... } while ($exists)`). Sistem memeriksa apakah nomor pesanan tersebut sudah pernah ada di database. Jika sudah ada, nomor otomatis dinaikkan ke nomor berikutnya sehingga **mustahil terjadi duplicate entry**.
+- **Proteksi Double Click / Double Submit (`Kasir.jsx`)**:
+  - Menambahkan state `isSubmittingOrder` yang otomatis menonaktifkan (*disable*) tombol "Kirim Pesanan ke Dapur" saat permintaan sedang diproses, sehingga kasir yang tidak sengaja mengklik tombol submit berkali-kali tidak akan mengirimkan pesanan ganda.
+- **Kompilasi & Paket Update ZIP**:
+  - Sukses kompilasi `npm run build` (6.28s).
+  - Paket hosting cPanel diperbarui: `d:\PA\CPH_Update_Kantin_September_2026.zip` (2.62 MB).
+
+---
+
+## 13 Oktober 2026 (Fitur Monitor Pesanan Pengganti Dapur Sementara & Pelunasan Belum Bayar di Laporan)
+
+### 1. Halaman Baru "Monitor Pesanan Kantin" Pengganti Dapur untuk Kasir (`OrderMonitor.jsx` & `KasirController.php`):
+- **Solusi Sementara Tanpa Menghapus Kitchen Display**:
+  - Karena sistem layar dapur belum digunakan secara terpisah, dibuatkan halaman baru **`OrderMonitor.jsx`** (`/pos/monitor` atau `/order-monitor`) yang ramah kasir.
+  - Halaman ini menjadi pusat kendali kasir untuk memantau makanan yang sedang dimasak, pesanan yang belum dibayar, dan pesanan yang sudah selesai.
+  - Fitur-fitur unggulan pada Monitor Pesanan:
+    - **Header & Metric KPI**: Menampilkan jumlah pesanan yang sedang berjalan, pesanan belum lunas (`UNPAID`), dan pesanan yang selesai hari ini.
+    - **Visual 30 Nomor Antrian Meja**: Kasir dapat melihat status nomor meja (hijau = kosong, merah = terisi, kuning = selesai/perlu dibersihkan). Mengklik nomor meja kuning langsung mengosongkan meja (`🧹 Reset Meja`).
+    - **Checklist Menu Antar**: Kasir dapat mengklik tombol `🍽️ Antar` pada tiap menu ketika makanan selesai disajikan ke pelanggan.
+    - **Tandai Selesai 1-Klik**: Tombol hijau **`✅ Tandai Selesai & Meja Kosong`** langsung menyelesaikan pesanan dan mengembalikan status meja menjadi `🟢 Tersedia (AVAILABLE)`.
+    - **Tagih & Bayar Langsung**: Pada kartu pesanan yang belum bayar, kasir dapat langsung mengklik `💳 Tagih & Bayar Kasir` (Cash, QRIS, Split) tanpa perlu berpindah halaman.
+    - **Cetak Struk & Batal Order**: Staf kasir dapat mencetak struk atau membatalkan pesanan langsung dari kartu monitor.
+
+### 2. Fitur Selesaikan Pesanan & Kosongkan Meja Langsung dari POS Kasir (`Kasir.jsx` & `KasirController.php`):
+- **Tombol Selesai Makan di Meja Aktif**:
+  - Pada panel meja terisi (`OCCUPIED`) yang sudah lunas, kasir kini memiliki tombol **`✅ Selesai Makan & Kosongkan Meja`**. Menekan tombol ini menyelesaikan pesanan dan langsung mengubah status nomor meja menjadi hijau (`AVAILABLE`) agar nomor antrian bisa diserahkan ke pelanggan baru.
+- **Tombol Kosongkan Meja Kuning (`NEEDS_CLEANING`)**:
+  - Ketika meja berstatus kuning, kasir dapat langsung menekan tombol **`🧹 Kosongkan & Jadikan Tersedia (Hijau)`** (`handleResetTable`) tanpa perlu menunggu staf dapur.
+- **Shortcut Navigasi Monitor**:
+  - Di header atas halaman kasir POS (`/order`), ditambahkan tombol pintas biru: **`📋 Monitor Pesanan`**.
+- **Sidebar Navigation**:
+  - Menu KANTIN pada sidebar sekarang menyertakan **`Monitor Pesanan`** untuk peran kasir dan admin.
+
+### 3. Fitur Pelunasan Pesanan "Belum Bayar" Langsung di Laporan Penjualan (`ReportIndex.jsx`):
+- **Menjawab Kebutuhan Pelunasan Kasir dari Laporan**:
+  - Pada tabel rincian transaksi laporan penjualan (`/admin/pos-reports`), transaksi yang berstatus `⚠️ UNPAID` kini dilengkapi dengan tombol **`💳 Bayar Kasir`** (di kolom Status dan kolom Aksi).
+- **Modal Pelunasan Kasir di Laporan**:
+  - Mengklik tombol bayar membuka modal **"Pelunasan Pembayaran Kasir"**:
+    - Pilihan metode bayar fleksibel: **Cash (Tunai)**, **QRIS (Non-Tunai)**, atau **SPLIT (Cash + QRIS)**.
+    - Menghitung kembalian uang tunai secara otomatis.
+    - Memproses pembayaran via `pos.payment.process`.
+  - Seketika pembayaran tersimpan:
+    - Status transaksi langsung berubah menjadi `✅ LUNAS`.
+    - Omzet penjualan kasir (Cash/QRIS) langsung ter-update di dashboard laporan.
+    - Modal cetak struk customer lunas otomatis terbuka untuk diserahkan ke pelanggan jika diperlukan.
+
+### 4. Build Bundle Frontend & Paket Update Hosting:
+- Sukses kompilasi Vite bundle dengan `npm run build` (5.93s) tanpa error.
+- Mengemas seluruh update ke paket ZIP hosting cPanel: `d:\PA\CPH_Update_Kantin_September_2026.zip` (2.62 MB).
+
+---
+
+## 13 Oktober 2026 (Fitur Edit & Cancel Pesanan, Split Payment Cash + QRIS, Catatan Koreksi Kembalian QRIS, & Fix Bug POS)
+
+### 1. Fitur Edit Pesanan, Tambah Menu Susulan & Pembatalan Berjenjang (`KasirController.php`, `Kasir.jsx`, `Receipt.jsx`):
+- **Tambah Menu Susulan Setelah Struk Dicetak**:
+  - Pada panel meja aktif (`OCCUPIED`), kasir dapat mengklik `➕ Tambah Menu ke Meja Ini`. Kasir dapat memilih menu tambahan dari katalog dan mengklik `Simpan Pesanan Tambahan`.
+  - Backend (`addItemsToOrder`) menambahkan item baru ke pesanan aktif tanpa menghapus pesanan awal, mengakumulasikan total tagihan, dan mengembalikan tiket cetak khusus: `--- TICKET DAPUR (TAMBAHAN) ---` sehingga koki hanya memasak item yang baru ditambahkan.
+- **Tombol Kembali / Koreksi Sebelum Cetak**:
+  - Di modal print resi (`Kasir.jsx`), ditambahkan tombol `⬅️ Kembali / Edit Pesanan` sehingga kasir dapat membatalkan cetak dan mengubah item pesanan jika pelanggan tiba-tiba ingin mengganti pesanan sebelum kertas dicetak.
+- **Pembatalan Berjenjang (Cancel Per-Menu & Cancel Pesanan Utuh)**:
+  - **Cancel Per-Menu (`cancelOrderItem`)**: Kasir dapat menghapus salah satu menu dari meja aktif dengan alasan pembatalan (misal: habis stok atau salah pesan). Subtotal menu yang dibatalkan dikurangkan dari total tagihan pesanan secara otomatis, dan status item ditandai `CANCELLED`.
+  - **Cancel Pesanan Lengkap (`cancelOrder`)**: Kasir dapat membatalkan seluruh pesanan meja aktif. Meja otomatis dikembalikan ke status `AVAILABLE` (kosong), tagihan di-nolkan, dan seluruh pesanan bertatus `CANCELLED`.
+  - **Otomatis Dikeluarkan dari Laporan Omzet**: Query laporan keuangan di `PosReportController.php` mengecualikan seluruh pesanan dan item bertatus `CANCELLED` sehingga omzet dan best-seller menu tidak terinflasi.
+
+### 2. Fitur Pembayaran Gabungan Split Payment: Cash + QRIS (`KasirController.php`, `Kasir.jsx`, `Receipt.jsx`, `PosReportController.php`):
+- **Input Fleksibel Cash & QRIS Sekaligus**:
+  - Pada panel pembayaran kasir (saat checkout awal maupun bayar meja aktif), tersedia opsi tab metode bayar baru: **`SPLIT (Cash + QRIS)`**.
+  - Kasir dapat memasukkan nominal porsi uang tunai (`cash_amount`) dan porsi non-tunai (`qris_amount`).
+  - Sistem secara realtime menghitung sisa tagihan, total bayar gabungan, dan kembalian uang tunai jika porsi uang tunai melebihi sisa kewajiban.
+- **Format Struk Split Presisi (`Receipt.jsx`)**:
+  - Struk customer mencantumkan metode bayar: `SPLIT (TUNAI + QRIS)`, rincian porsi `• Bayar Tunai: Rp ...`, `• Bayar QRIS: Rp ...`, serta `Kembalian Tunai: Rp ...`.
+- **Integrasi Omzet Akurat di Dashboard Laporan (`PosReportController.php` & `ReportIndex.jsx`)**:
+  - Porsi Cash dari pembayaran Split dialokasikan ke omzet fisik laci kasir (`cashRevenue`), sedangkan porsi QRIS dialokasikan ke omzet mutasi bank (`qrisRevenue`).
+  - Baris transaksi di tabel laporan menampilkan label ungu `SPLIT (CASH + QRIS)` beserta rincian breakdown nominal Cash & QRIS.
+
+### 3. Fitur Catatan Koreksi Kembalian Uang QRIS di Laporan Keuangan (`PosReportController.php` & `ReportIndex.jsx`):
+- **Kasus Pelanggan Transfer QRIS Berlebih**:
+  - Menjawab skenario kasir di mana pelanggan salah transfer QRIS dengan nominal berlebih (misal tagihan Rp 45.000 tapi ditransfer Rp 50.000) dan kasir menyerahkan uang kembalian Rp 5.000 dari laci tunai.
+- **Modal Edit Catatan di Laporan (`ReportIndex.jsx`)**:
+  - Pada setiap baris transaksi yang sudah memiliki pembayaran, kasir/admin dapat mengklik tombol edit kuning (`FiEdit2`).
+  - Muncul modal popup: **"Catat Kembalian & Koreksi Pembayaran"** untuk mengisikan nominal kembalian tunai yang telah diserahkan dan kolom teks `Catatan Koreksi Kasir` (misal: *"QRIS ditransfer Rp 50.000, kembalian Rp 5.000 tunai diserahkan kasir"*).
+  - Catatan tersimpan di kolom `catatan_koreksi` pada tabel `pos_payments` via route `admin.pos.reports.payment.update-note`, tampil sebagai badge kuning `📝` pada tabel laporan, dan dicetak di struk untuk audit.
+
+### 4. Perbaikan Bug POS (Fix Double Quantity & Fix Print Urutan Unpaid):
+- **Fix Tombol Tambah Menu nambah 2 Item di Kartu POS**:
+  - **Penyebab**: Event bubbling antara wrapper kartu menu `<div onClick>` dan tombol `<button>` di dalam kartu tanpa `stopPropagation()`, serta ketiadaan debounce/throttling pada klik ganda cepat peramban touch/desktop.
+  - **Solusi**: Menambahkan `e.stopPropagation()`, penetapan atribut eksplisit `type="button"`, serta proteksi throttling ref `lastAddClickRef` (150ms) sehingga satu kali klik dijamin hanya menambah tepat 1 item ke keranjang.
+- **Fix Print "Belum Bayar" Keluar Struk Customer Duluan**:
+  - **Penyebab**: Modal struk default menggunakan mode `bothPrintStep = 1` (Struk Customer).
+  - **Solusi**: Saat transaksi diproses dengan metode bayar belum bayar (`UNPAID`), sistem secara cerdas langsung mengarahkan preview dan mode cetak ke **`receiptType = 'kitchen'`** (Ticket Dapur Saja). Kasir langsung mencetak tiket pesanan untuk koki dapur tanpa mencetak struk kasir yang belum lunas.
+
+### 5. Analisis & Rekomendasi Solusi "Split Bill" (1 Meja Bayar Terpisah):
+- **Kondisi Sistem Saat Ini**: 1 Meja fisik = 1 Nomor Antrian / 1 Nomor Pesanan di dapur.
+- **Rekomendasi Praktis Terbaik**:
+  1. **Solusi Operasional Saat Ini (Paling Cepat & Alami Tanpa Bikin Dapur Bingung)**:
+     - Gunakan fitur **Split Payment (Cash + QRIS)** yang baru saja dibuat jika 1 orang bayar cash dan 1 orang bayar QRIS.
+     - Atau, jika masing-masing orang bayar tunai/QRIS sebagian: kasir cukup menjumlahkan di kalkulator/catatan kasir, lalu masukkan total porsi yang dibayar masing-masing ke sistem.
+  2. **Jika Pelanggan Ingin Struk Masing-Masing Terpisah Sejak Awal**:
+     - Kasir dapat menginput nomor meja dengan sub-identitas pada nama customer: contoh Meja `05` (Budi) dan Meja `05B` / catatan di nama `05 - Rian`. Dapur tetap tahu meja yang sama, namun struk dan pembayaran terpisah rapi.
+
+### 6. Database Migrations & Auto-Healing Hosting Helper:
+- Dibuat migrasi `database/migrations/2026_10_13_130000_add_split_payment_and_correction_notes_to_pos_tables.php`.
+- Ditambahkan perintah auto-healing DDL di controller dan `public/setup_cpanel.php` agar kompatibel otomatis di hosting cPanel tanpa error query.
+- Sukses kompilasi bundle Vite frontend via `npm run build` (16.87s).
+- Mengemas seluruh update ke paket `d:\PA\CPH_Update_Kantin_September_2026.zip` (2.60 MB).
+
+---
+
 ## 13 Oktober 2026 (Restorasi Presisi Struk Customer Versi 21 Menit Lalu & Tiket Dapur Tetap Aman)
 
 ### Penyesuaian Desain Struk POS (`Receipt.jsx`):

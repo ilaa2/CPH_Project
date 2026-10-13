@@ -185,7 +185,7 @@ export default function FoodIndex({ foods = { data: [] }, categories = [], filte
                         <div className="w-10 h-10 bg-gray-100 rounded-lg overflow-hidden border flex items-center justify-center">
                           {food.gambar ? (
                             <img
-                              src={food.gambar.startsWith('/') || food.gambar.startsWith('http') ? food.gambar : `/storage/${food.gambar}`}
+                              src={encodeURI(food.gambar.startsWith('/') || food.gambar.startsWith('http') ? food.gambar : `/storage/${food.gambar}`)}
                               alt={food.nama}
                               className="w-full h-full object-cover"
                             />

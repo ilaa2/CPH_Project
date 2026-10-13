@@ -143,8 +143,8 @@ export default function Sidebar({ header, children }) {
                     {(auth.user?.role === 'admin' || auth.user?.role === 'kasir') && (
                       <SidebarItem icon={<FiCoffee size={20} />} text="Sistem POS Kasir" href="/order" active={route().current('pos.kasir')} />
                     )}
-                    {(auth.user?.role === 'admin' || auth.user?.role === 'dapur') && (
-                      <SidebarItem icon={<FiTv size={20} />} text="Kitchen Display" href="/kitchen" active={route().current('pos.kitchen')} />
+                    {(auth.user?.role === 'admin' || auth.user?.role === 'kasir' || auth.user?.role === 'dapur') && (
+                      <SidebarItem icon={<FiTv size={20} />} text="Monitor Pesanan" href="/pos/monitor" active={route().current('pos.monitor')} />
                     )}
                     {(auth.user?.role === 'admin' || auth.user?.role === 'kasir') && (
                       <>

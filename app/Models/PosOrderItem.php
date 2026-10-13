@@ -19,6 +19,8 @@ class PosOrderItem extends Model
         'subtotal',
         'catatan',
         'is_served',
+        'status',
+        'batal_alasan',
     ];
 
     protected $casts = [

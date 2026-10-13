@@ -16,7 +16,10 @@ class PosPayment extends Model
         'cashier_id',
         'metode_pembayaran',
         'jumlah_bayar',
+        'cash_amount',
+        'qris_amount',
         'kembalian',
+        'catatan_koreksi',
         'paid_at',
         'status',
     ];

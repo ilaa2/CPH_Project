@@ -53,6 +53,7 @@ $dbItems = @(
     "database\migrations\2026_10_12_220000_allow_unavailable_status_in_pos_tables.php",
     "database\migrations\2026_10_12_221000_add_pempek_palantea_to_pos_foods.php",
     "database\migrations\2026_10_12_222000_add_is_served_to_pos_order_items_table.php",
+    "database\migrations\2026_10_13_130000_add_split_payment_and_correction_notes_to_pos_tables.php",
     "database\seeders\DatabaseSeeder.php",
     "database\seeders\PosSeeder.php"
 )

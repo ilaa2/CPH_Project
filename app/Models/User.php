@@ -84,11 +84,11 @@ class User extends Authenticatable
     }
 
     /**
-     * Check if user can access POS (admin or kasir)
+     * Check if user can access POS (admin, kasir, or dapur)
      */
     public function canAccessPos(): bool
     {
-        return in_array($this->role, ['admin', 'kasir']);
+        return in_array($this->role, ['admin', 'kasir', 'dapur']);
     }
 
     /**
