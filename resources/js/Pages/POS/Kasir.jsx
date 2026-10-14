@@ -2,12 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Head, useForm, usePage, router, Link } from '@inertiajs/react';
 import Sidebar from '@/Components/Bar/Sidebar';
 import Receipt from './Receipt';
+import CashierGuideModal from './CashierGuideModal';
 import Swal from 'sweetalert2';
 import {
   FiCoffee, FiShoppingBag, FiCheckCircle, FiClock, FiAlertCircle,
   FiPlus, FiMinus, FiTrash2, FiPrinter, FiSearch, FiX, FiDollarSign,
   FiCreditCard, FiRefreshCw, FiVolume2, FiVolumeX, FiSlash,
-  FiCornerUpLeft, FiPlusCircle, FiEdit3, FiTv, FiCheck
+  FiCornerUpLeft, FiPlusCircle, FiEdit3, FiTv, FiCheck, FiBookOpen
 } from 'react-icons/fi';
 
 // Web Audio API Synthesizer Sound Generator
@@ -125,6 +126,8 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
   // Addon menu state (Tambah menu ke pesanan meja aktif)
   const [isAddingAddon, setIsAddingAddon] = useState(false);
   const [addonCart, setAddonCart] = useState([]);
+  const [addonPaymentOption, setAddonPaymentOption] = useState('LATER'); // 'LATER', 'Cash', 'QRIS'
+  const [showGuideModal, setShowGuideModal] = useState(false);
 
   // Split payment state saat order baru (AVAILABLE)
   const [orderSplitCash, setOrderSplitCash] = useState('');
@@ -248,26 +251,35 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
     const activeOrder = selectedTable?.active_order;
     if (!activeOrder || addonCart.length === 0) return;
 
+    const addonSubtotal = addonCart.reduce((sum, it) => sum + (it.jumlah * Number(it.food.harga || 0)), 0);
+
     router.post(route('pos.order.add-items', activeOrder.id), {
       items: addonCart.map(item => ({
         food_id: item.food_id,
         jumlah: item.jumlah,
         catatan: item.catatan,
       })),
+      payment_option: addonPaymentOption,
+      jumlah_bayar: addonPaymentOption !== 'LATER' ? addonSubtotal : 0,
+      cash_amount: addonPaymentOption === 'Cash' ? addonSubtotal : 0,
+      qris_amount: addonPaymentOption === 'QRIS' ? addonSubtotal : 0,
     }, {
       onSuccess: (page) => {
         setIsAddingAddon(false);
         setAddonCart([]);
+        setAddonPaymentOption('LATER');
         if (soundEnabled) {
           playAudioAndVoice(`Menu tambahan nomor antrian ${selectedTable?.nomor_meja || ''} berhasil dikirim ke dapur`);
         }
         const updatedOrder = page.props?.flash?.latestOrder;
         const newAddedItems = page.props?.flash?.newAddedItems || [];
         if (updatedOrder) {
-          // Siapkan receipt data KHUSUS untuk menu tambahan (kitchen ticket)
+          // items memuat SELURUH pesanan (Batch 1 awal + tambahan) untuk Struk Customer
+          // addon_items memuat menu yang baru saja ditambah khusus untuk Ticket Dapur
           setCurrentReceiptOrder({
             ...updatedOrder,
-            items: newAddedItems.length > 0 ? newAddedItems : updatedOrder.items,
+            items: updatedOrder.items,
+            addon_items: newAddedItems.length > 0 ? newAddedItems : updatedOrder.items,
             is_additional: true,
           });
           setReceiptType('kitchen');
@@ -693,6 +705,14 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
           <FiCoffee className="text-green-600" /> POS / Order Makanan Kantin
         </h2>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowGuideModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+            title="Buka Buku Panduan Operasional Kasir"
+          >
+            <FiBookOpen size={14} /> Panduan Kasir
+          </button>
           <Link
             href="/pos/monitor"
             className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold transition-all shadow-xs"
@@ -943,6 +963,8 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
 
                 {selectedTable.active_order.items?.map((item, i) => {
                   const isCancelled = item.status === 'CANCELLED';
+                  const batchNo = item.batch_no || 1;
+                  const isAddon = batchNo > 1;
                   return (
                     <div key={i} className={`flex justify-between items-center text-xs py-1.5 border-b border-gray-100 ${isCancelled ? 'opacity-50 bg-red-50/50 rounded px-1' : ''}`}>
                       <div className="flex-1 pr-2">
@@ -950,6 +972,15 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
                           <span className={`font-bold ${isCancelled ? 'line-through text-red-500' : 'text-gray-900'}`}>
                             {item.jumlah}x {item.food?.nama}
                           </span>
+                          {isAddon ? (
+                            <span className="text-[9px] font-black text-blue-700 bg-blue-100 border border-blue-200 px-1.5 py-0.2 rounded">
+                              ⚡ Tambahan #{batchNo - 1}
+                            </span>
+                          ) : (
+                            <span className="text-[9px] font-semibold text-gray-600 bg-gray-100 border border-gray-200 px-1.5 py-0.2 rounded">
+                              ▶ Awal
+                            </span>
+                          )}
                           {isCancelled ? (
                             <span className="text-[9px] font-black text-red-700 bg-red-100 border border-red-200 px-1.5 py-0.5 rounded">
                               ❌ Dibatalkan
@@ -1046,15 +1077,52 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
                     </div>
                   )}
 
-                  {addonCart.length > 0 && (
-                    <button
-                      type="button"
-                      onClick={handleSubmitAddonOrder}
-                      className="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-lg text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
-                    >
-                      🍳 Kirim Menu Tambahan ke Dapur
-                    </button>
-                  )}
+                  {addonCart.length > 0 && (() => {
+                    const addonSubtotal = addonCart.reduce((sum, it) => sum + (it.jumlah * Number(it.food.harga || 0)), 0);
+                    return (
+                      <div className="space-y-2 pt-1 border-t border-blue-200">
+                        <div className="flex justify-between items-center text-xs font-black text-blue-950">
+                          <span>Subtotal Menu Tambahan:</span>
+                          <span className="text-emerald-700 font-black text-sm">Rp {addonSubtotal.toLocaleString('id-ID')}</span>
+                        </div>
+
+                        {/* Opsi Bayar Tambahan */}
+                        <div>
+                          <label className="block text-[11px] font-bold text-blue-900 mb-1">
+                            Metode Pembayaran Menu Tambahan:
+                          </label>
+                          <div className="grid grid-cols-3 gap-1">
+                            {[
+                              { id: 'LATER', label: '⚡ Bayar Nanti' },
+                              { id: 'Cash', label: '💵 Tunai' },
+                              { id: 'QRIS', label: '📱 QRIS' },
+                            ].map(opt => (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => setAddonPaymentOption(opt.id)}
+                                className={`py-1 px-1.5 rounded-lg text-[10px] font-black transition-all ${
+                                  addonPaymentOption === opt.id
+                                    ? 'bg-blue-600 text-white shadow-xs'
+                                    : 'bg-white text-gray-700 border border-blue-200 hover:bg-blue-100'
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleSubmitAddonOrder}
+                          className="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-extrabold rounded-lg text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                        >
+                          🍳 Kirim Menu Tambahan ke Dapur
+                        </button>
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -1065,10 +1133,50 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
                   </div>
                 )}
 
-                <div className="flex justify-between font-bold text-sm text-gray-900">
-                  <span>Total Tagihan:</span>
-                  <span className="text-green-700">Rp {Number(selectedTable.active_order.total).toLocaleString('id-ID')}</span>
-                </div>
+                {/* Subtotal Breakdown for Addon Orders */}
+                {(() => {
+                  const items = selectedTable.active_order.items?.filter(it => it.status !== 'CANCELLED') || [];
+                  const initialItems = items.filter(it => !it.batch_no || it.batch_no === 1);
+                  const addonItems = items.filter(it => it.batch_no > 1);
+                  const initialTotal = initialItems.reduce((acc, it) => acc + Number(it.subtotal || 0), 0);
+                  const addonTotal = addonItems.reduce((acc, it) => acc + Number(it.subtotal || 0), 0);
+                  const alreadyPaid = Number(selectedTable.active_order.payment?.jumlah_bayar || (selectedTable.active_order.payment_status === 'PAID' ? selectedTable.active_order.total : 0));
+                  const remainingDue = Math.max(0, Number(selectedTable.active_order.total) - alreadyPaid);
+
+                  return (
+                    <div className="p-2.5 bg-gray-50 border border-gray-200 rounded-xl space-y-1.5 text-xs">
+                      {addonItems.length > 0 && (
+                        <>
+                          <div className="flex justify-between text-gray-600 font-medium">
+                            <span>Pesanan Awal (Batch 1):</span>
+                            <span className="font-bold">Rp {initialTotal.toLocaleString('id-ID')}</span>
+                          </div>
+                          <div className="flex justify-between text-blue-700 font-bold">
+                            <span>Pesanan Tambahan (Batch 2+):</span>
+                            <span className="font-extrabold">+ Rp {addonTotal.toLocaleString('id-ID')}</span>
+                          </div>
+                          <div className="border-t border-gray-200 pt-1"></div>
+                        </>
+                      )}
+                      <div className="flex justify-between font-black text-sm text-gray-900">
+                        <span>Total Tagihan Meja:</span>
+                        <span className="text-green-700">Rp {Number(selectedTable.active_order.total).toLocaleString('id-ID')}</span>
+                      </div>
+                      {alreadyPaid > 0 && remainingDue > 0 && (
+                        <>
+                          <div className="flex justify-between text-gray-500 text-[11px]">
+                            <span>Sudah Dibayar Sebelumnya:</span>
+                            <span className="text-gray-700 font-semibold">Rp {alreadyPaid.toLocaleString('id-ID')}</span>
+                          </div>
+                          <div className="flex justify-between text-amber-700 font-extrabold text-xs pt-0.5">
+                            <span>Sisa Kurang Bayar (Tambahan):</span>
+                            <span className="text-amber-800 font-black">Rp {remainingDue.toLocaleString('id-ID')}</span>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <div className="flex gap-2">
                   <button
@@ -1741,6 +1849,12 @@ export default function Kasir({ tables = [], categories = [], activeOrders = [] 
           </div>
         );
       })()}
+
+      {/* MODAL BUKU PANDUAN KASIR */}
+      <CashierGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+      />
     </Sidebar>
   );
 }

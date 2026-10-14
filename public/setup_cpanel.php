@@ -97,6 +97,10 @@ if ($action) {
                     \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_order_items ADD COLUMN batal_alasan VARCHAR(255) NULL");
                     $logs[] = "[OK] Kolom batal_alasan berhasil ditambahkan ke pos_order_items.";
                 }
+                if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_order_items', 'batch_no')) {
+                    \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_order_items ADD COLUMN batch_no INT NOT NULL DEFAULT 1");
+                    $logs[] = "[OK] Kolom batch_no berhasil ditambahkan ke pos_order_items.";
+                }
             } catch (\Exception $e) {
                 $logs[] = "[INFO] " . $e->getMessage();
             }

@@ -9,6 +9,7 @@ use App\Models\PosOrder;
 use App\Models\PosOrderItem;
 use App\Models\PosPayment;
 use App\Models\PosFood;
+use App\Models\PosTable;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -175,9 +176,14 @@ class PosReportController extends Controller
         // Summary payload
         $summaryData = [
             'total_pendapatan' => (int) $filteredRevenue,
+            'total_penjualan' => (int) $filteredRevenue,
             'total_transaksi' => (int) $filteredTransactionCount,
             'cash_revenue' => (int) $cashRevenue,
+            'total_cash' => (int) $cashRevenue,
             'qris_revenue' => (int) $qrisRevenue,
+            'total_qris' => (int) $qrisRevenue,
+            'cash_percent' => $filteredRevenue > 0 ? round(($cashRevenue / $filteredRevenue) * 100) : 0,
+            'qris_percent' => $filteredRevenue > 0 ? round(($qrisRevenue / $filteredRevenue) * 100) : 0,
             'produk_terlaris' => $topProductText,
             'total_active_unpaid' => (int) $totalActiveUnpaid,
             'todayRevenue' => (int) $todayRevenue,
@@ -271,10 +277,12 @@ class PosReportController extends Controller
 
         // Paginated Transactions List
         $orders = $ordersQuery->latest()->paginate(15)->withQueryString();
+        $tables = PosTable::orderBy('nomor_meja')->get();
 
         return Inertia::render('POS/Admin/ReportIndex', [
             'orders' => $orders,
             'summary' => $summaryData,
+            'tables' => $tables,
             'topFoods' => $topFoods,
             'chartData' => $chartData,
             'peakHoursData' => $peakHoursData,
@@ -624,17 +632,47 @@ class PosReportController extends Controller
         return $this->export($request, 'penjualan', 'csv');
     }
 
+    private function ensureColumnsExist()
+    {
+        try {
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_payments', 'cash_amount')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_payments ADD COLUMN cash_amount INT NOT NULL DEFAULT 0");
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_payments', 'qris_amount')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_payments ADD COLUMN qris_amount INT NOT NULL DEFAULT 0");
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_payments', 'catatan_koreksi')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_payments ADD COLUMN catatan_koreksi TEXT NULL");
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_order_items', 'status')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_order_items ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE'");
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_order_items', 'batal_alasan')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_order_items ADD COLUMN batal_alasan VARCHAR(255) NULL");
+            }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_order_items', 'batch_no')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_order_items ADD COLUMN batch_no INT NOT NULL DEFAULT 1");
+            }
+        } catch (\Exception $e) {
+            // Ignore jika sudah ada
+        }
+    }
+
     /**
-     * Update metode pembayaran, nominal Cash/QRIS, kembalian, dan catatan koreksi
+     * Update data pesanan, metode pembayaran, nominal Cash/QRIS, kembalian, nama pelanggan, meja, dan catatan koreksi
      */
     public function updatePaymentNote(Request $request, $id)
     {
+        $this->ensureColumnsExist();
+
         $request->validate([
-            'metode_pembayaran' => 'nullable|in:Cash,QRIS,SPLIT,UNPAID',
+            'metode_pembayaran' => 'nullable|string',
             'cash_amount' => 'nullable|integer|min:0',
             'qris_amount' => 'nullable|integer|min:0',
             'kembalian' => 'nullable|integer|min:0',
             'catatan_koreksi' => 'nullable|string|max:500',
+            'nama_pelanggan' => 'nullable|string|max:100',
+            'table_id' => 'nullable|exists:pos_tables,id',
         ]);
 
         try {
@@ -644,7 +682,25 @@ class PosReportController extends Controller
             $payment = $order->payment;
             $orderTotal = (int) $order->total;
 
-            $newMethod = $request->metode_pembayaran ?: ($payment ? $payment->metode_pembayaran : ($order->metode_pembayaran ?: 'Cash'));
+            if ($request->filled('nama_pelanggan')) {
+                $order->nama_pelanggan = $request->nama_pelanggan;
+            }
+            if ($request->filled('table_id')) {
+                $order->table_id = $request->table_id;
+            }
+
+            $rawMethod = $request->metode_pembayaran ?: ($payment ? $payment->metode_pembayaran : ($order->metode_pembayaran ?: 'Cash'));
+            $upperMethod = strtoupper(trim($rawMethod));
+
+            if ($upperMethod === 'QRIS') {
+                $newMethod = 'QRIS';
+            } elseif ($upperMethod === 'SPLIT') {
+                $newMethod = 'SPLIT';
+            } elseif ($upperMethod === 'UNPAID') {
+                $newMethod = 'UNPAID';
+            } else {
+                $newMethod = 'Cash';
+            }
 
             if ($newMethod === 'UNPAID') {
                 if ($payment) {
@@ -681,7 +737,7 @@ class PosReportController extends Controller
             if (!$payment) {
                 $payment = PosPayment::create([
                     'order_id' => $order->id,
-                    'cashier_id' => auth()->id() ?: $order->cashier_id,
+                    'cashier_id' => auth()->id() ?: ($order->cashier_id ?: 1),
                     'metode_pembayaran' => $newMethod,
                     'jumlah_bayar' => $jumlahBayar,
                     'cash_amount' => $cashAmount,
@@ -704,17 +760,17 @@ class PosReportController extends Controller
             }
 
             // Sinkronkan ke PosOrder
-            $order->update([
-                'metode_pembayaran' => $newMethod,
-                'payment_status' => 'PAID',
-            ]);
+            $order->metode_pembayaran = $newMethod;
+            $order->payment_status = 'PAID';
+            $order->save();
 
             DB::commit();
 
-            return back()->with('success', 'Metode pembayaran pesanan ' . $order->nomor_pesanan . ' berhasil diubah menjadi ' . $newMethod . '!');
+            return back()->with('success', 'Data pesanan ' . $order->nomor_pesanan . ' berhasil disimpan!');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->with('error', 'Gagal memperbarui pembayaran: ' . $e->getMessage());
+            return back()->with('error', 'Gagal memperbarui pesanan: ' . $e->getMessage());
         }
     }
 }
+

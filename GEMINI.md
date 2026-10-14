@@ -1,5 +1,172 @@
 # Catatan Perubahan
 
+## 15 Oktober 2026 (Fix Error: Class "App\Http\Controllers\Pos\PosTable" not found di PosReportController)
+
+### 1. Investigasi & Solusi Error:
+- **Gejala Error**: Saat membuka halaman Laporan Penjualan Kantin (`/admin/pos-reports`), sistem memunculkan layar merah *500 Internal Server Error* dengan pesan:
+  `Class "App\Http\Controllers\Pos\PosTable" not found in app/Http/Controllers/Pos/PosReportController.php:279`
+- **Penyebab**:
+  - Pada pembaruan sebelumnya, data tabel nomor antrian (`$tables = PosTable::orderBy('nomor_meja')->get();`) dikirimkan ke frontend Inertia untuk dropdown edit meja di modal koreksi laporan.
+  - Namun, baris `use App\Models\PosTable;` belum di-import di bagian atas berkas `app/Http/Controllers/Pos/PosReportController.php`. Akibatnya, namespace resolver PHP menganggap model tersebut berada di namespace controller lokal (`App\Http\Controllers\Pos\PosTable`), yang tentu saja tidak ada.
+- **Tindakan Perbaikan**:
+  - Menambahkan baris import `use App\Models\PosTable;` pada `app/Http/Controllers/Pos/PosReportController.php`.
+  - Memverifikasi sintaks via `php -l app/Http/Controllers/Pos/PosReportController.php` (No syntax errors detected).
+  - Mengemas ulang paket deployment cPanel `d:\PA\CPH_Update_Kantin_September_2026.zip` (191.13 MB) sehingga file controller yang diperbaiki siap diekstrak di server hosting.
+
+### 2. Solusi Struk Customer Lengkap (Menampilkan Pesanan Awal + Pesanan Tambahan):
+- **Gejala Masalah**: Pada popup cetak struk customer setelah penambahan menu, daftar item yang tercetak hanya menampilkan menu pesanan tambahan (`newAddedItems`), sedangkan pesanan awal (Batch 1) tidak tercantum di daftar item, meskipun Total di bagian bawah struk sudah menjumlahkan total keseluruhan meja (misal: Rp 220.000).
+- **Penyebab**:
+  - Di `resources/js/Pages/POS/Kasir.jsx`, state `currentReceiptOrder.items` sebelumnya ditimpa (*overwritten*) hanya dengan array `newAddedItems` agar tiket dapur hanya mencetak menu baru. Akibatnya, saat kasir berpindah ke tab *Struk Customer*, daftar menu pesanan awal hilang dari tampilan struk.
+- **Tindakan Perbaikan**:
+  - **Pemisahan Properti Data di `Kasir.jsx`**:
+    - `currentReceiptOrder.items`: Tetap mempertahankan seluruh daftar menu (`updatedOrder.items`) dari Batch 1 (Awal) hingga seluruh Batch Tambahan untuk kebutuhan Struk Pelanggan.
+    - `currentReceiptOrder.addon_items`: Menyimpan khusus item baru (`newAddedItems`) untuk kebutuhan Tiket Dapur.
+  - **Penyempurnaan Render di `Receipt.jsx`**:
+    - **Struk Customer (`!isKitchen`)**: Mengelompokkan seluruh pesanan secara berurutan dan teratur: `▶ PESANAN AWAL` (Batch 1), `▶ PESANAN TAMBAHAN #1` (Batch 2), `▶ PESANAN TAMBAHAN #2` (Batch 3), dst., lengkap dengan subtotal masing-masing kelompok dan Total Keseluruhan sehingga item dan nominal tagihan cocok 100%.
+    - **Tiket Dapur (`isKitchen`)**: Tetap hanya mencetak menu baru (`addon_items`) dengan badge `★ HANYA MASAK MENU TAMBAHAN INI ★` sehingga koki dapur tidak memasak ulang hidangan pertama.
+  - Berhasil dikompilasi via `npm run build` (32.64s) dan paket cPanel `CPH_Update_Kantin_September_2026.zip` diperbarui ulang.
+
+### 3. Buku Panduan Super Lengkap Kasir & Admin POS Kantin Palantea (14 Bab & 9 Tab In-App):
+- **Latar Belakang & Permintaan Pengguna**:
+  - Pengguna meminta dibuatkan buku panduan operasional kasir selengkap mungkin tanpa ada yang terlewat, bahkan hal-hal simpel seperti cara menginput menu baru, upload foto produk, input kategori makanan, setting menu habis, reset meja, alur transaksi, hingga penanganan komplain.
+- **Dua Format Panduan yang Disediakan**:
+  1. **Dokumentasi Cetak / File Markdown Lengkap (`docs/BUKU_PANDUAN_KASIR_POS_PALANTEA.md`)**:
+     - Memuat 14 bab super komprehensif:
+       - **Bab 1**: Pendahuluan & Akses Akun Kasir (Alamat URL, Hak Akses Akun, Layar Kasir, Monitor Pesanan, Laporan Penjualan).
+       - **Bab 2**: Panduan Input Kategori Menu Baru (Langkah buat kategori baru di `/admin/pos-foods`, modal kategori, tips penamaan).
+       - **Bab 3**: Panduan Input & Kelola Menu Makanan/Minuman (Langkah tambah menu di `/admin/pos-foods`, pengisian form nama, kategori, harga, upload foto berbingkai resmi Palantea PNG/JPG, switch status Aktif vs Nonaktif).
+       - **Bab 4**: Pengaturan Menu Habis (Sold Out) & Ketersediaan Cepat (Toggle status aktif/tidak aktif agar menu tidak bisa diklik di kasir).
+       - **Bab 5**: Manajemen Nomor Meja & Reset 30 Meja Antrian (Layar `/admin/pos-tables`, tombol Reset Semua Meja jadi Kosong saat jam buka, ubah status per meja).
+       - **Bab 6**: Alur Pemesanan Baru (New Order) Kasir (5 langkah: Pilih Meja & Tamu, Pilih Menu & Jumlah, Cek Keranjang, Pilih Metode Bayar Cash/QRIS/Split/Unpaid, Cetak Struk).
+       - **Bab 7**: Alur Pesanan Tambahan di Meja Aktif (Addon) (Pilih meja merah `OCCUPIED`, klik Tambah Menu, beda Batch 1 vs Batch 2+, pilihan Bayar Nanti vs Bayar Sekarang).
+       - **Bab 8**: Konsep Struk Cerdas: Tiket Dapur vs Struk Customer (Tiket Dapur hanya mencetak menu baru bertuliskan `★ HANYA MASAK MENU TAMBAHAN INI ★` anti masak ulang; Struk Customer mencetak batch awal + tambahan berurutan).
+       - **Bab 9**: Pengoperasian Monitor Pesanan Dapur & Pengantaran (Kolom antrian Masak `PROCESSING`, tombol Selesai Masak `COOKED`, tombol Antar ke Meja `SERVED`).
+       - **Bab 10**: Fitur Laporan, Koreksi Salah Bayar Cash ke QRIS & Split (Klik badge metode bayar di `/admin/pos-reports`, ubah Cash ke QRIS 1-klik 100%, split bill, input catatan alasan koreksi).
+       - **Bab 11**: Pelunasan Pesanan Belum Bayar (UNPAID) (Tombol Bayar Sekarang di laporan atau kasir, pilih Cash/QRIS otomatis full bill).
+       - **Bab 12**: Pembatalan Pesanan & Pengurangan Item (Batalkan item di keranjang sebelum kirim, atau batalkan meja via monitor/admin).
+       - **Bab 13**: Pengaturan Printer Thermal Struk (58mm & 80mm) (Setting Chrome/Edge: Margin None, Scale 100%, matikan Header & Footer, rekomendasi printer Bluetooth/USB).
+       - **Bab 14**: SOP Operasional Harian Kasir & Panduan Troubleshooting FAQ (SOP Buka Kasir, SOP Pergantian Shift, SOP Tutup Kasir, dan 7 FAQ kendala umum operasional).
+  2. **Modal Panduan Interaktif In-App ([`CashierGuideModal.jsx`](file:///d:/PA/CPH_Project/resources/js/Pages/POS/CashierGuideModal.jsx))**:
+     - Ditanam langsung di dalam aplikasi web dengan tombol **`[📖 Panduan Kasir]`** pada 3 halaman utama: Kasir (`/order`), Monitor (`/pos/monitor`), dan Laporan (`/admin/pos-reports`).
+     - Menyediakan 9 tab navigasi modern dengan desain card, badge warna-warni, dan langkah-langkah visual step-by-step:
+       1. *1. Pesanan Baru* (Langkah transaksi baru, metode bayar Cash, QRIS, Split, Unpaid)
+       2. *2. Pesanan Tambahan* (Cara tambah menu di meja occupied, tiket dapur addon)
+       3. *3. Input & Kelola Menu* (Langkah input hidangan baru, harga, upload foto, status sold out)
+       4. *4. Input Kategori* (Langkah buat kategori baru via `/admin/pos-foods`)
+       5. *5. Manajemen 30 Meja* (Cara reset meja ke kosong, arti warna meja)
+       6. *6. Monitor Pesanan* (Panduan operasional dapur, tombol Masak & Antar)
+       7. *7. Laporan & Koreksi Bayar* (Cara koreksi salah tekan bayar Cash ke QRIS & pelunasan Unpaid)
+       8. *8. Struk & Printer Thermal* (Panduan printer 58mm/80mm, beda tiket dapur vs struk customer)
+       9. *9. SOP & Troubleshooting FAQ* (SOP buka/tutup kasir, laci kasir fisik, dan solusi kendala umum)
+- **Kompilasi & Deployment**:
+  - Bundle frontend dikompilasi sukses via `npm run build` (5.22s).
+  - Paket arsip deployment cPanel `d:\PA\CPH_Update_Kantin_September_2026.zip` diperbarui memuat seluruh file buku panduan markdown, modal in-app, serta bundle aset build.
+
+### 4. Eliminasi Baris Subtotal Redundan di Atas TOTAL pada Struk Customer (`Receipt.jsx`):
+- **Masalah & Kebingungan Pengguna**:
+  - Pada struk pelanggan sebelumnya, di bawah daftar menu tercetak baris `Subtotal: Rp 105.000`, lalu tepat di bawahnya tercetak lagi `TOTAL: Rp 105.000`.
+  - Kasir dan pembeli bingung karena nominal yang sama berulang dua kali, padahal pada masing-masing header kelompok (`▶ PESANAN AWAL: Rp 23.000` dan `▶ PESANAN TAMBAHAN #1: Rp 82.000`) sudah tercantum rincian penjumlahannya dengan jelas.
+- **Tindakan Perbaikan**:
+  - **Kondisionalisasi Subtotal**: Baris `Subtotal:` di atas `TOTAL:` dikondisikan agar **hanya muncul jika terdapat diskon** (`Number(order.diskon) > 0`). Jika tidak ada diskon (kondisi umum/standar), baris subtotal disembunyikan sehingga struk langsung beralih ke `TOTAL:` bergaris ganda yang tegas.
+  - **Penyesuaian Header Kolom**: Label header kolom yang semula bertuliskan `SUBTOTAL` diubah menjadi `HARGA` agar lebih natural dan tidak rancu.
+  - Tampilan struk menjadi jauh lebih bersih, ringkas, hemat kertas thermal, dan tidak menimbulkan pertanyaan angka dobel bagi kasir maupun pelanggan.
+  - Frontend dikompilasi sukses via `npm run build` (5.26s) dan arsip cPanel `CPH_Update_Kantin_September_2026.zip` diperbarui.
+
+---
+
+## 14 Oktober 2026 (Fitur Akumulasi Pesanan Tambahan di Meja Sama, Konsep Struk Cerdas Dapur & Customer, Metrik Cash vs QRIS Laporan, Buku Panduan Kasir, & Fix Simpan Edit Laporan)
+
+### 1. Akumulasi & Penjumlahan Pesanan Tambahan di Meja yang Sama (Add-On Order):
+- **Latar Belakang**: Ketika tamu yang sedang makan di nomor meja aktif (`OCCUPIED`) ingin memesan hidangan tambahan (misal: tambah es teh, camilan, atau porsi nasi), sebelumnya sistem belum membedakan item pesanan awal dan pesanan tambahan, serta belum ada fasilitas memilih pembayaran terpisah maupun akumulasi tagihan otomatis.
+- **Implementasi Database (`batch_no`)**:
+  - Dibuat migrasi baru `database/migrations/2026_10_14_190000_add_batch_no_to_pos_order_items_table.php` yang menambahkan kolom `batch_no INT NOT NULL DEFAULT 1` pada tabel `pos_order_items`.
+  - Model `app/Models/PosOrderItem.php` menambahkan field `batch_no` ke array `$fillable`.
+- **Backend Controller (`KasirController.php`)**:
+  - `storeOrder()`: Menginisialisasi seluruh item pesanan awal dengan `batch_no = 1`.
+  - `addItemsToOrder()`:
+    - Menghitung nomor urut batch secara otomatis: `newBatchNo = max(batch_no) + 1`.
+    - Menyimpan item baru dengan `batch_no` baru dan status dapur `PROCESSING`.
+    - Menghitung subtotal baru dan menambahkannya ke total tagihan meja (`$order->total += $subtotalBaru`).
+    - Mendukung parameter `payment_option`:
+      - `'LATER'` (Gabung ke Tagihan Meja): Status pesanan dipertahankan `UNPAID` (atau ditandai unpaid untuk sisa tagihan jika sebelumnya sudah ada pembayaran).
+      - `'Cash'` / `'QRIS'`: Pembayaran langsung dicatat ke pos pembayaran dan menambah riwayat akumulasi pembayaran lunas.
+  - `processPayment()`: Mengalkulasi sisa tagihan secara cerdas (`targetBill = max(0, total - alreadyPaid)`), sehingga jika pesanan awal sudah dibayar dan ada pesanan tambahan, kasir hanya menagih sisa kekurangan bayar.
+- **Frontend POS Kasir (`Kasir.jsx`)**:
+  - Item pada meja aktif diberi badge identitas visual:
+    - `▶ Awal`: Untuk pesanan batch 1.
+    - `⚡ Tambahan #1`, `⚡ Tambahan #2`: Untuk pesanan addon berikutnya.
+  - Panel Keranjang Menu Tambahan (`isAddingAddon`):
+    - Dilengkapi pemilih metode bayar addon: `[⚡ Bayar Nanti]`, `[💵 Tunai]`, `[📱 QRIS]`.
+    - Menampilkan subtotal menu tambahan dan tombol `[🍳 Kirim Menu Tambahan ke Dapur]`.
+  - Kartu Rincian Meja Aktif (`OCCUPIED`):
+    - Menampilkan rincian transparan:
+      - *Pesanan Awal (Batch 1)*: Rp ...
+      - *Pesanan Tambahan (Batch 2+)*: + Rp ...
+      - *Total Tagihan Meja*: Rp ... (Akumulasi lengkap)
+      - *Sudah Dibayar*: Rp ... (jika ada)
+      - *Sisa Kurang Bayar*: Rp ... (jika ada sisa)
+
+### 2. Konsep Struk Cerdas Customer & Dapur untuk Pesanan Tambahan (`Receipt.jsx`):
+- **Masalah Operasional Dapur**: Dapur kerap keliru memasak ulang hidangan pesanan pertama saat menerima tiket pesanan tambahan.
+- **Konsep & Solusi Tiket Dapur (Kitchen Ticket)**:
+  - Tiket dapur untuk pesanan tambahan **HANYA mencantumkan menu yang baru ditambahkan**.
+  - Dilengkapi header peringatan mencolok:
+    `--- TICKET DAPUR (TAMBAHAN) ---`
+    `★ HANYA MASAK MENU TAMBAHAN INI ★`
+    `SEGERA SIAPKAN & MASAK MENU TAMBAHAN DI BAWAH INI`
+  - Pesanan awal tidak dicetak di tiket dapur tambahan sehingga juru masak dijamin **100% tidak memasak ulang** menu lama.
+- **Konsep & Solusi Struk Pelanggan (Customer Receipt)**:
+  - Struk pelanggan mengelompokkan menu secara rapi berdasarkan waktu pemesanan:
+    - `▶ PESANAN AWAL` beserta daftar menu & subtotal batch 1.
+    - `▶ PESANAN TAMBAHAN #1`, `#2`, dst. beserta rincian menu & subtotal masing-masing batch.
+    - Total Tagihan Akumulasi, Nominal Bayar, dan Sisa Tagihan (jika ada).
+  - Kasir dan tamu mendapatkan kejelasan mutlak tanpa ada menu yang terlewat.
+
+### 3. Tampilan Laporan Penjualan Kantin Lebih Lengkap (Total Penjualan, Total Cash, Total QRIS):
+- **5 Kartu Ringkasan KPI di Dashboard Laporan (`ReportIndex.jsx` & `PosReportController.php`)**:
+  1. 🟢 **Total Penjualan** (`border-l-4 border-emerald-500`): Total seluruh omzet pesanan Lunas (`PAID`).
+  2. 💵 **Total Kas Tunai (Cash)** (`border-l-4 border-green-600`): Total akumulasi kas fisik uang tunai di laci kasir.
+  3. 📱 **Total Non-Tunai (QRIS)** (`border-l-4 border-blue-600`): Total uang transfer masuk ke rekening QRIS Palantea.
+  4. 🔵 **Total Transaksi** (`border-l-4 border-indigo-500`): Total seluruh order/pesanan masuk.
+  5. 🟣 **Menu Terlaris** (`border-l-4 border-purple-500`): Hidangan terfavorit dengan penjualan terbanyak.
+- **Banner Arus Kas Kasir (Cash vs QRIS)**:
+  - Menampilkan progress bar visual perbandingan persentase uang tunai (`cash_percent`) dan uang non-tunai (`qris_percent`).
+- **Footer Tabel Overview Penjualan (`tfoot`)**:
+  - Menampilkan baris rekapitulasi di bagian bawah tabel transaksi: Total Omzet, Breakdown Kas Tunai vs QRIS, serta Total Transaksi sesuai filter aktif.
+
+### 4. Buku Panduan (Tutorial) Pemakaian Seluruh Fitur Website untuk Kasir:
+- **Dokumentasi Lengkap (`docs/BUKU_PANDUAN_KASIR_POS_PALANTEA.md`)**:
+  - Dibuatkan buku pedoman operasional lengkap yang dapat dibaca, diunduh, atau dicetak sebagai SOP harian kasir kantin.
+  - Memuat 9 bab komprehensif: Pendahuluan & Akses Akun, Alur Pesanan Baru, Alur Pesanan Tambahan, Konsep Struk Customer & Dapur, Pengoperasian Monitor Pesanan, Fitur Koreksi Salah Bayar Cash ke QRIS, Pelunasan UNPAID, Panduan Status 30 Meja Antrian, serta Troubleshooting & FAQ.
+- **Modal Panduan Interaktif In-App (`CashierGuideModal.jsx`)**:
+  - Dibuatkan komponen modal pop-up panduan modern dengan 5 tab interaktif:
+    1. *1. Pesanan Baru*: Panduan 5 langkah pesan di kasir POS.
+    2. *2. Pesanan Tambahan*: Panduan tambah menu meja aktif & tiket dapur.
+    3. *3. Monitor Pesanan*: Panduan pengantaran menu, tagih kasir, & kosongkan meja.
+    4. *4. Laporan & Koreksi Bayar*: Panduan ubah Cash ke QRIS & pelunasan UNPAID.
+    5. *5. Struk & Status Meja*: Panduan ukuran struk thermal & arti warna meja (Hijau/Merah/Kuning/Abu-abu).
+  - Tombol akses **`[📖 Panduan Kasir]`** dipasang di header atas pada ketiga halaman utama:
+    - POS Kasir Utama (`/order`)
+    - Monitor Pesanan (`/pos/monitor`)
+    - Laporan Penjualan Kantin (`/admin/pos-reports`)
+
+### 5. Investigasi & Solusi Bug "Edit Tidak Tersimpan" di Laporan Penjualan:
+- **Penyebab Utama**:
+  - File migrasi `2026_10_13_130000_add_split_payment_and_correction_notes_to_pos_tables.php` sebelumnya berstatus *Pending*, sehingga kolom `cash_amount`, `qris_amount`, dan `catatan_koreksi` belum terbentuk di tabel `pos_payments` MariaDB.
+  - Ketika controller menyimpan data, database melemparkan SQL error atau me-reset nilai kembali ke 0.
+  - Pada frontend, error flash session dari controller sebelumnya belum ditangkap dengan SweetAlert2.
+- **Solusi Komprehensif**:
+  - Migrasi telah dieksekusi secara permanen (`php artisan migrate`).
+  - Menambahkan auto-heal `ensureColumnsExist()` pada `PosReportController.php` dan `setup_cpanel.php` agar server hosting cPanel otomatis membuat kolom tersebut jika belum ada.
+  - Menambahkan input field **Nama Pelanggan** dan dropdown **Nomor Meja** di dalam form Edit Modal laporan sehingga nama tamu dan meja juga dapat diperbaiki.
+  - Menambahkan pengecekan status respons dan flash error handling di `handleSavePaymentNote` dengan pesan SweetAlert2 yang jelas.
+
+### 6. Hasil Kompilasi & Pengemasan Update Hosting:
+- Kompilasi frontend berhasil 100% tanpa error via `npm run build` (17.71s).
+- File arsip hosting cPanel diperbarui: `d:\PA\CPH_Update_Kantin_September_2026.zip` (191.13 MB), memuat bundle JS/CSS baru, migrasi batch, buku panduan kasir, seeder, dan seluruh foto menu resmi.
+
+---
+
 ## 13 Oktober 2026 (Redesain Laporan Penjualan Kantin Sesuai Desain Laporan Penjualan Sayur Hidroponik)
 
 ### 1. Penyelarasan Desain Laporan Kantin dengan Laporan Sayur:

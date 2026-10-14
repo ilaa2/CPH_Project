@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
 import Mainbar from '@/Components/Bar/Mainbar';
 import Receipt from '@/Pages/POS/Receipt';
+import CashierGuideModal from '@/Pages/POS/CashierGuideModal';
 import LoadingSpinner from '@/Components/LoadingSpinner';
 import axios from 'axios';
 import Swal from 'sweetalert2';
@@ -9,7 +10,7 @@ import {
   FiBarChart2, FiCalendar, FiFileText, FiTrendingUp, FiUsers,
   FiShoppingBag, FiDollarSign, FiFilter, FiRefreshCw, FiCreditCard,
   FiPrinter, FiEdit2, FiSearch, FiX, FiClock, FiDownload, FiCheckCircle,
-  FiCoffee, FiCheck
+  FiCoffee, FiCheck, FiBookOpen
 } from 'react-icons/fi';
 import { FaChevronDown, FaFilePdf, FaFileExcel, FaEye } from 'react-icons/fa';
 import {
@@ -41,6 +42,7 @@ ChartJS.register(
 export default function ReportIndex({
   orders,
   summary: initialSummary,
+  tables = [],
   topFoods,
   chartData,
   peakHoursData,
@@ -72,16 +74,26 @@ export default function ReportIndex({
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState(null);
   const [receiptType, setReceiptType] = useState('both');
   const [bothPrintStep, setBothPrintStep] = useState(1);
+  const [showGuideModal, setShowGuideModal] = useState(false);
 
-  // --- MODAL KOREKSI PEMBAYARAN (CASH -> QRIS, SPLIT, KEMBALIAN) ---
+  // --- MODAL KOREKSI PEMBAYARAN & DETAIL TRANSAKSI ---
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [editCustomerName, setEditCustomerName] = useState('');
+  const [editTableId, setEditTableId] = useState('');
   const [editPaymentMethod, setEditPaymentMethod] = useState('Cash');
   const [editCashAmount, setEditCashAmount] = useState('');
   const [editQrisAmount, setEditQrisAmount] = useState('');
   const [editKembalian, setEditKembalian] = useState(0);
   const [editNote, setEditNote] = useState('');
   const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+
+  // Auto-sync summary saat props diperbarui Inertia
+  useEffect(() => {
+    if (initialSummary && Object.keys(initialSummary).length > 0) {
+      setSummary(initialSummary);
+    }
+  }, [initialSummary]);
 
   // --- MODAL PELUNASAN KASIR (UNPAID) ---
   const [showPayModal, setShowPayModal] = useState(false);
@@ -233,6 +245,8 @@ export default function ReportIndex({
     setEditQrisAmount((order.payment?.qris_amount ?? (currMethod === 'QRIS' ? order.total : 0)).toString());
     setEditKembalian(order.payment?.kembalian || 0);
     setEditNote(order.payment?.catatan_koreksi || '');
+    setEditCustomerName(order.nama_pelanggan || '');
+    setEditTableId(order.table_id || (order.table ? order.table.id : ''));
     setShowEditModal(true);
   };
 
@@ -255,15 +269,21 @@ export default function ReportIndex({
       qris_amount: qrisVal,
       kembalian: parseInt(editKembalian) || 0,
       catatan_koreksi: editNote,
+      nama_pelanggan: editCustomerName,
+      table_id: editTableId,
     }, {
       preserveScroll: true,
-      onSuccess: () => {
+      onSuccess: (page) => {
         setIsSubmittingNote(false);
+        if (page?.props?.flash?.error) {
+          Swal.fire({ icon: 'error', title: 'Gagal Menyimpan', text: page.props.flash.error });
+          return;
+        }
         setShowEditModal(false);
         Swal.fire({
           icon: 'success',
-          title: 'Metode Pembayaran Diperbarui!',
-          text: `Pesanan tercatat dengan metode ${editPaymentMethod}. Omzet laporan telah diperbarui.`,
+          title: 'Perubahan Berhasil Disimpan!',
+          text: `Data transaksi pesanan #${editingOrder.nomor_pesanan} telah diperbarui.`,
           timer: 1700,
           showConfirmButton: false,
         });
@@ -435,6 +455,14 @@ export default function ReportIndex({
           <p className="text-xs text-gray-500">Pantau omzet penjualan kasir, rincian pembayaran Cash vs QRIS, dan produk terlaris secara realtime.</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowGuideModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold shadow-xs transition-all cursor-pointer"
+            title="Buka Buku Panduan Operasional Kasir"
+          >
+            <FiBookOpen size={14} /> Panduan Kasir
+          </button>
           <Link
             href="/pos/monitor"
             className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs transition-all"
@@ -528,33 +556,72 @@ export default function ReportIndex({
           </div>
         </section>
 
-        {/* 2. SUMMARY STATS (GRID 4 KOLOM) */}
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <SummaryCard
-            title="Total Pendapatan"
-            value={formatRp(summary.total_pendapatan || summary.filteredRevenue || 0)}
-            icon={<FiDollarSign className="text-green-600 text-xl" />}
-            color="border-green-500"
-          />
-          <SummaryCard
-            title="Total Transaksi"
-            value={`${summary.total_transaksi || summary.filteredTransactionCount || 0} Pesanan`}
-            icon={<FiShoppingBag className="text-blue-600 text-xl" />}
-            color="border-blue-500"
-          />
-          <SummaryCard
-            title="Kas Tunai vs QRIS"
-            value={`💵 ${formatRp(summary.cash_revenue || summary.cashRevenue || 0)}`}
-            subtext={`📱 QRIS: ${formatRp(summary.qris_revenue || summary.qrisRevenue || 0)}`}
-            icon={<FiCreditCard className="text-orange-600 text-xl" />}
-            color="border-orange-500"
-          />
-          <SummaryCard
-            title="Menu Terlaris"
-            value={summary.produk_terlaris || topFoods?.[0]?.food?.nama || '-'}
-            icon={<FiTrendingUp className="text-purple-600 text-xl" />}
-            color="border-purple-500"
-          />
+        {/* 2. SUMMARY STATS (GRID 5 KOLOM & REKAP KEUANGAN CASH VS QRIS) */}
+        <section className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+            <SummaryCard
+              title="Total Penjualan"
+              value={formatRp(summary.total_penjualan || summary.total_pendapatan || summary.filteredRevenue || 0)}
+              subtext="Akumulasi omzet lunas"
+              icon={<FiDollarSign className="text-green-600 text-xl" />}
+              color="border-green-500"
+            />
+            <SummaryCard
+              title="Total Kas Tunai (Cash)"
+              value={formatRp(summary.total_cash || summary.cash_revenue || summary.cashRevenue || 0)}
+              subtext={`${summary.cash_percent || 0}% dari total penjualan`}
+              icon={<FiDollarSign className="text-emerald-600 text-xl" />}
+              color="border-emerald-500"
+            />
+            <SummaryCard
+              title="Total Non-Tunai (QRIS)"
+              value={formatRp(summary.total_qris || summary.qris_revenue || summary.qrisRevenue || 0)}
+              subtext={`${summary.qris_percent || 0}% dari total penjualan`}
+              icon={<FiCreditCard className="text-blue-600 text-xl" />}
+              color="border-blue-500"
+            />
+            <SummaryCard
+              title="Total Transaksi"
+              value={`${summary.total_transaksi || summary.filteredTransactionCount || 0} Pesanan`}
+              subtext="Jumlah transaksi masuk"
+              icon={<FiShoppingBag className="text-orange-600 text-xl" />}
+              color="border-orange-500"
+            />
+            <SummaryCard
+              title="Menu Terlaris"
+              value={summary.produk_terlaris || topFoods?.[0]?.food?.nama || '-'}
+              subtext="Menu paling diminati"
+              icon={<FiTrendingUp className="text-purple-600 text-xl" />}
+              color="border-purple-500"
+            />
+          </div>
+
+          {/* Banner Komparasi Cash vs QRIS */}
+          <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-green-50 rounded-lg text-green-700 font-bold text-sm">
+                💰 Rekapitulasi Arus Kas Kasir
+              </div>
+              <div className="text-xs">
+                <span className="font-bold text-gray-800">Distribusi Pembayaran: </span>
+                <span className="text-emerald-700 font-black">💵 Kas Tunai (Cash) {summary.cash_percent || 0}% ({formatRp(summary.total_cash || summary.cash_revenue || summary.cashRevenue || 0)})</span>
+                <span className="text-gray-400 mx-1.5">•</span>
+                <span className="text-blue-700 font-black">📱 Non-Tunai (QRIS) {summary.qris_percent || 0}% ({formatRp(summary.total_qris || summary.qris_revenue || summary.qrisRevenue || 0)})</span>
+              </div>
+            </div>
+            <div className="w-full sm:w-64 bg-gray-100 h-3 rounded-full overflow-hidden flex border border-gray-200">
+              <div
+                className="bg-emerald-500 h-full transition-all"
+                style={{ width: `${summary.cash_percent || 0}%` }}
+                title={`Cash: ${summary.cash_percent || 0}%`}
+              ></div>
+              <div
+                className="bg-blue-500 h-full transition-all"
+                style={{ width: `${summary.qris_percent || 0}%` }}
+                title={`QRIS: ${summary.qris_percent || 0}%`}
+              ></div>
+            </div>
+          </div>
         </section>
 
         {/* 3. REPORT CATALOG (2 MAIN REPORTS) */}
@@ -792,6 +859,25 @@ export default function ReportIndex({
                             </tr>
                           )}
                         </tbody>
+                        {previewType === 'penjualan' && (
+                          <tfoot className="bg-gray-100/80 border-t-2 border-gray-300 font-bold text-xs text-gray-800">
+                            <tr>
+                              <td colSpan={3} className="px-6 py-3 text-right uppercase tracking-wider text-gray-600">
+                                Total Rekapitulasi (Sesuai Filter):
+                              </td>
+                              <td className="px-6 py-3">
+                                <div className="text-sm font-black text-green-700">{formatRp(summary.total_penjualan || 0)}</div>
+                                <div className="flex gap-2 text-[10px] mt-0.5 font-bold">
+                                  <span className="text-emerald-700">Cash: {formatRp(summary.total_cash || 0)}</span>
+                                  <span className="text-blue-700">QRIS: {formatRp(summary.total_qris || 0)}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-3 text-center text-[11px] text-gray-500 font-semibold">
+                                {summary.total_orders || 0} Trx
+                              </td>
+                            </tr>
+                          </tfoot>
+                        )}
                       </table>
                     </div>
 
@@ -867,6 +953,39 @@ export default function ReportIndex({
                   <span className="font-extrabold text-gray-800 uppercase px-2 py-0.5 rounded bg-gray-200 text-[10px]">
                     {editingOrder.payment?.metode_pembayaran || editingOrder.metode_pembayaran || (editingOrder.payment_status === 'UNPAID' ? 'BELUM BAYAR (UNPAID)' : 'CASH')}
                   </span>
+                </div>
+              </div>
+
+              {/* Edit Customer Name & Table */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Nama Pelanggan:
+                  </label>
+                  <input
+                    type="text"
+                    value={editCustomerName}
+                    onChange={(e) => setEditCustomerName(e.target.value)}
+                    placeholder="Contoh: Meja 5 / Bpk Andi"
+                    className="w-full px-3 py-2 border rounded-xl text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 mb-1">
+                    Nomor Meja:
+                  </label>
+                  <select
+                    value={editTableId}
+                    onChange={(e) => setEditTableId(e.target.value)}
+                    className="w-full px-3 py-2 border rounded-xl text-xs font-semibold text-gray-800 focus:ring-2 focus:ring-amber-500 bg-white"
+                  >
+                    <option value="">-- Tanpa Meja (Takeaway) --</option>
+                    {tables && tables.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        Meja #{t.nomor_meja}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -1319,6 +1438,12 @@ export default function ReportIndex({
           </div>
         );
       })()}
+
+      {/* MODAL BUKU PANDUAN KASIR */}
+      <CashierGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+      />
     </Mainbar>
   );
 }

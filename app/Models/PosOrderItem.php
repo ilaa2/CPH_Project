@@ -21,6 +21,7 @@ class PosOrderItem extends Model
         'is_served',
         'status',
         'batal_alasan',
+        'batch_no',
     ];
 
     protected $casts = [

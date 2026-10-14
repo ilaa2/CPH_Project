@@ -90,6 +90,9 @@ class KasirController extends Controller
             if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_order_items', 'batal_alasan')) {
                 \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_order_items ADD COLUMN batal_alasan VARCHAR(255) NULL");
             }
+            if (!\Illuminate\Support\Facades\Schema::hasColumn('pos_order_items', 'batch_no')) {
+                \Illuminate\Support\Facades\DB::statement("ALTER TABLE pos_order_items ADD COLUMN batch_no INT NOT NULL DEFAULT 1");
+            }
         } catch (\Exception $e) {
             // Ignore jika sudah ada
         }
@@ -230,8 +233,9 @@ class KasirController extends Controller
                 ]);
             }
 
-            // Create Order Items
+            // Create Order Items (Batch 1: Pesanan Awal)
             foreach ($itemsData as $item) {
+                $item['batch_no'] = 1;
                 $order->items()->create($item);
             }
 
@@ -280,6 +284,11 @@ class KasirController extends Controller
                 return back()->with('error', 'Pesanan ini sudah dibayar sebelumnya.');
             }
 
+            $existingPayment = PosPayment::where('order_id', $order->id)->first();
+            $alreadyPaid = $existingPayment ? (int)$existingPayment->jumlah_bayar : 0;
+            $sisaTagihan = max(0, $order->total - $alreadyPaid);
+            $targetBill = $alreadyPaid > 0 ? $sisaTagihan : $order->total;
+
             $metode = $request->metode_pembayaran;
             $cashAmount = (int) ($request->cash_amount ?? 0);
             $qrisAmount = (int) ($request->qris_amount ?? 0);
@@ -287,36 +296,47 @@ class KasirController extends Controller
             if ($metode === 'SPLIT') {
                 $totalBayar = $cashAmount + $qrisAmount;
             } elseif ($metode === 'QRIS') {
-                $totalBayar = $qrisAmount > 0 ? $qrisAmount : ((int)$request->jumlah_bayar ?: $order->total);
+                $totalBayar = $qrisAmount > 0 ? $qrisAmount : ((int)$request->jumlah_bayar ?: $targetBill);
                 $qrisAmount = $totalBayar;
             } else {
-                $totalBayar = $cashAmount > 0 ? $cashAmount : ((int)$request->jumlah_bayar ?: $order->total);
+                $totalBayar = $cashAmount > 0 ? $cashAmount : ((int)$request->jumlah_bayar ?: $targetBill);
                 $cashAmount = $totalBayar;
             }
 
-            if ($totalBayar < $order->total) {
+            if ($totalBayar < $targetBill) {
                 DB::rollBack();
-                return back()->with('error', 'Jumlah pembayaran (Rp ' . number_format($totalBayar, 0, ',', '.') . ') kurang dari total tagihan (Rp ' . number_format($order->total, 0, ',', '.') . ').');
+                return back()->with('error', 'Jumlah pembayaran (Rp ' . number_format($totalBayar, 0, ',', '.') . ') kurang dari sisa tagihan (Rp ' . number_format($targetBill, 0, ',', '.') . ').');
             }
 
-            $kembalian = max(0, $totalBayar - $order->total);
+            $kembalian = max(0, $totalBayar - $targetBill);
 
-            // Save Payment Record
-            PosPayment::create([
-                'order_id' => $order->id,
-                'cashier_id' => Auth::id(),
-                'metode_pembayaran' => $metode,
-                'jumlah_bayar' => $totalBayar,
-                'cash_amount' => $cashAmount,
-                'qris_amount' => $qrisAmount,
-                'kembalian' => $kembalian,
-                'paid_at' => now(),
-                'status' => 'SUCCESS',
-            ]);
+            if ($existingPayment) {
+                $existingPayment->jumlah_bayar += $totalBayar;
+                $existingPayment->cash_amount += $cashAmount;
+                $existingPayment->qris_amount += $qrisAmount;
+                $existingPayment->kembalian = $kembalian;
+                if ($existingPayment->metode_pembayaran !== $metode) {
+                    $existingPayment->metode_pembayaran = 'SPLIT';
+                }
+                $existingPayment->paid_at = now();
+                $existingPayment->save();
+            } else {
+                PosPayment::create([
+                    'order_id' => $order->id,
+                    'cashier_id' => Auth::id() ?: 1,
+                    'metode_pembayaran' => $metode,
+                    'jumlah_bayar' => $totalBayar,
+                    'cash_amount' => $cashAmount,
+                    'qris_amount' => $qrisAmount,
+                    'kembalian' => $kembalian,
+                    'paid_at' => now(),
+                    'status' => 'SUCCESS',
+                ]);
+            }
 
             // Update Order Status: PAYMENT = PAID, ORDER = COMPLETED
             $order->update([
-                'metode_pembayaran' => $metode,
+                'metode_pembayaran' => $existingPayment ? $existingPayment->metode_pembayaran : $metode,
                 'payment_status' => 'PAID',
                 'order_status' => 'COMPLETED',
             ]);
@@ -348,6 +368,9 @@ class KasirController extends Controller
             'items.*.food_id' => 'required|exists:pos_foods,id',
             'items.*.jumlah' => 'required|integer|min:1',
             'items.*.catatan' => 'nullable|string|max:255',
+            'payment_option' => 'nullable|string',
+            'cash_amount' => 'nullable|integer|min:0',
+            'qris_amount' => 'nullable|integer|min:0',
         ]);
 
         try {
@@ -359,6 +382,9 @@ class KasirController extends Controller
                 DB::rollBack();
                 return back()->with('error', 'Pesanan yang sudah dibatalkan tidak dapat ditambah menu!');
             }
+
+            $maxBatch = (int) ($order->items()->max('batch_no') ?: 1);
+            $newBatchNo = $maxBatch + 1;
 
             $addedSubtotal = 0;
             $newAddedItems = [];
@@ -382,6 +408,7 @@ class KasirController extends Controller
                     'catatan' => $item['catatan'] ?? null,
                     'is_served' => 0,
                     'status' => 'ACTIVE',
+                    'batch_no' => $newBatchNo,
                 ]);
                 $createdItem->load('food');
                 $newAddedItems[] = $createdItem;
@@ -390,13 +417,52 @@ class KasirController extends Controller
             $order->subtotal += $addedSubtotal;
             $order->total += $addedSubtotal;
 
-            // Jika sebelumnya COMPLETED atau PAID, jika ada menu tambahan maka status dapur kembali PROCESSING
-            if ($order->order_status === 'COMPLETED') {
-                $order->order_status = 'PROCESSING';
-                // Jika meja tadi NEEDS_CLEANING, ubah kembali jadi OCCUPIED
-                if ($order->table) {
-                    $order->table->update(['status' => 'OCCUPIED']);
+            $paymentOption = $request->input('payment_option', 'LATER'); // 'LATER', 'Cash', 'QRIS', 'SPLIT'
+
+            if (in_array($paymentOption, ['Cash', 'QRIS', 'SPLIT'])) {
+                $payment = $order->payment;
+                $addonCash = (int) ($request->input('cash_amount', 0));
+                $addonQris = (int) ($request->input('qris_amount', 0));
+
+                if ($paymentOption === 'Cash' && $addonCash === 0) {
+                    $addonCash = $addedSubtotal;
+                } elseif ($paymentOption === 'QRIS' && $addonQris === 0) {
+                    $addonQris = $addedSubtotal;
                 }
+
+                if (!$payment) {
+                    $payment = PosPayment::create([
+                        'order_id' => $order->id,
+                        'cashier_id' => Auth::id() ?: 1,
+                        'metode_pembayaran' => $paymentOption,
+                        'jumlah_bayar' => $addonCash + $addonQris,
+                        'cash_amount' => $addonCash,
+                        'qris_amount' => $addonQris,
+                        'kembalian' => max(0, ($addonCash + $addonQris) - $addedSubtotal),
+                        'paid_at' => now(),
+                        'status' => 'SUCCESS',
+                    ]);
+                } else {
+                    $payment->jumlah_bayar += ($addonCash + $addonQris);
+                    $payment->cash_amount += $addonCash;
+                    $payment->qris_amount += $addonQris;
+                    if ($payment->metode_pembayaran !== $paymentOption) {
+                        $payment->metode_pembayaran = 'SPLIT';
+                        $order->metode_pembayaran = 'SPLIT';
+                    }
+                    $payment->save();
+                }
+                $order->payment_status = 'PAID';
+            } else {
+                // Jika ada pesanan tambahan yang belum dibayar, tandai UNPAID agar kasir ingat menagih
+                $order->payment_status = 'UNPAID';
+            }
+
+            if ($order->order_status === 'COMPLETED' || $order->order_status === 'READY') {
+                $order->order_status = 'PROCESSING';
+            }
+            if ($order->table && $order->table->status !== 'OCCUPIED') {
+                $order->table->update(['status' => 'OCCUPIED']);
             }
 
             $order->save();
@@ -404,9 +470,10 @@ class KasirController extends Controller
 
             DB::commit();
 
-            return back()->with('success', 'Berhasil menambahkan menu ke No. Antrian ' . ($order->table ? $order->table->nomor_meja : '') . '!')
+            return back()->with('success', 'Berhasil menambahkan pesanan tambahan (Batch #' . $newBatchNo . ') ke No. Antrian ' . ($order->table ? $order->table->nomor_meja : '') . '!')
                 ->with('latestOrder', $order)
-                ->with('newAddedItems', $newAddedItems);
+                ->with('newAddedItems', $newAddedItems)
+                ->with('newBatchNo', $newBatchNo);
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->with('error', 'Gagal menambah menu: ' . $e->getMessage());

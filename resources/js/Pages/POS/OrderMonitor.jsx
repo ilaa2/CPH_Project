@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Head, router, Link } from '@inertiajs/react';
 import Sidebar from '@/Components/Bar/Sidebar';
 import Receipt from '@/Pages/POS/Receipt';
+import CashierGuideModal from '@/Pages/POS/CashierGuideModal';
 import Swal from 'sweetalert2';
 import {
   FiTv, FiCoffee, FiShoppingBag, FiCheckCircle, FiClock,
   FiPrinter, FiDollarSign, FiSearch, FiRefreshCw, FiVolume2,
   FiVolumeX, FiAlertCircle, FiX, FiCheck, FiTrash2, FiPlusCircle,
-  FiArrowRight, FiSliders, FiEdit2
+  FiArrowRight, FiSliders, FiEdit2, FiBookOpen
 } from 'react-icons/fi';
 
 // Audio Synthesizer Chime
@@ -66,6 +67,7 @@ export default function OrderMonitor({ tables = [], activeOrders = [] }) {
   const [selectedTableFilter, setSelectedTableFilter] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [showGuideModal, setShowGuideModal] = useState(false);
 
   // Modal State: Print Struk
   const [showReceiptModal, setShowReceiptModal] = useState(false);
@@ -374,6 +376,14 @@ export default function OrderMonitor({ tables = [], activeOrders = [] }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowGuideModal(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+            title="Buka Buku Panduan Operasional Kasir"
+          >
+            <FiBookOpen size={14} /> Panduan Kasir
+          </button>
           <button
             onClick={toggleSound}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
@@ -684,6 +694,11 @@ export default function OrderMonitor({ tables = [], activeOrders = [] }) {
                               <span className={`font-bold ${isCancelled ? 'line-through text-red-500' : isServed ? 'text-green-900' : 'text-gray-800'}`}>
                                 {item.food?.nama || 'Menu'}
                               </span>
+                              {item.batch_no > 1 && (
+                                <span className="text-[9px] font-black text-blue-700 bg-blue-100 border border-blue-200 px-1 py-0.2 rounded">
+                                  ⚡ Tambahan #{item.batch_no - 1}
+                                </span>
+                              )}
                               {isCancelled && (
                                 <span className="text-[9px] font-black text-red-700 bg-red-100 px-1 py-0.2 rounded">
                                   Batal
@@ -1028,6 +1043,12 @@ export default function OrderMonitor({ tables = [], activeOrders = [] }) {
           </div>
         );
       })()}
+
+      {/* MODAL BUKU PANDUAN KASIR */}
+      <CashierGuideModal
+        isOpen={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+      />
     </Sidebar>
   );
 }

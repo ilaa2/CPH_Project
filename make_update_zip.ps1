@@ -54,6 +54,7 @@ $dbItems = @(
     "database\migrations\2026_10_12_221000_add_pempek_palantea_to_pos_foods.php",
     "database\migrations\2026_10_12_222000_add_is_served_to_pos_order_items_table.php",
     "database\migrations\2026_10_13_130000_add_split_payment_and_correction_notes_to_pos_tables.php",
+    "database\migrations\2026_10_14_190000_add_batch_no_to_pos_order_items_table.php",
     "database\seeders\DatabaseSeeder.php",
     "database\seeders\PosSeeder.php"
 )
@@ -106,8 +107,11 @@ if (Test-Path (Join-Path $sourceDir "storage\app\public\pos_foods")) {
     Copy-Item (Join-Path $sourceDir "storage\app\public\pos_foods") (Join-Path $tempDir "storage\app\public") -Recurse -Force
 }
 
-# 7. Root .htaccess
+# 7. Root .htaccess & docs/
 Copy-Item (Join-Path $sourceDir ".htaccess") (Join-Path $tempDir ".htaccess") -Force
+if (Test-Path (Join-Path $sourceDir "docs")) {
+    Copy-Item (Join-Path $sourceDir "docs") (Join-Path $tempDir "docs") -Recurse -Force
+}
 
 Write-Host ">>> Mengompresi paket ZIP ke $zipPath..."
 if (Test-Path $zipPath) { Remove-Item -Force $zipPath }

@@ -83,39 +83,97 @@ function SingleReceiptContent({ order, isKitchen, paperSize = '80mm' }) {
           </div>
         </div>
 
-        {/* DAFTAR MENU (ITEMS) */}
+        {/* DAFTAR MENU (ITEMS) DENGAN PISAHAN BATCH AWAL & TAMBAHAN */}
         <div className="mb-2 pb-2 border-b-2 border-dashed border-gray-600 space-y-2">
           <div className="text-xs font-black uppercase tracking-wider border-b-2 border-black pb-1 flex justify-between">
             <span>MENU PESANAN</span>
-            <span>SUBTOTAL</span>
+            <span>HARGA</span>
           </div>
 
-          <div className="space-y-1.5 pt-0.5">
-            {order.items?.map((item, idx) => (
-              <div key={idx} className="space-y-0.5 pb-1 border-b border-gray-200 last:border-b-0 text-xs sm:text-sm">
-                <div className="flex justify-between items-start gap-1">
-                  <span className="font-bold text-black text-sm sm:text-base leading-snug break-words flex-1">
-                    <span className="text-base sm:text-lg font-black mr-1">{item.jumlah}x</span> {item.food?.nama || 'Menu'}
-                  </span>
-                  <span className="font-black text-black text-sm sm:text-base whitespace-nowrap shrink-0 text-right">
-                    Rp {Number(item.subtotal).toLocaleString('id-ID')}
-                  </span>
+          {(() => {
+            const hasMultipleBatches = order.items && order.items.some(it => (it.batch_no || 1) > 1);
+            if (!hasMultipleBatches) {
+              return (
+                <div className="space-y-1.5 pt-0.5">
+                  {order.items?.map((item, idx) => (
+                    <div key={idx} className="space-y-0.5 pb-1 border-b border-gray-200 last:border-b-0 text-xs sm:text-sm">
+                      <div className="flex justify-between items-start gap-1">
+                        <span className="font-bold text-black text-sm sm:text-base leading-snug break-words flex-1">
+                          <span className="text-base sm:text-lg font-black mr-1">{item.jumlah}x</span> {item.food?.nama || 'Menu'}
+                        </span>
+                        <span className="font-black text-black text-sm sm:text-base whitespace-nowrap shrink-0 text-right">
+                          Rp {Number(item.subtotal).toLocaleString('id-ID')}
+                        </span>
+                      </div>
+                      {item.jumlah > 1 && (
+                        <div className="text-xs text-gray-700 pl-6">
+                          @ Rp {Number(item.harga_satuan).toLocaleString('id-ID')}
+                        </div>
+                      )}
+                      {item.catatan && (
+                        <div className="text-xs font-black italic text-black pl-6">
+                          * Note: {item.catatan}
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
+              );
+            }
 
-                {item.jumlah > 1 && (
-                  <div className="text-xs text-gray-700 pl-6">
-                    @ Rp {Number(item.harga_satuan).toLocaleString('id-ID')}
-                  </div>
-                )}
+            // Group by batch_no
+            const batches = {};
+            order.items.forEach(it => {
+              const b = (it.batch_no && Number(it.batch_no) > 0) ? Number(it.batch_no) : 1;
+              if (!batches[b]) batches[b] = [];
+              batches[b].push(it);
+            });
 
-                {item.catatan && (
-                  <div className="text-xs font-black italic text-black pl-6">
-                    * Note: {item.catatan}
-                  </div>
-                )}
+            const sortedBatchKeys = Object.keys(batches).map(Number).sort((a, b) => a - b);
+
+            return (
+              <div className="space-y-3 pt-0.5">
+                {sortedBatchKeys.map(bNo => {
+                  const bItems = batches[bNo];
+                  const bSubtotal = bItems.filter(i => i.status !== 'CANCELLED').reduce((s, i) => s + (Number(i.subtotal) || 0), 0);
+                  const isFirstBatch = bNo === 1;
+
+                  return (
+                    <div key={bNo} className="space-y-1">
+                      <div className="bg-gray-100 px-1.5 py-0.5 border-y border-dashed border-gray-500 flex justify-between text-xs font-black uppercase">
+                        <span>{isFirstBatch ? '▶ PESANAN AWAL' : `▶ PESANAN TAMBAHAN #${bNo - 1}`}</span>
+                        <span>Rp {bSubtotal.toLocaleString('id-ID')}</span>
+                      </div>
+                      <div className="space-y-1 pl-1">
+                        {bItems.map((item, idx) => (
+                          <div key={idx} className="space-y-0.5 pb-1 border-b border-gray-200 last:border-b-0 text-xs sm:text-sm">
+                            <div className="flex justify-between items-start gap-1">
+                              <span className="font-bold text-black text-sm sm:text-base leading-snug break-words flex-1">
+                                <span className="text-base sm:text-lg font-black mr-1">{item.jumlah}x</span> {item.food?.nama || 'Menu'}
+                              </span>
+                              <span className="font-black text-black text-sm sm:text-base whitespace-nowrap shrink-0 text-right">
+                                Rp {Number(item.subtotal).toLocaleString('id-ID')}
+                              </span>
+                            </div>
+                            {item.jumlah > 1 && (
+                              <div className="text-xs text-gray-700 pl-6">
+                                @ Rp {Number(item.harga_satuan).toLocaleString('id-ID')}
+                              </div>
+                            )}
+                            {item.catatan && (
+                              <div className="text-xs font-black italic text-black pl-6">
+                                * Note: {item.catatan}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            ))}
-          </div>
+            );
+          })()}
         </div>
 
         {/* CATATAN PESANAN UMUM */}
@@ -128,16 +186,17 @@ function SingleReceiptContent({ order, isKitchen, paperSize = '80mm' }) {
 
         {/* TOTAL & RINCIAN PEMBAYARAN */}
         <div className="space-y-1.5 mb-3 pt-1 text-xs sm:text-sm">
-          <div className="flex justify-between font-bold">
-            <span>Subtotal:</span>
-            <span>Rp {Number(order.subtotal || 0).toLocaleString('id-ID')}</span>
-          </div>
-
-          {order.diskon > 0 && (
-            <div className="flex justify-between font-bold">
-              <span>Diskon:</span>
-              <span>- Rp {Number(order.diskon).toLocaleString('id-ID')}</span>
-            </div>
+          {Number(order.diskon || 0) > 0 && (
+            <>
+              <div className="flex justify-between font-bold">
+                <span>Subtotal:</span>
+                <span>Rp {Number(order.subtotal || order.total || 0).toLocaleString('id-ID')}</span>
+              </div>
+              <div className="flex justify-between font-bold text-red-600">
+                <span>Diskon:</span>
+                <span>- Rp {Number(order.diskon).toLocaleString('id-ID')}</span>
+              </div>
+            </>
           )}
 
           {/* TOTAL UTAMA */}
@@ -203,7 +262,12 @@ function SingleReceiptContent({ order, isKitchen, paperSize = '80mm' }) {
           ) : order.payment_status === 'UNPAID' && (
             <div className="my-2 p-2 bg-gray-100 border-2 border-dashed border-black rounded text-center text-xs text-black font-black space-y-0.5">
               <p className="text-sm font-black uppercase">⚠️ TAGIHAN BELUM LUNAS</p>
-              <p className="text-xs uppercase">* Pembayaran ditagih saat makanan diantar *</p>
+              {order.payment?.jumlah_bayar > 0 && (
+                <p className="text-xs font-bold text-black">
+                  Sudah Dibayar Sebelumnya: Rp {Number(order.payment.jumlah_bayar).toLocaleString('id-ID')}
+                </p>
+              )}
+              <p className="text-xs uppercase">* Pembayaran ditagih saat makanan diantar / selesai makan *</p>
             </div>
           )}
         </div>
@@ -227,9 +291,15 @@ function SingleReceiptContent({ order, isKitchen, paperSize = '80mm' }) {
         <h2 className="font-black text-2xl sm:text-3xl uppercase tracking-wider text-black leading-tight">
           {order.is_additional ? '--- TICKET DAPUR (TAMBAHAN) ---' : '--- TICKET DAPUR ---'}
         </h2>
-        <p className="text-xs sm:text-sm font-black text-black uppercase mt-0.5">
-          {order.is_additional ? '★ MENU TAMBAHAN PESANAN ★' : 'SEGERA SIAPKAN & MASAK'}
-        </p>
+        {order.is_additional ? (
+          <div className="my-1 py-1 px-2 bg-black text-white font-black text-xs sm:text-sm uppercase rounded">
+            ★ HANYA MASAK MENU TAMBAHAN INI ★
+          </div>
+        ) : (
+          <p className="text-xs sm:text-sm font-black text-black uppercase mt-0.5">
+            SEGERA SIAPKAN & MASAK
+          </p>
+        )}
       </div>
 
       {/* NOMOR MEJA & INFORMASI PESANAN (TANPA BOLD BLOK HITAM) */}
@@ -273,25 +343,42 @@ function SingleReceiptContent({ order, isKitchen, paperSize = '80mm' }) {
           DAFTAR MENU (MASAK)
         </div>
 
-        <div className="space-y-2.5 pt-1">
-          {order.items?.map((item, idx) => (
-            <div key={idx} className="pb-2 border-b border-gray-300 last:border-b-0 space-y-1">
-              <div className="flex items-start gap-2">
-                <span className="text-2xl sm:text-3xl font-black text-black shrink-0 leading-none">
-                  {item.jumlah}X
-                </span>
-                <span className="text-lg sm:text-xl font-black uppercase text-black leading-tight flex-1 break-words">
-                  {item.food?.nama || 'MENU'}
-                </span>
-              </div>
-              {item.catatan && (
-                <div className="text-xs sm:text-sm font-black uppercase text-black bg-gray-100 p-1.5 border border-black rounded">
-                  * CATATAN: {item.catatan.toUpperCase()}
+        {(() => {
+          let kitchenItems = order.items || [];
+          if (order.is_additional) {
+            if (order.addon_items && order.addon_items.length > 0) {
+              kitchenItems = order.addon_items;
+            } else {
+              // Jika addon_items tidak diberikan, ambil item dengan batch tertinggi
+              const maxBatch = Math.max(...kitchenItems.map(i => Number(i.batch_no) || 1));
+              if (maxBatch > 1) {
+                kitchenItems = kitchenItems.filter(i => (Number(i.batch_no) || 1) === maxBatch);
+              }
+            }
+          }
+
+          return (
+            <div className="space-y-2.5 pt-1">
+              {kitchenItems.map((item, idx) => (
+                <div key={idx} className="pb-2 border-b border-gray-300 last:border-b-0 space-y-1">
+                  <div className="flex items-start gap-2">
+                    <span className="text-2xl sm:text-3xl font-black text-black shrink-0 leading-none">
+                      {item.jumlah}X
+                    </span>
+                    <span className="text-lg sm:text-xl font-black uppercase text-black leading-tight flex-1 break-words">
+                      {item.food?.nama || 'MENU'}
+                    </span>
+                  </div>
+                  {item.catatan && (
+                    <div className="text-xs sm:text-sm font-black uppercase text-black bg-gray-100 p-1.5 border border-black rounded">
+                      * CATATAN: {item.catatan.toUpperCase()}
+                    </div>
+                  )}
                 </div>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
+          );
+        })()}
       </div>
 
       {/* CATATAN PESANAN UMUM */}
