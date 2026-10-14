@@ -33,6 +33,13 @@ use App\Http\Controllers\MidtransController;
 // ====== LOCATION CONTROLLER ======
 use App\Http\Controllers\LocationController;
 
+// ====== POS & KITCHEN CONTROLLERS ======
+use App\Http\Controllers\Pos\KasirController;
+use App\Http\Controllers\Pos\KitchenController;
+use App\Http\Controllers\Pos\AdminFoodController;
+use App\Http\Controllers\Pos\AdminTableController;
+use App\Http\Controllers\Pos\PosReportController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -180,10 +187,61 @@ Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.'
     });
 });
 
+// =====================================================
+// === ROUTE POS KASIR (Role: admin, kasir) ===
+// =====================================================
+Route::middleware(['auth', 'pos.access'])->group(function () {
+    Route::get('/order', [KasirController::class, 'index'])->name('pos.kasir');
+    Route::get('/pos/monitor', [KasirController::class, 'monitor'])->name('pos.monitor');
+    Route::get('/order-monitor', [KasirController::class, 'monitor'])->name('pos.monitor.alias1');
+    Route::get('/admin/pos-monitor', [KasirController::class, 'monitor'])->name('admin.pos.monitor');
+    Route::get('/monitor', [KasirController::class, 'monitor'])->name('pos.monitor.alias2');
+    Route::post('/pos/order', [KasirController::class, 'storeOrder'])->name('pos.order.store');
+    Route::post('/pos/payment', [KasirController::class, 'processPayment'])->name('pos.payment.process');
+    Route::post('/pos/order/{id}/complete', [KasirController::class, 'completeOrder'])->name('pos.order.complete');
+    Route::post('/pos/order/{id}/cancel', [KasirController::class, 'cancelOrder'])->name('pos.order.cancel');
+    Route::post('/pos/order/{id}/add-items', [KasirController::class, 'addItemsToOrder'])->name('pos.order.add-items');
+    Route::post('/pos/order-item/{id}/toggle-served', [KasirController::class, 'toggleOrderItemServed'])->name('pos.order-item.toggle-served');
+    Route::post('/pos/order-item/{id}/cancel', [KasirController::class, 'cancelOrderItem'])->name('pos.order-item.cancel');
+    Route::post('/pos/table/{id}/reset', [KasirController::class, 'resetTable'])->name('pos.table.reset');
+    Route::get('/pos/json-state', [KasirController::class, 'jsonState'])->name('pos.json.state');
+
+    // --- POS Menu & Table Management (Admin & Kasir) ---
+    Route::prefix('admin')->group(function () {
+        Route::get('/pos-foods', [AdminFoodController::class, 'index'])->name('admin.pos.foods.index');
+        Route::post('/pos-foods', [AdminFoodController::class, 'store'])->name('admin.pos.foods.store');
+        Route::post('/pos-foods/{id}/update', [AdminFoodController::class, 'update'])->name('admin.pos.foods.update');
+        Route::post('/pos-foods/{id}/delete', [AdminFoodController::class, 'destroy'])->name('admin.pos.foods.delete');
+        Route::post('/pos-food-categories', [AdminFoodController::class, 'storeCategory'])->name('admin.pos.food-categories.store');
+
+        Route::get('/pos-tables', [AdminTableController::class, 'index'])->name('admin.pos.tables.index');
+        Route::post('/pos-tables/{id}/status', [AdminTableController::class, 'updateStatus'])->name('admin.pos.tables.update-status');
+        Route::post('/pos-tables/reset-all', [AdminTableController::class, 'resetAll'])->name('admin.pos.tables.reset-all');
+
+        // --- POS Reports & Revenue Dashboard ---
+        Route::get('/pos-reports', [PosReportController::class, 'index'])->name('admin.pos.reports.index');
+        Route::get('/pos-reports/export-csv', [PosReportController::class, 'exportCsv'])->name('admin.pos.reports.export.csv');
+        Route::get('/pos-reports/{type}/json', [PosReportController::class, 'data'])->name('admin.pos.reports.data');
+        Route::get('/pos-reports/{type}/{format}', [PosReportController::class, 'export'])->name('admin.pos.reports.export');
+        Route::post('/pos-reports/order/{id}/update-payment-note', [PosReportController::class, 'updatePaymentNote'])->name('admin.pos.reports.payment.update-note');
+    });
+});
+
+// =====================================================
+// === ROUTE KITCHEN DISPLAY / DAPUR (Role: admin, dapur) ===
+// =====================================================
+Route::middleware(['auth', 'kitchen.access'])->group(function () {
+    Route::get('/kitchen', [KitchenController::class, 'index'])->name('pos.kitchen');
+    Route::post('/kitchen/order/{id}/status', [KitchenController::class, 'updateOrderStatus'])->name('pos.kitchen.order.status');
+    Route::post('/kitchen/item/{id}/toggle-served', [KitchenController::class, 'toggleItemServed'])->name('pos.kitchen.item.toggle-served');
+    Route::post('/kitchen/table/{id}/clean', [KitchenController::class, 'cleanTable'])->name('pos.kitchen.table.clean');
+    Route::get('/kitchen/json-state', [KitchenController::class, 'jsonState'])->name('pos.kitchen.json.state');
+});
+
 // Legacy route redirects for backwards compatibility
 Route::middleware(['auth', 'verified', 'admin'])->group(function () {
-    Route::get('/dashboard', fn() => redirect()->route('admin.dashboard'));
-    Route::get('/profile', fn() => redirect()->route('admin.profile.edit'));
+    Route::redirect('/dashboard', '/admin');
+    Route::redirect('/profile', '/admin/profile');
 });
 
 

@@ -67,6 +67,38 @@ class User extends Authenticatable
         return $this->role === 'customer';
     }
 
+    /**
+     * Check if user is kasir
+     */
+    public function isKasir(): bool
+    {
+        return $this->role === 'kasir';
+    }
+
+    /**
+     * Check if user is dapur
+     */
+    public function isDapur(): bool
+    {
+        return $this->role === 'dapur';
+    }
+
+    /**
+     * Check if user can access POS (admin, kasir, or dapur)
+     */
+    public function canAccessPos(): bool
+    {
+        return in_array($this->role, ['admin', 'kasir', 'dapur']);
+    }
+
+    /**
+     * Check if user can access Kitchen Display (admin or dapur)
+     */
+    public function canAccessKitchen(): bool
+    {
+        return in_array($this->role, ['admin', 'dapur']);
+    }
+
     // ===== RELATIONSHIPS =====
 
     /**
